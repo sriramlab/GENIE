@@ -1,0 +1,3 @@
+p_casual ld_ex maf_ex min_maf max_maf total_h2 num_simul
+1 0.0 0.0 0 0.5 0.1 1
+1 0.0 0.0 0 0.5 0.1 1
