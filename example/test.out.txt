@@ -1,0 +1,26 @@
+number of features in bin0: 10000
+number of features in bin1: 10000
+number of features in bin2: 1
+OUTPUT: 
+Variances: 
+Sigma^2_g0: 0.120922  SE: 0.0208765
+Sigma^2_ge0: 0.255791  SE: 0.146867
+Sigma^2_ge1: 0.166876  SE: 0.144766
+Sigma^2_e: 0.713525  SE: 0.0207696
+Heritabilities(Adjusted for GxE): 
+h^2_adj_g0 : 0.12094 SE: 0.0208833
+h^2_adj_ge0 : 0.100091 SE: 0.0571284
+h^2_adj_ge1 : 0.0653117 SE: 0.0566585
+Total h^2_adj : 0.286343 SE: 0.0207734
+Total h^2_adj_GxE : 0.100091 SE: 0.0571284
+Total h^2_adj_G : 0.12094 SE: 0.0208833
+G enrichment
+Enrichment G_0 : 1 SE: 0
+
+h^2's (heritabilities) and e's (enrichments) are computed based on overlapping setting
+h^2's: 
+h^2_g0 : 0.12094 SE: 0.0208833
+h^2_ge0 : 0.100091 SE: 0.0571284
+Enrichments: (overlapping def)
+Enrichment of G bin 0 : 1 SE: 2.89571e-13
+Enrichment of GxE bin 0 : 1 SE: 4.37853e-13
