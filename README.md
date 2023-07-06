@@ -46,6 +46,7 @@ num_vec (-k): The number of random vectors (10 is recommended).
 num_block (-jn): The number of jackknife blocks(100 is recommended). The higher number of jackknife blocks the higher memory usage.
 out_put (-o): The path of the output file.
 
+By default, GENIE fits a single GxE variance component. To partition GxE component w.r.t the annotation file, add "-eXannot" flag.
 
 ```
 ## File formats
