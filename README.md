@@ -14,7 +14,7 @@ make
 ## How to install :
 
 ```
-git clone https://github.com/alipazokit/GENIE.git
+git clone https://github.com/sriramlab/GENIE.git
 cd GENIE
 mkdir build
 cd build/
