@@ -1,0 +1,53 @@
+FILENAME,TRAIT,FIELD_ID,category1,Category
+ala_at,Alanine aminotransferase,30620,Liver,Liver
+albumin,Albumin,30600,Liver,Blood biochemistry
+alcohol_freq,Alcohol intake frequency,1558,Other,Other
+alka_phos,Alkaline phosphatase,30610,Bone,Liver
+apo_a,Apolipoprotein A,30630,Cardiovascular,Lipid metabolism
+asp_at,Aspartate aminotransferase,30650,Liver,Liver
+basal_metabolic,Basal metabolic rate,23105,Anthropometry,Anthropometry
+blood_eosinophil,Eosinophil count,30150,Blood biochemistry,Blood biochemistry
+blood_lymphocyte,Lymphocyte count,30120,Blood biochemistry,Blood biochemistry
+blood_mch,Mean corpuscular hemoglobin,30050,Blood biochemistry,Blood biochemistry
+blood_monocyte,Monocyte count,30130,Blood biochemistry,Blood biochemistry
+blood_mpv,Mean platelet volume,30100,Blood biochemistry,Blood biochemistry
+blood_mscv,Mean sphered cell volume,30270,Blood biochemistry,Blood biochemistry
+blood_platelet,Platelet count,30080,Blood biochemistry,Blood biochemistry
+blood_platelet_distrib_width,Platelet distribution width,30110,Blood biochemistry,Blood biochemistry
+blood_rbc_count,RBC count,30010,Blood biochemistry,Blood biochemistry
+blood_rbc_distrib_width,RBC distribution width,30070,Blood biochemistry,Blood biochemistry
+blood_reticulocyte,High light scatter reticulocyte count,30300,Blood biochemistry,Blood biochemistry
+blood_wbc_count,White blood cell count,30000,Blood biochemistry,Blood biochemistry
+bmd_heel_tscore,BMD Heel T-score,4106+4125,Anthropometry,Anthropometry
+bmi,Body mass index,21001,Anthropometry,Anthropometry
+calcium,Calcium,30680,Bone,Other
+cholesterol,Cholesterol,30690,Cardiovascular,Lipid metabolism
+corneal_hysteresis,Corneal Hysteresis,5256+5264,Eye,Other
+c_reactive_prot,C-reactive protein,30710,Cardiovascular,Blood biochemistry
+creatinine,Creatinine,30700,Renal,Kidney
+creatinine_urine,Creatinine in urine,30510,Renal,Kidney
+cystatin_c,Cystatin-C,30720,Renal,Kidney
+fev1_fvc,FEV1-FVC ratio,3063/3062,Other,Lung
+fvc,FVC,3062,Other,Lung
+ggt,Gamma glutamyltransferase,30730,Liver,Liver
+glucose,Glucose,30740,Diabetes,Glucose metabolism
+hair_color,Hair color,1747,Other,Other
+hba1c,Hemoglobin A1c,30750,Diabetes,Glucose metabolism
+hdl,HDL cholesterol,30760,Cardiovascular,Lipid metabolism
+height,Height,50,Anthropometry,Anthropometry
+igf1,IGF-1,30770,Blood biochemistry,Blood biochemistry
+ldl,LDL direct,30780,Cardiovascular,Lipid metabolism
+microalbumin,Microalbumin in urine,30500,Renal,Kidney
+overall_health,Overall health rating,2178,Other,Other
+phosphate,Phosphate,30810,Renal,Blood biochemistry
+potassium,Potassium in urine,30520,Renal,Kidney
+shbg,SHBG,30830,Blood biochemistry,Blood biochemistry
+sodium,Sodium in urine,30530,Renal,Kidney
+testosterone,Testosterone,30850,Blood biochemistry,Blood biochemistry
+triglycerides,Triglycerides,30870,Cardiovascular,Lipid metabolism
+urate,Urate,30880,Renal,Kidney
+urea,Urea,30670,Renal,Kidney
+vitamin_d,Vitamin D,30890,Bone,Blood biochemistry
+whr,Waist-hip ratio,48/49,Anthropometry,Anthropometry
+bp_diastolic,Diastolic blood pressure,1,Cardiovascular,Blood pressure
+bp_systolic,Systolic blood pressure,1,Cardiovascular,Blood pressure
