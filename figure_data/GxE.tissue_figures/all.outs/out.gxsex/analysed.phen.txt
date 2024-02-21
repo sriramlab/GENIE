@@ -1,0 +1,16 @@
+ala_at
+alcohol_freq
+asp_at
+basal_metabolic
+blood_platelet
+blood_rbc_count
+bp_diastolic
+bp_systolic
+c_reactive_prot
+creatinine
+creatinine_urine
+height
+igf1
+ldl
+testosterone
+whr
