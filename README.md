@@ -43,14 +43,20 @@ covariate (-c): The path of covariate file
 environment (-e): The path of environment file
 annotation (-annot): The path of genotype annotation file.
 num_vec (-k): The number of random vectors (10 is recommended). 
-num_block (-jn): The number of jackknife blocks (100 is recommended). The higher the number of jackknife blocks, the higher the memory usage.
+num_block (-jn): The number of jackknife blocks (100 is recommended). The higher the number of jackknife 
+    blocks, the higher the memory usage.
 output (-o): The path of the output file.
-model (-m): Specification of the model: it reduces to [RHE-mc](https://www.nature.com/articles/s41467-020-17576-9) if the model only fits the additive genetic (G) component; users can also consider to estimate GxE heritability with or without the noise heterogeneous component (NxE) (G/G+GxE/G+GxE+NxE). 
+model (-m): Specification of the model: it reduces to RHE-mc (Pazokitoroudi et al. Nat Commun (2020). 
+    https://doi.org/10.1038/s41467-020-17576-9) if the model only fits the additive genetic (G) component; 
+    users can also consider to estimate GxE heritability with or without the noise heterogeneous component
+    (NxE) (G/G+GxE/G+GxE+NxE). 
 num_threads (-t): The number of threads.
 seed (-s): The random seed.
 verbose (-v): Whether to output extra information or not (0/1).
 
-By default, GENIE fits a single GxE variance component. To partition the GxE component w.r.t the annotation file, add "-eXannot" flag. The phenotype vector is standardized after regressing covariates. To turn this off, add "-norm_proj_pheno 0". In addition, a one's vector is appended to the covariates (the intercept term). To remove this intercept term, add "-cov_add_intercept 0".
+By default, GENIE fits a single GxE variance component. To partition the GxE component w.r.t the annotation 
+file, add "-eXannot" flag. The phenotype vector is standardized after regressing covariates. To turn this off, add "-norm_proj_pheno 0". In addition, a one's vector is appended to the covariates (the intercept term). To 
+remove this intercept term, add "-cov_add_intercept 0".
 
 ```
 ## File formats
@@ -59,7 +65,8 @@ Genotype: It must be in bed format.
 Phenotype: It must have a header in the following format: FID IID name_of_phenotype
 Covariate: It must have a header in the following format: FID IID name_of_cov_1 name_of_cov_2  . . .   name_of_cov_n
 Environment: It must have a header in the following format: FID IID name_of_env_1 name_of_env_2  . . .   name_of_env_n
-Annotation: It has M rows (M=number  of SNPs) and K columns (K=number of annotations). If SNP i belongs to annotation j, then there is  "1" in row i and column j. Otherwise, there is "0". (delimiter is " ")
+Annotation: It has M rows (M=number  of SNPs) and K columns (K=number of annotations). If SNP i belongs to 
+annotation j, then there is  "1" in row i and column j. Otherwise, there is "0". (delimiter is " ")
 
 1) The number and order of individuals must be the same in phenotype, genotype, environment, and covariate files.
 2) The number and order of SNPs must be the same in bim file and annotation file.
@@ -72,7 +79,8 @@ Annotation: It has M rows (M=number  of SNPs) and K columns (K=number of annotat
 ```
 GENIE is able to fit single/multiple additive and GxE variance components. 
 1) SNPs are partitioned with respect to the annotation file.
-2) By default, GENIE fits a single GxE variance component. To partition the GxE component w.r.t the annotation file, please add "-eXannot" flag.
+2) By default, GENIE fits a single GxE variance component. To partition the GxE component w.r.t the annotation 
+file, please add "-eXannot" flag.
 3) GENIE fits noise by environment (NxE) variance component (heterogeneous noise).
 4) By default, GENIE adds environmental variables to covariates as fixed effects.
 ```
@@ -86,6 +94,10 @@ chmod +x test.sh
 
 ## Citation
 ```
+1. Ali Pazokitoroudi, Andrew Dahl, Noah Zaitlen, Saharon Rosset, Sriram Sankararaman
+bioRxiv 2023.12.12.571316; doi: https://doi.org/10.1101/2023.12.12.571316
+2. Ali Pazokitoroudi, Yue Wu, Kathryn S. Burch, Kangcheng Hou, Aaron Zhou, Bogdan Pasaniuc, Sriram Sankararaman
+Nature Communications (2020); doi: https://doi.org/10.1101/522003
 ```
 
 
