@@ -43,10 +43,14 @@ covariate (-c): The path of covariate file
 environment (-e): The path of environment file
 annotation (-annot): The path of genotype annotation file.
 num_vec (-k): The number of random vectors (10 is recommended). 
-num_block (-jn): The number of jackknife blocks(100 is recommended). The higher the number of jackknife blocks, the higher the memory usage.
-out_put (-o): The path of the output file.
+num_block (-jn): The number of jackknife blocks (100 is recommended). The higher the number of jackknife blocks, the higher the memory usage.
+output (-o): The path of the output file.
+model (-m): Specification of the model: it reduces to [RHE-mc](https://www.nature.com/articles/s41467-020-17576-9) if the model only fits the additive genetic (G) component; users can also consider to estimate GxE heritability with or without the noise heterogeneous component (NxE) (G/G+GxE/G+GxE+NxE). 
+num_threads (-t): The number of threads.
+seed (-s): The random seed.
+verbose (-v): Whether to output extra information or not (0/1).
 
-By default, GENIE fits a single GxE variance component. To partition the GxE component w.r.t the annotation file, add "-eXannot" flag.
+By default, GENIE fits a single GxE variance component. To partition the GxE component w.r.t the annotation file, add "-eXannot" flag. The phenotype vector is standardized after regressing covariates. To turn this off, add "-norm_proj_pheno 0". In addition, a one's vector is appended to the covariates (the intercept term). To remove this intercept term, add "-cov_add_intercept 0".
 
 ```
 ## File formats
