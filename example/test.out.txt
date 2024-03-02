@@ -1,26 +1,57 @@
-number of features in bin0: 10000
-number of features in bin1: 10000
-number of features in bin2: 1
+Number of indvs after filtering: 5000
+Number of covariates: 7
+Number of environments: 1
+LHS of Normal Eq
+7579.24 2349.79 1953.69 4994.07
+2349.79 2339.53 1946.41 1948.32
+1953.69 1946.41 1941.56 1943.33
+4994.07 1948.32 1943.33    4993
+RHS of Normal Eq
+5422.16
+2606.72
+ 2461.6
+   4999
+Normal Equations info:
+The relative error is: 0
+Max sing.val: 13275.1
+Min sing.val: 148.115
+Condition number: 89.627
+
+
+*****
+Number of features in bin0-th: 10000
+Number of features in bin1-th: 10000
+Number of features in bin2-th: 1
+*****
+Number of G variance components: 1
+Number of GxE variance components: 1
+Number of NxE variance components: 1
+*****
 OUTPUT: 
 Variances: 
-Sigma^2_g0: 0.120922  SE: 0.0208765
-Sigma^2_ge0: 0.255791  SE: 0.146867
-Sigma^2_ge1: 0.166876  SE: 0.144766
-Sigma^2_e: 0.713525  SE: 0.0207696
-Heritabilities(Adjusted for GxE): 
-h^2_adj_g0 : 0.12094 SE: 0.0208833
-h^2_adj_ge0 : 0.100091 SE: 0.0571284
-h^2_adj_ge1 : 0.0653117 SE: 0.0566585
-Total h^2_adj : 0.286343 SE: 0.0207734
-Total h^2_adj_GxE : 0.100091 SE: 0.0571284
-Total h^2_adj_G : 0.12094 SE: 0.0208833
+Sigma^2_g0: 0.126884  SE: 0.0229139
+Sigma^2_gxe0: 0.229844  SE: 0.134169
+Sigma^2_nxe0: 0.203845  SE: 0.133634
+Sigma^2_e: 0.705264  SE: 0.0226921
+*****
+Heritabilities: 
+h^2_g0 : 0.126759 SE: 0.0228828
+h^2_gxe0 : 0.08958 SE: 0.0521624
+h^2_nxe0 : 0.0792436 SE: 0.0519494
+Total h^2 : 0.295583 SE: 0.0226649
+Total h^2_g : 0.126759 SE: 0.0228828
+Total h^2_gxe : 0.08958 SE: 0.0521624
+*****
 G enrichment
-Enrichment G_0 : 1 SE: 0
+Enrichment g_0 : 1 SE: 0
+GxE enrichment
+Enrichment gxe_0 : 1 SE: 0
+*****
 
 h^2's (heritabilities) and e's (enrichments) are computed based on overlapping setting
 h^2's: 
-h^2_g0 : 0.12094 SE: 0.0208833
-h^2_ge0 : 0.100091 SE: 0.0571284
-Enrichments: (overlapping def)
-Enrichment of G bin 0 : 1 SE: 2.89571e-13
-Enrichment of GxE bin 0 : 1 SE: 4.37853e-13
+h^2_g0 : 0.126759 SE: 0.0228828
+h^2_gxe0 : 0.08958 SE: 0.0521624
+Enrichments (overlapping def): 
+Enrichment g_0 : 1 SE: 3.93301e-13
+Enrichment gxe_0 : 1 SE: 3.94094e-13

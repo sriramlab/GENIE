@@ -16,8 +16,6 @@ ENDIF()
 ADD_DEFINITIONS(-DDEBUG=${DEBUG})
 
 
+add_executable(GENIE_mem src/ge_mem_flexible.cpp src/genotype.cpp src/matmult.cpp src/storage.cpp)
+add_executable(GENIE src/ge_hetro_flexible.cpp src/genotype.cpp src/matmult.cpp src/storage.cpp)
 
-
-add_executable(GENIE_mem src/ge_mem_eff.cpp src/genotype.cpp src/storage.cpp)
-
-add_executable(GENIE src/ge_hetro.cpp src/genotype.cpp src/storage.cpp)

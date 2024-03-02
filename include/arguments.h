@@ -40,6 +40,17 @@ struct options{
 	bool missing;
 	bool text_version;
 	double beta;
+	//CHANGE(10/20)
+	bool hetero_noise;
+	bool gen_by_env;
+	std::string model;
+	int seed;
+	bool normalize_proj_pheno;
+	bool cov_add_intercept;
+	int nthreads;
+	int verbose;
+	//CHANGE(11/12)
+	// bool perm_E_in_GxE;
 };
 
 /*template<typename T, typename U>
@@ -203,7 +214,7 @@ public:
 void parse_args(int argc, char const *argv[]){
 	
 	// Setting Default Values
-	command_line_opts.num_of_evec=2;
+	command_line_opts.num_of_evec=10;
 	command_line_opts.getaccuracy=false;
 	command_line_opts.debugmode=false;
 	command_line_opts.OUTPUT_PATH = "";
@@ -216,9 +227,25 @@ void parse_args(int argc, char const *argv[]){
 	command_line_opts.text_version = false;
 	
 	command_line_opts.exannot=false;
+	//CHANGE(10/20)
+	command_line_opts.hetero_noise=true;
+	command_line_opts.gen_by_env=true;
+	command_line_opts.jack_number = 100;
+	command_line_opts.model = "G+GxE+NxE";
+	command_line_opts.seed = -1;
+	command_line_opts.normalize_proj_pheno = true;
+	command_line_opts.cov_add_intercept = true;
+	command_line_opts.nthreads = 1;
+	command_line_opts.verbose = 0;
+	//CHANGE(11/12)
+	// command_line_opts.perm_E_in_GxE=false;
 
-	if(argc<3){
-		  cout<<"Correct Usage :"<<endl<<" -g  <genotype file> -p <phenotype file> -c <covariate file>  -k <number of random vector> -jn <number of jackknife blocks>    -o <output file> -annot <annot file> "<<endl;
+	if(argc<6){
+		// cout<<"Correct Usage is "<<argv[0]<<" -p <parameter file>"<<endl;
+		cout<<"Correct Usage is "<<argv[0] << ":" << endl;
+		cout <<"\t-g [genotype] -annot [annotation] -p [phenotype] -c [covariates] -o [output]" << endl;
+		cout  << "\t[-e [environment] -m [G|G+GxE|G+GxE+NxE] -k [# random vectors] -jn [# jackknife subsamples]	-t [# threads]]" << endl;
+		cout <<  "\t[-s [random seed] -eXannot -norm_proj_pheno [0|1] -cov_add_intercept [0|1] -v [0|1]]"<<endl;
 		exit(-1);
 	}
 
@@ -241,7 +268,7 @@ void parse_args(int argc, char const *argv[]){
 		command_line_opts.memory_efficient = cfg.getValueOfKey<bool>("memory_efficient",false);	
 		command_line_opts.fast_mode = cfg.getValueOfKey<bool>("fast_mode",true);
 		command_line_opts.missing = cfg.getValueOfKey<bool>("missing",false);	
-		command_line_opts.text_version = cfg.getValueOfKey<bool>("text_version",false);							
+		command_line_opts.text_version = cfg.getValueOfKey<bool>("text_version",false);						
 	}
 	else{
 		for (int i = 1; i < argc; i++) { 
@@ -318,8 +345,65 @@ void parse_args(int argc, char const *argv[]){
 				command_line_opts.accelerated_em = atof(argv[i+1]);
 				i++;
 			}
-			else if(strcmp(argv[i],"-v")==0)
-				command_line_opts.debugmode=true;
+			//CHANGE(2/27)
+			else if(strcmp(argv[i],"-m")==0) {
+				if (strcmp(argv[i+1], "G")==0) {
+					command_line_opts.model = "G";
+					command_line_opts.hetero_noise=false;
+					command_line_opts.gen_by_env=false;
+					command_line_opts.normalize_proj_pheno = false;
+					cout << "Estimation of G heritability" << endl;
+				} else if (strcmp(argv[i+1], "G+GxE")==0) {
+					command_line_opts.model = "G+GxE";
+					command_line_opts.hetero_noise=false;
+					command_line_opts.gen_by_env=true;
+					cout << "Estimation of G and GxE heritability (no heterogeneous noise)" << endl;
+				} else if (strcmp(argv[i+1], "G+GxE+NxE")==0) {
+					command_line_opts.hetero_noise=true;
+					command_line_opts.gen_by_env=true;
+					cout << "Estimation of G and GxE heritability (with heterogeneous noise)" << endl;
+				} else {
+					cout << "model can only be G, G+GxE, or G+GxE+NxE. Using default G+GxE+NxE model" << endl;
+					command_line_opts.hetero_noise=true;
+					command_line_opts.gen_by_env=true;
+					cout << "Estimation of G and GxE heritability (with heterogeneous noise)" << endl;
+				}
+				i++;
+			} else if (strcmp(argv[i], "-s")==0) {
+				command_line_opts.seed = atoi(argv[i+1]);
+				i++;
+			} else if (strcmp(argv[i], "-norm_proj_pheno")==0) {
+				int flag = atoi(argv[i+1]);
+				if (flag == 0) {
+					command_line_opts.normalize_proj_pheno = false;
+					cout << "The phenotype vector after projection on covariates will be be normalized" << endl;
+				} else {
+					command_line_opts.normalize_proj_pheno = true;
+				}
+				i++;
+			} else if (strcmp(argv[i], "-cov_add_intercept")==0) {
+				int flag = atoi(argv[i+1]);
+				if (flag == 0) {
+					command_line_opts.cov_add_intercept = false;
+					cout << "The one vector (intercept term) will not be added to the covariates" << endl;
+				} else {
+					command_line_opts.cov_add_intercept = true;
+				}
+				i++;
+			} else if (strcmp(argv[i], "-t")==0) {
+				command_line_opts.nthreads = atoi(argv[i+1]);
+				i++;
+			} else if (strcmp(argv[i], "-v")==0) {
+				command_line_opts.verbose = atoi(argv[i+1]);
+				i++;
+			}
+			//CHANGE(11/12)
+			// else if (strcmp(argv[i], "-perm_E_in_GxE")==0) {
+			// 	command_line_opts.perm_E_in_GxE=true;
+			// 	cout << "permute E in GxE flag set" << endl;
+			// }
+			// else if(strcmp(argv[i],"-v")==0)
+			// 	command_line_opts.debugmode=true;
 			else if(strcmp(argv[i],"-a")==0)
 				command_line_opts.getaccuracy=true;
 			else if(strcmp(argv[i],"-mem")==0)
@@ -334,7 +418,11 @@ void parse_args(int argc, char const *argv[]){
 				 command_line_opts.exannot=true;	
 			else{
 				cout<<"Not Enough or Invalid arguments"<<endl;
-				  cout<<"Correct Usage :"<<endl<<" -g  <genotype file> -p <phenotype file> -c <covariate file>  -k <number of random vector> -jn <number of jackknife blocks>    -o <output file> -annot <annot file> "<<endl;
+				// cout<<"Correct Usage is "<<argv[0]<<" -g <genotype file> -k <num_of_evec> -b <num_of_zb/10>  -v (for debugmode) -a (for getting accuracy)"<<endl;
+				cout<<"Correct Usage is "<<argv[0] << ":" << endl;
+				cout <<"\t-g [genotype] -annot [annotation] -p [phenotype] -c [covariates] -o [output]" << endl;
+				cout  << "\t[-e [environment] -m [G|G+GxE|G+GxE+NxE] -k [# random vectors] -jn [# jackknife subsamples]	-t [# threads]]" << endl;
+				cout <<  "\t[-s [random seed] -eXannot -norm_proj_pheno [0|1] -cov_add_intercept [0|1] -v [0|1]]"<<endl;
 				exit(-1);
 			}
 		}
@@ -359,6 +447,7 @@ void parse_args(int argc, char const *argv[]){
 	
 	if(got_genotype_file==false){
 		cout<<"Genotype file missing"<<endl;
+		cout<<"Correct Usage is "<<argv[0]<<" -g <genotype file> -k <num_of_evec> -m <max_iterations> -v (for debugmode) -a (for getting accuracy)"<<endl;
 		exit(-1);
 	}
 
