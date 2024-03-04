@@ -20,6 +20,8 @@
 //#include "helper.h"
 #include "storage.h"
 #include "matmult.h"
+#include "io.h"
+#include "std.h"
 
 #include "/usr/include/boost/random.hpp"
 
@@ -224,7 +226,7 @@ int read_env(int Nind, std::string filename){
         vector<double> cov_sum(covNum, 0);
         if (gen_by_env == true) {
                 Enviro=MatrixXdr::Zero(Nind,covNum);
-                cout<< "Read in "<<covNum << " Environment.. "<<endl;
+                cout<< "Reading in "<<covNum << " Environment.. "<<endl;
         }
 
         int j=0;
@@ -264,239 +266,119 @@ int read_env(int Nind, std::string filename){
 bool add_env_to_cov=true;
 
 int read_cov(int Nind, std::string filename){
-        ifstream ifs(filename.c_str(), ios::in);
-        std::string line;
-        std::istringstream in;
-        int covIndex = 0;
-        std::getline(ifs,line);
-        in.str(line);
-        string b;
-        vector<vector<int> > missing;
-        int covNum=0;
-        vector<double> cov_sum;
-        while(in>>b)
-        {
-                if(b!="FID" && b !="IID"){
-                missing.push_back(vector<int>()); //push an empty row  
-                covNum++;
-                }
-        }
+	ifstream ifs(filename.c_str(), ios::in);
+	std::string line;
+	std::istringstream in;
+	int covIndex = 0;
+	std::getline(ifs,line);
+	in.str(line);
+	string b;
+	vector<vector<int> > missing;
+	int covNum=0;
+	vector<double> cov_sum;
+	while(in>>b)
+	{
+		if(b!="FID" && b !="IID"){
+			missing.push_back(vector<int>()); //push an empty row  
+			covNum++;
+		}
+	}
 
-        if(covNum!=0)
-                 cov_sum.resize(covNum, 0);
+	if(covNum!=0)
+		cov_sum.resize(covNum, 0);
 
-        if (cov_add_intercept == true) {
-                if(add_env_to_cov==true)
-                        covariate.resize(Nind, covNum+Nenv+1);
-                else
-                        covariate.resize(Nind, covNum+1); 
-        } else {
-                if(add_env_to_cov==true)
-                        covariate.resize(Nind, covNum+Nenv);
-                else
-                        covariate.resize(Nind, covNum);  
-        }
+	if (cov_add_intercept == true) {
+		if(add_env_to_cov==true)
+			covariate.resize(Nind, covNum+Nenv+1);
+		else
+			covariate.resize(Nind, covNum+1); 
+	} else {
+		if(add_env_to_cov==true)
+			covariate.resize(Nind, covNum+Nenv);
+		else
+			covariate.resize(Nind, covNum);  
+	}
 
 
-        cout<< "Read in "<<covNum << " Covariates.. "<<endl;
+	cout<< "Reading in "<<covNum << " Covariates.. "<<endl;
 
-        int j=0;
-        while(std::getline(ifs, line)){
-                in.clear();
-                in.str(line);
-                string temp;
-                in>>temp; in>>temp; //FID IID 
-                for(int k=0; k<covNum; k++){
+	int j=0;
+	while(std::getline(ifs, line)){
+		in.clear();
+		in.str(line);
+		string temp;
+		in>>temp; in>>temp; //FID IID 
+		for(int k=0; k<covNum; k++){
 
-                        in>>temp;
-                        if(temp=="NA")
-                        {
-                                missing[k].push_back(j);
-                                continue;
-                        }
-                        double cur = atof(temp.c_str());
-                        if(cur==-9)
-                        {
-                                missing[k].push_back(j);
-                                continue;
-                        }else{
-                                cov_sum[k]= cov_sum[k]+ cur;
-                                covariate(j,k) = cur;
-                        }
-                }
-                j++;
-        }
-        //compute cov mean and impute 
-        for (int a=0; a<covNum ; a++)
-        {
-                int missing_num = missing[a].size();
-                cov_sum[a] = cov_sum[a] / (Nind - missing_num);
+			in>>temp;
+			if(temp=="NA")
+			{
+				missing[k].push_back(j);
+				continue;
+			}
+			double cur = atof(temp.c_str());
+			if(cur==-9)
+			{
+				missing[k].push_back(j);
+				continue;
+			}else{
+				cov_sum[k]= cov_sum[k]+ cur;
+				covariate(j,k) = cur;
+			}
+			}
+		j++;
+	}
 
-                for(int b=0; b<missing_num; b++)
-                {
-                        int index = missing[a][b];
-                        covariate(index, a) = cov_sum[a];
-                }
-        }
+	//compute cov mean and impute 
+	for (int a=0; a<covNum ; a++)
+	{
+		int missing_num = missing[a].size();
+		cov_sum[a] = cov_sum[a] / (Nind - missing_num);
 
-        if (gen_by_env == true) {
-                if (verbose == true) {
-                        cout<<"The shape of Env: " << Enviro.rows()<<" "<<Enviro.cols()<<endl;
-                        cout<<"The shape of Cov: " << covariate.rows()<<" "<<covariate.cols()<<endl;
-                        cout<<"Number of covariates: " << covNum<< ", the number of environments: "<<Nenv<<endl;
-                }
-                if(add_env_to_cov==true){
-                        for(int i=0;i<Nenv;i++){
-                                covariate.col(covNum+i)=Enviro.col(i);
-                        }
-                }
-        } else {
-                if (cov_add_intercept == true) {
-                        //adding col of all ones to covariates
-                        for (int i=0;i<Nind;i++)
-                                covariate(i,covNum+Nenv)=1;
-                        return covNum+1;
-                } 
-        }
-        if (cov_add_intercept == true) {
-                //adding col of all ones to covariates
-                for (int i=0;i<Nind;i++)
-                        covariate(i,covNum+Nenv)=1;
-        }
+		for(int b=0; b<missing_num; b++)
+		{
+			int index = missing[a][b];
+			covariate(index, a) = cov_sum[a];
+		}
+	}
 
-        if (cov_add_intercept == true) {
-                if(add_env_to_cov==true)
-                        return covNum+Nenv+1;
-                else
-                        return covNum+1; 
-        } else {
-                if(add_env_to_cov==true)
-                        return covNum+Nenv;
-                else
-                        return covNum;  
-        }
+	if (gen_by_env == true) {
+		if (verbose == true) {
+			cout<<"The shape of Env: " << Enviro.rows()<<" "<<Enviro.cols()<<endl;
+			cout<<"The shape of Cov: " << covariate.rows()<<" "<<covariate.cols()<<endl;
+			cout<<"Number of covariates: " << covNum<< ", the number of environments: "<<Nenv<<endl;
+		}
+		if(add_env_to_cov==true){
+			for(int i=0;i<Nenv;i++){
+				covariate.col(covNum+i)=Enviro.col(i);
+			}
+		}
+	} else {
+		if (cov_add_intercept == true) {
+		//adding col of all ones to covariates
+		for (int i=0;i<Nind;i++)
+			covariate(i,covNum+Nenv)=1;
+			return covNum+1;
+		} 
+	}
+	if (cov_add_intercept == true) {
+		//adding col of all ones to covariates
+		for (int i=0;i<Nind;i++)
+			covariate(i,covNum+Nenv)=1;
+	}
 
+	if (cov_add_intercept == true) {
+		if(add_env_to_cov==true)
+			return covNum+Nenv+1;
+		else
+			return covNum+1; 
+	} else {
+		if(add_env_to_cov==true)
+			return covNum+Nenv;
+		else
+			return covNum;  
+	}
 }
-
-
-
-// void multiply_y_pre_fast(MatrixXdr &op, int Ncol_op ,MatrixXdr &res,bool subtract_means){
-
-//         for(int k_iter=0;k_iter<Ncol_op;k_iter++){
-//                 sum_op[k_iter]=op.col(k_iter).sum();
-//         }
-//         #if DEBUG==1
-//                 if(debug){
-//                         // print_time ();
-//                         cout <<"Starting mailman on premultiply"<<endl;
-//                         cout << "Nops = " << Ncol_op << "\t" <<g.Nsegments_hori << endl;
-//                         cout << "Segment size = " << g.segment_size_hori << endl;
-//                         cout << "Matrix size = " <<g.segment_size_hori<<"\t" <<g.Nindv << endl;
-//                         cout << "op = " <<  op.rows () << "\t" << op.cols () << endl;
-//                 }
-//         #endif
-//         //TODO: Memory Effecient SSE FastMultipy
-//         for(int seg_iter=0;seg_iter<g.Nsegments_hori-1;seg_iter++){
-//                 mailman::fastmultiply(g.segment_size_hori,g.Nindv,Ncol_op,g.p[seg_iter],op,yint_m,partialsums,y_m);
-//                 int p_base = seg_iter*g.segment_size_hori;
-//                 for(int p_iter=p_base; (p_iter<p_base+g.segment_size_hori) && (p_iter<g.Nsnp) ; p_iter++ ){
-//                         for(int k_iter=0;k_iter<Ncol_op;k_iter++)
-//                                 res(p_iter,k_iter) = y_m[p_iter-p_base][k_iter];
-//                 }
-//         }
-
-//         int last_seg_size = (g.Nsnp%g.segment_size_hori !=0 ) ? g.Nsnp%g.segment_size_hori : g.segment_size_hori;
-//         mailman::fastmultiply(last_seg_size,g.Nindv,Ncol_op,g.p[g.Nsegments_hori-1],op,yint_m,partialsums,y_m);
-//         int p_base = (g.Nsegments_hori-1)*g.segment_size_hori;
-//         for(int p_iter=p_base; (p_iter<p_base+g.segment_size_hori) && (p_iter<g.Nsnp) ; p_iter++){
-//                 for(int k_iter=0;k_iter<Ncol_op;k_iter++)
-//                         res(p_iter,k_iter) = y_m[p_iter-p_base][k_iter];
-//         }
-
-//         #if DEBUG==1
-//                 if(debug){
-//                         // print_time ();
-//                         cout <<"Ending mailman on premultiply"<<endl;
-//                 }
-//         #endif
-
-//         if(!subtract_means)
-//                 return;
-
-//         for(int p_iter=0;p_iter<p;p_iter++){
-//                 for(int k_iter=0;k_iter<Ncol_op;k_iter++){
-//                         res(p_iter,k_iter) = res(p_iter,k_iter) - (g.get_col_mean(p_iter)*sum_op[k_iter]);
-//                         if(var_normalize)
-//                                 res(p_iter,k_iter) = res(p_iter,k_iter)/(g.get_col_std(p_iter));
-//                 }
-//         }
-
-// }
-
-
-
-// void multiply_y_post_fast(MatrixXdr &op_orig, int Nrows_op, MatrixXdr &res,bool subtract_means){
-
-//         MatrixXdr op;
-//         op = op_orig.transpose();
-
-//         if(var_normalize && subtract_means){
-//                 for(int p_iter=0;p_iter<p;p_iter++){
-//                         for(int k_iter=0;k_iter<Nrows_op;k_iter++)
-//                                 op(p_iter,k_iter) = op(p_iter,k_iter) / (g.get_col_std(p_iter));
-//                 }
-//         }
-
-//         #if DEBUG==1
-//                 if(debug){
-//                         // print_time ();
-//                         cout <<"Starting mailman on postmultiply"<<endl;
-//                 }
-//         #endif
-
-//         int Ncol_op = Nrows_op;
-
-//         int seg_iter;
-//         for(seg_iter=0;seg_iter<g.Nsegments_hori-1;seg_iter++){
-// mailman::fastmultiply_pre(g.segment_size_hori,g.Nindv,Ncol_op, seg_iter * g.segment_size_hori, g.p[seg_iter],op,yint_e,partialsums,y_e);
-//         }
-//         int last_seg_size = (g.Nsnp%g.segment_size_hori !=0 ) ? g.Nsnp%g.segment_size_hori : g.segment_size_hori;
-//         mailman::fastmultiply_pre(last_seg_size,g.Nindv,Ncol_op, seg_iter * g.segment_size_hori, g.p[seg_iter],op,yint_e,partialsums,y_e);
-
-//         for(int n_iter=0; n_iter<n; n_iter++)  {
-//                 for(int k_iter=0;k_iter<Ncol_op;k_iter++) {
-//                         res(k_iter,n_iter) = y_e[n_iter][k_iter];
-//                         y_e[n_iter][k_iter] = 0;
-//                 }
-//         }
-
-//         #if DEBUG==1
-//                 if(debug){
-//                         // print_time ();
-//                         cout <<"Ending mailman on postmultiply"<<endl;
-//                 }
-//         #endif
-
-
-//         if(!subtract_means)
-//                 return;
-
-//         double *sums_elements = new double[Ncol_op];
-//         memset (sums_elements, 0, Nrows_op * sizeof(int));
-
-//         for(int k_iter=0;k_iter<Ncol_op;k_iter++){
-//                 double sum_to_calc=0.0;
-//                 for(int p_iter=0;p_iter<p;p_iter++)
-//                         sum_to_calc += g.get_col_mean(p_iter)*op(p_iter,k_iter);
-//                 sums_elements[k_iter] = sum_to_calc;
-//         }
-//         for(int k_iter=0;k_iter<Ncol_op;k_iter++){
-//                 for(int n_iter=0;n_iter<n;n_iter++)
-//                         res(k_iter,n_iter) = res(k_iter,n_iter) - sums_elements[k_iter];
-//         }
-
-
-// }
 
 
 void initial_var(){
@@ -840,16 +722,16 @@ void read_annot (string filename){
         //cout<<"Total number of SNPs : "<<Nsnp<<endl;
         int selected_snps=0;
         for (int i=0;i<num_parti;i++){
-                cout<<len[i]<<" SNPs in "<<i<<"-th bin"<<endl;
+                cout<<len[i]<<" SNPs in bin "<<i<<endl;
                 selected_snps+=len[i];
         }
 
-        cout<<"Number of selected SNPs w.r.t  annot file : " <<selected_snps<<endl;
+        cout<<"Number of SNPs selected according to annotation file : " <<selected_snps<<endl;
 
 
         step_size=Nsnp/Njack;
         step_size_rem=Nsnp%Njack;
-        cout<<"Number of SNPs per block : "<<step_size<<endl;   
+        cout<<"Number of SNPs per jackknife block : "<<step_size<<endl;   
 
         int Total_Nbin;
         if(Annot_x_E==false){
@@ -1603,28 +1485,31 @@ void genotype_stream_pass(string name, int pass_num){
                         herit=X_l.colPivHouseholderQr().solve(Y_r);
 
                         if(jack_index==0){
-                                outfile<<"Number of indvs after filtering: "<<Nindv_mask<<endl;
+                                outfile<<"Number of individuals after filtering: "<<Nindv_mask<<endl;
                                 outfile<<"Number of covariates: "<<cov_num<<endl;
                                 outfile<<"Number of environments: "<<Nenv<<endl;
-                                cout<<"LHS of Normal Eq"<<endl<<X_l<<endl;
-                                cout<<"RHS of Normal Eq"<<endl<<Y_r<<endl;
-                                double relative_error = (X_l*herit - Y_r).norm() / Y_r.norm(); // norm() is L2 norm
-                                cout << "The relative error is: " << relative_error << endl;
-                                JacobiSVD<MatrixXd> svd(X_l);
-                                double cond = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
-                                cout<<"condition number:  "<< cond<<endl;
+								
+								if (verbose == true) {
+										cout<<"LHS of Normal Eq"<<endl<<X_l<<endl;
+										cout<<"RHS of Normal Eq"<<endl<<Y_r<<endl;
+										double relative_error = (X_l*herit - Y_r).norm() / Y_r.norm(); // norm() is L2 norm
+										cout << "The relative error is: " << relative_error << endl;
+										JacobiSVD<MatrixXd> svd(X_l);
+										double cond = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
+										cout<<"condition number:  "<< cond<<endl;
 
-                                outfile<<"LHS of Normal Eq"<<endl<<X_l<<endl;
-                                outfile<<"RHS of Normal Eq"<<endl<<Y_r<<endl;
-                                outfile<<"Normal Equations info:"<<endl;
-                                outfile<<"The relative error is: " << relative_error << endl;
-                                outfile<<"Max sing.val: "<<svd.singularValues()(0)<<endl;
-                                outfile<<"Min sing.val: "<<svd.singularValues()(svd.singularValues().size()-1)<<endl;
-                                outfile<<"Condition number: "<<cond<<endl;
-                                cout << endl;
-                                cout << endl;
-                                outfile << endl;
-                                outfile << endl;
+										outfile<<"LHS of Normal Eq"<<endl<<X_l<<endl;
+										outfile<<"RHS of Normal Eq"<<endl<<Y_r<<endl;
+										outfile<<"Normal Equations info:"<<endl;
+										outfile<<"The relative error is: " << relative_error << endl;
+										outfile<<"Max sing.val: "<<svd.singularValues()(0)<<endl;
+										outfile<<"Min sing.val: "<<svd.singularValues()(svd.singularValues().size()-1)<<endl;
+										outfile<<"Condition number: "<<cond<<endl;
+										cout << endl;
+										cout << endl;
+										outfile << endl;
+										outfile << endl;
+								}
                         }
                         for(int i=0;i<(T_Nbin+1);i++)
                                 jack(i,jack_index)=herit(i,0);
@@ -1655,7 +1540,7 @@ void genotype_stream_pass(string name, int pass_num){
                 } //end if pass_num=2
 
         }//end loop over jack
-        cout<<" Reading and computing  of all blocks are finished"<<endl;
+        cout<<"Finished reading and computing over all blocks"<<endl;
         cout << endl;
         cout << endl;
 
@@ -1701,7 +1586,7 @@ void genotype_stream_pass(string name, int pass_num){
                                 len.push_back(1);
                         }
                 }
-                cout<<"Size of the bins :"<<endl;
+                cout<<"Size of bins :"<<endl;
                 if (hetero_noise == true) {
                         for(int i=0;i<Nbin+nongen_Nbin+Nenv;i++)
                                 cout<<"bin "<<i<<" : "<<len[i]<<endl;
@@ -1711,7 +1596,7 @@ void genotype_stream_pass(string name, int pass_num){
                 }
 
 
-                cout<<"Number of indvs without missing phenotype and enviroment: "<<mask.sum()<<endl;
+                cout<<"Number of individuals without missing phenotype and enviroment: "<<mask.sum()<<endl;
                 cout << endl;
                 cout << endl;
 
@@ -1795,9 +1680,10 @@ void genotype_stream_pass(string name, int pass_num){
 
                 herit=X_l.colPivHouseholderQr().solve(Y_r);
 
-                cout<<"Xl"<<endl<<X_l<<endl;
-                cout<<"Yl"<<endl<<Y_r<<endl;
-                
+		if (verbose == true ) { 
+                	cout<<"Xl"<<endl<<X_l<<endl;
+                	cout<<"Yl"<<endl<<Y_r<<endl;
+               	}
                 for(int i=0;i<(T_Nbin+1);i++)
                 point_est(i,0)=herit(i,0);
 
@@ -1897,7 +1783,7 @@ int main(int argc, char const *argv[]){
         filename=command_line_opts.PHENOTYPE_FILE_PATH;
         count_pheno(filename);
         read_pheno2(Nindv,filename);
-        cout<<"Number of Indvs : "<<Nindv<<endl;
+        cout<<"Number of individuals : "<<Nindv<<endl;
         y_sum=pheno.sum();
 
         /////read _env
@@ -1928,7 +1814,7 @@ int main(int argc, char const *argv[]){
         int fam_lines=count_fam(name_fam);
 
         if (fam_lines!=Nindv)
-                exitWithError("# indvs in fam file and pheno file does not match ");
+                exitWithError("# individuals in fam file and pheno file does not match ");
 
         std::string covfile=command_line_opts.COVARIATE_FILE_PATH;
         std::string covname="";
@@ -2094,7 +1980,7 @@ int main(int argc, char const *argv[]){
         std::stringstream f3;
         f3 << geno_name << ".bed";
         string name=f3.str();
-        cout<< "The name of genotype file: " << name << endl;
+//        cout<< "Genotype file: " << name << endl;
         ifstream ifs (name.c_str(), ios::in|ios::binary);
         read_header=true;
         global_snp_index=-1;
@@ -2105,8 +1991,7 @@ int main(int argc, char const *argv[]){
         }
 
         cout << endl;
-        cout << endl;
-        cout<<"Start reading genotypes in blocks..."<<endl;
+        cout<<"Reading genotypes ..."<<endl;
 
         string add_output=command_line_opts.OUTPUT_FILE_PATH;
         outfile.open(add_output.c_str(), std::ios_base::out);
@@ -2131,48 +2016,48 @@ int main(int argc, char const *argv[]){
         cout<<"*****"<<endl;
         outfile<<"*****"<<endl;
         for (int i=0;i<T_Nbin;i++){
-                cout<<"Number of features in bin"<<i<<"-th: "<<len[i]<<endl;
-                outfile<<"Number of features in bin"<<i<<"-th: "<<len[i]<<endl;
+                cout<<"Number of features in bin "<<i<<" : "<<len[i]<<endl;
+                outfile<<"Number of features in bin "<<i<<" : "<<len[i]<<endl;
         }
         cout<<"*****"<<endl;
         outfile<<"*****"<<endl;
-        cout<<"Number of G variance components: "<<Nbin<<endl;
-        cout<<"Number of GxE variance components: "<<nongen_Nbin<<endl;
-        outfile<<"Number of G variance components: "<<Nbin<<endl;
-        outfile<<"Number of GxE variance components: "<<nongen_Nbin<<endl;
+        cout<<"Number of G variance components : "<<Nbin<<endl;
+        cout<<"Number of GxE variance components : "<<nongen_Nbin<<endl;
+        outfile<<"Number of G variance components : "<<Nbin<<endl;
+        outfile<<"Number of GxE variance components : "<<nongen_Nbin<<endl;
         if (hetero_noise == true) {
-                cout<<"Number of NxE variance components: "<<Nenv<<endl;
-                outfile<<"Number of NxE variance components: "<<Nenv<<endl;
+                cout<<"Number of NxE variance components : "<<Nenv<<endl;
+                outfile<<"Number of NxE variance components : "<<Nenv<<endl;
         } else {
-                cout<<"Number of NxE variance components: 0"<<endl;
-                outfile<<"Number of NxE variance components: 0"<<endl;
+                cout<<"Number of NxE variance components : 0"<<endl;
+                outfile<<"Number of NxE variance components : 0"<<endl;
         }
 
         cout<<"*****"<<endl;
         outfile<<"*****"<<endl;
 
 
-        cout<<endl<<"OUTPUT: "<<endl<<"Variances: "<<endl;
-        outfile<<"OUTPUT: "<<endl<<"Variances: "<<endl;
+        cout<<endl<<"OUTPUT: "<<endl<<"Variance components: "<<endl;
+        outfile<<"OUTPUT: "<<endl<<"Variance components: "<<endl;
         for (int j=0;j<T_Nbin;j++){
                 if(j<Nbin){
-                        cout<<"Sigma^2_g"<<j<<": "<<point_est(j,0)<<"  SE: "<<point_se(j,0)<<endl;
-                        outfile<<"Sigma^2_g"<<j<<": "<<point_est(j,0)<<"  SE: "<<point_se(j,0)<<endl;
+                        cout<<"Sigma^2_g["<<j<<"] : "<<point_est(j,0)<<"  SE : "<<point_se(j,0)<<endl;
+                        outfile<<"Sigma^2_g["<<j<<"] : "<<point_est(j,0)<<"  SE : "<<point_se(j,0)<<endl;
                 }
                 else if (j <(Nbin+nongen_Nbin)){
                         int k=j-Nbin;
-                        cout<<"Sigma^2_gxe"<<k<<": "<<point_est(j,0)<<"  SE: "<<point_se(j,0)<<endl;
-                        outfile<<"Sigma^2_gxe"<<k<<": "<<point_est(j,0)<<"  SE: "<<point_se(j,0)<<endl;
+                        cout<<"Sigma^2_gxe["<<k<<"] : "<<point_est(j,0)<<"  SE : "<<point_se(j,0)<<endl;
+                        outfile<<"Sigma^2_gxe["<<k<<"] : "<<point_est(j,0)<<"  SE : "<<point_se(j,0)<<endl;
                 }
                 else if (j<(T_Nbin)){
                         int k=j-Nbin-nongen_Nbin;
-                        cout<<"Sigma^2_nxe"<<k<<": "<<point_est(j,0)<<"  SE: "<<point_se(j,0)<<endl;
-                        outfile<<"Sigma^2_nxe"<<k<<": "<<point_est(j,0)<<"  SE: "<<point_se(j,0)<<endl;
+                        cout<<"Sigma^2_nxe["<<k<<"] : "<<point_est(j,0)<<"  SE : "<<point_se(j,0)<<endl;
+                        outfile<<"Sigma^2_nxe["<<k<<"] : "<<point_est(j,0)<<"  SE : "<<point_se(j,0)<<endl;
 
                 }
         }
-        cout<<"Sigma^2_e: "<<point_est(T_Nbin,0)<<"  SE: "<<point_se(T_Nbin,0)<<endl;
-        outfile<<"Sigma^2_e: "<<point_est(T_Nbin,0)<<"  SE: "<<point_se(T_Nbin,0)<<endl;
+        cout<<"Sigma^2_e : "<<point_est(T_Nbin,0)<<"  SE : "<<point_se(T_Nbin,0)<<endl;
+        outfile<<"Sigma^2_e : "<<point_est(T_Nbin,0)<<"  SE : "<<point_se(T_Nbin,0)<<endl;
 
         double temp_sig=0;
         double temp_sum=point_est.sum();
@@ -2241,31 +2126,31 @@ int main(int argc, char const *argv[]){
         MatrixXdr SEjack_adj_gxe=jack_se(jack_adj_gxe);
         cout<<"*****"<<endl;
         outfile<<"*****"<<endl;
-        cout<<endl<<"Heritabilities: "<<endl;
+        cout<<"Heritabilities: "<<endl;
         outfile<<"Heritabilities: "<<endl;
         for (int j=0;j<T_Nbin;j++){
                 if(j<Nbin){
-                        cout<<"h^2_g"<<j<<" : "<<point_est_adj_gxe(j,0)<<" SE: "<<SEjack_adj_gxe(j,0)<<endl;
-                        outfile<<"h^2_g"<<j<<" : "<<point_est_adj_gxe(j,0)<<" SE: "<<SEjack_adj_gxe(j,0)<<endl;
+                        cout<<"h2_g["<<j<<"] : "<<point_est_adj_gxe(j,0)<<" SE : "<<SEjack_adj_gxe(j,0)<<endl;
+                        outfile<<"h2_g["<<j<<"] : "<<point_est_adj_gxe(j,0)<<" SE : "<<SEjack_adj_gxe(j,0)<<endl;
                 }
                 else if (j<(Nbin+nongen_Nbin)){
                         int k=j-Nbin;
-                        cout<<"h^2_gxe"<<k<<" : "<<point_est_adj_gxe(j,0)<<" SE: "<<SEjack_adj_gxe(j,0)<<endl;
-                        outfile<<"h^2_gxe"<<k<<" : "<<point_est_adj_gxe(j,0)<<" SE: "<<SEjack_adj_gxe(j,0)<<endl;
+                        cout<<"h2_gxe["<<k<<"] : "<<point_est_adj_gxe(j,0)<<" SE : "<<SEjack_adj_gxe(j,0)<<endl;
+                        outfile<<"h2_gxe["<<k<<"] : "<<point_est_adj_gxe(j,0)<<" SE : "<<SEjack_adj_gxe(j,0)<<endl;
                 }
                 else if (j<(T_Nbin)){
                         int k=j-Nbin-nongen_Nbin;
-                        cout<<"h^2_nxe"<<k<<" : "<<point_est_adj_gxe(j,0)<<" SE: "<<SEjack_adj_gxe(j,0)<<endl;
-                        outfile<<"h^2_nxe"<<k<<" : "<<point_est_adj_gxe(j,0)<<" SE: "<<SEjack_adj_gxe(j,0)<<endl;
+                        cout<<"h2_nxe["<<k<<"] : "<<point_est_adj_gxe(j,0)<<" SE : "<<SEjack_adj_gxe(j,0)<<endl;
+                        outfile<<"h2_nxe["<<k<<"] : "<<point_est_adj_gxe(j,0)<<" SE : "<<SEjack_adj_gxe(j,0)<<endl;
                 }
         }
-        cout<<"Total h^2 : "<<point_est_adj_gxe(T_Nbin,0)<<" SE: "<<SEjack_adj_gxe(T_Nbin,0)<<endl;
-        outfile<<"Total h^2 : "<<point_est_adj_gxe(T_Nbin,0)<<" SE: "<<SEjack_adj_gxe(T_Nbin,0)<<endl;
-        cout<<"Total h^2_g : "<<point_est_adj_gxe(T_Nbin+2,0)<<" SE: "<<SEjack_adj_gxe(T_Nbin+2,0)<<endl;
-        outfile<<"Total h^2_g : "<<point_est_adj_gxe(T_Nbin+2,0)<<" SE: "<<SEjack_adj_gxe(T_Nbin+2,0)<<endl;
+        cout<<"Total h2 : "<<point_est_adj_gxe(T_Nbin,0)<<" SE: "<<SEjack_adj_gxe(T_Nbin,0)<<endl;
+        outfile<<"Total h2 : "<<point_est_adj_gxe(T_Nbin,0)<<" SE: "<<SEjack_adj_gxe(T_Nbin,0)<<endl;
+        cout<<"Total h2_g : "<<point_est_adj_gxe(T_Nbin+2,0)<<" SE: "<<SEjack_adj_gxe(T_Nbin+2,0)<<endl;
+        outfile<<"Total h2_g : "<<point_est_adj_gxe(T_Nbin+2,0)<<" SE: "<<SEjack_adj_gxe(T_Nbin+2,0)<<endl;
         if (gen_by_env == true) {
-                cout<<"Total h^2_gxe : "<<point_est_adj_gxe(T_Nbin+1,0)<<" SE: "<<SEjack_adj_gxe(T_Nbin+1,0)<<endl;
-                outfile<<"Total h^2_gxe : "<<point_est_adj_gxe(T_Nbin+1,0)<<" SE: "<<SEjack_adj_gxe(T_Nbin+1,0)<<endl;
+                cout<<"Total h2_gxe : "<<point_est_adj_gxe(T_Nbin+1,0)<<" SE: "<<SEjack_adj_gxe(T_Nbin+1,0)<<endl;
+                outfile<<"Total h2_gxe : "<<point_est_adj_gxe(T_Nbin+1,0)<<" SE: "<<SEjack_adj_gxe(T_Nbin+1,0)<<endl;
         }
         cout<<"*****"<<endl;
         outfile<<"*****"<<endl;
@@ -2303,11 +2188,14 @@ int main(int argc, char const *argv[]){
         enrich_g_se=MatrixXdr::Zero(Nbin,1);
         enrich_g_se=jack_se(jack_enrich_g);
 
+	
+        cout<<"Enrichments:"<<endl;
+        outfile<<"Enrichments:"<<endl;
         cout<<"G enrichment"<<endl;
         outfile<<"G enrichment"<<endl;
         for(int i=0;i<Nbin;i++){
-                cout<<"Enrichment g_"<<i<<" : "<<enrich_g(i,0)<<" SE: "<<enrich_g_se(i,0)<<endl;
-                outfile<<"Enrichment g_"<<i<<" : "<<enrich_g(i,0)<<" SE: "<<enrich_g_se(i,0)<<endl;
+                cout<<"Enrichment g["<<i<<"] : "<<enrich_g(i,0)<<" SE : "<<enrich_g_se(i,0)<<endl;
+                outfile<<"Enrichment g["<<i<<"] : "<<enrich_g(i,0)<<" SE : "<<enrich_g_se(i,0)<<endl;
         }
         // compute enrich GxE
         if (gen_by_env == true) {
@@ -2347,8 +2235,8 @@ int main(int argc, char const *argv[]){
                 cout<<"GxE enrichment"<<endl;
                 outfile<<"GxE enrichment"<<endl;
                 for(int i=0;i<Nbin;i++){
-                        cout<<"Enrichment gxe_"<<i<<" : "<<enrich_gxe(i,0)<<" SE: "<<enrich_gxe_se(i,0)<<endl;
-                        outfile<<"Enrichment gxe_"<<i<<" : "<<enrich_gxe(i,0)<<" SE: "<<enrich_gxe_se(i,0)<<endl;
+                        cout<<"Enrichment gxe["<<i<<"] : "<<enrich_gxe(i,0)<<" SE : "<<enrich_gxe_se(i,0)<<endl;
+                        outfile<<"Enrichment gxe["<<i<<"] : "<<enrich_gxe(i,0)<<" SE : "<<enrich_gxe_se(i,0)<<endl;
                 }
         }
         cout<<"*****"<<endl;
@@ -2410,20 +2298,22 @@ int main(int argc, char const *argv[]){
         MatrixXdr se_her_cat_ldsc=jack_se(her_cat_ldsc);
 
 
-        cout<<endl<<"h^2's (heritabilities) and e's (enrichments) are computed based on overlapping setting"<<endl;
-        outfile<<endl<<"h^2's (heritabilities) and e's (enrichments) are computed based on overlapping setting"<<endl;
+        cout<<"*****"<<endl;
+        outfile<<"*****"<<endl;
+        cout<<"Heritabilities and enrichments computed based on overlapping setting"<<endl;
+        outfile<<"Heritabilities and enrichments computed based on overlapping setting"<<endl;
 
-        cout<<endl<<"h^2's: "<<endl;
-        outfile<<"h^2's: "<<endl;
+        cout<<"Heritabilities: "<<endl;
+        outfile<<"Heritabilities: "<<endl;
         for (int j=0;j<Nbin;j++){
-                cout<<"h^2_g"<<j<<" : "<<point_her_cat_ldsc(j,0)<<" SE: "<<se_her_cat_ldsc(j,0)<<endl;
-                outfile<<"h^2_g"<<j<<" : "<<point_her_cat_ldsc(j,0)<<" SE: "<<se_her_cat_ldsc(j,0)<<endl;
+                cout<<"h2_g["<<j<<"] : "<<point_her_cat_ldsc(j,0)<<" SE : "<<se_her_cat_ldsc(j,0)<<endl;
+                outfile<<"h2_g["<<j<<"] : "<<point_her_cat_ldsc(j,0)<<" SE : "<<se_her_cat_ldsc(j,0)<<endl;
         }
         if (gen_by_env == true) {
                 for (int j=0;j<Nbin;j++){
                         int k=j+Nbin;
-                        cout<<"h^2_gxe"<<j<<" : "<<point_her_cat_ldsc(k,0)<<" SE: "<<se_her_cat_ldsc(k,0)<<endl;
-                        outfile<<"h^2_gxe"<<j<<" : "<<point_her_cat_ldsc(k,0)<<" SE: "<<se_her_cat_ldsc(k,0)<<endl;
+                        cout<<"h2_gxe["<<j<<"] : "<<point_her_cat_ldsc(k,0)<<" SE : "<<se_her_cat_ldsc(k,0)<<endl;
+                        outfile<<"h2_gxe["<<j<<"] : "<<point_her_cat_ldsc(k,0)<<" SE : "<<se_her_cat_ldsc(k,0)<<endl;
 
                 }
         }
@@ -2467,17 +2357,17 @@ int main(int argc, char const *argv[]){
 
         se_her_cat_ldsc=jack_se(her_cat_ldsc);
 
-        cout<<endl<<"Enrichments (overlapping def): "<<endl;
+        cout<<"Enrichments (overlapping def): "<<endl;
         outfile<<"Enrichments (overlapping def): "<<endl;
         for (int j=0;j<Nbin;j++){
-                cout<<"Enrichment g_"<<j<<" : "<<point_her_cat_ldsc(j,0)<<" SE: "<<se_her_cat_ldsc(j,0)<<endl;
-                outfile<<"Enrichment g_"<<j<<" : "<<point_her_cat_ldsc(j,0)<<" SE: "<<se_her_cat_ldsc(j,0)<<endl;
+                cout<<"Enrichment g["<<j<<"] : "<<point_her_cat_ldsc(j,0)<<" SE : "<<se_her_cat_ldsc(j,0)<<endl;
+                outfile<<"Enrichment g["<<j<<"] : "<<point_her_cat_ldsc(j,0)<<" SE : "<<se_her_cat_ldsc(j,0)<<endl;
         }
         if (gen_by_env == true) {
                 for (int j=0;j<Nbin;j++){
                         int k=j+Nbin;
-                        cout<<"Enrichment gxe_"<<j<<" : "<<point_her_cat_ldsc(k,0)<<" SE: "<<se_her_cat_ldsc(k,0)<<endl;
-                        outfile<<"Enrichment gxe_"<<j<<" : "<<point_her_cat_ldsc(k,0)<<" SE: "<<se_her_cat_ldsc(k,0)<<endl;
+                        cout<<"Enrichment gxe["<<j<<"] : "<<point_her_cat_ldsc(k,0)<<" SE : "<<se_her_cat_ldsc(k,0)<<endl;
+                        outfile<<"Enrichment gxe["<<j<<"] : "<<point_her_cat_ldsc(k,0)<<" SE: "<<se_her_cat_ldsc(k,0)<<endl;
                 }
         }
         ////////////////////////////////////////////////////////
