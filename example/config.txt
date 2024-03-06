@@ -1,0 +1,12 @@
+genotype=test
+phenotype=test.pheno
+covariate=test.cov
+environment=test.env
+annotation=single.annot
+output=test.out
+nthreads=6
+num_vec=20
+num_jack=10
+trace=1
+model=G
+verbose=1

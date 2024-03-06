@@ -147,6 +147,7 @@ int unitsize;
 int nrow, ncol;
 unsigned char *gtype;
 int Nsnp;
+int Nsnp_annot=0; // total # of SNPs w.r.t. annotation (could have overlaps)
 int Nindv;
 bool **bin_annot;
 int step_size;
@@ -178,6 +179,7 @@ bool gen_by_env;
 bool cov_add_intercept;
 int nthreads;
 bool verbose;
+bool trace;
 MatMult mm;
 
 std::istream& newline(std::istream& in)
@@ -710,6 +712,7 @@ void read_annot (string filename){
         }
 	
 	cout<<"Number of SNPs selected according to annotation file : " <<selected_snps<<endl;
+    Nsnp_annot = selected_snps;
 
 
 	step_size=Nsnp/Njack;
@@ -783,6 +786,7 @@ void read_annot_1col (string filename){
         cout<<"Total number of SNPs : "<<Nsnp<<endl;
         for (int i=0;i<Nbin;i++){
                 cout<<len[i]<<" SNPs in "<<i<<"-th bin"<<endl;
+                Nsnp_annot += len[i];
         }
 
 }
@@ -1217,7 +1221,8 @@ MatrixXdr jack_se(MatrixXdr jack){
 int main(int argc, char const *argv[]){
 
         parse_args(argc,argv);
-        verbose = (command_line_opts.verbose != 0);
+        verbose = command_line_opts.verbose;
+        trace = command_line_opts.print_trace;
 
         cout << "Active essential options: " << endl;
         if (command_line_opts.GENOTYPE_FILE_PATH != "")
@@ -1250,12 +1255,14 @@ int main(int argc, char const *argv[]){
                 cout << "\t-cov_add_intercept (intercept term added to covariates) " << std::to_string(command_line_opts.cov_add_intercept) << endl;
                 cout << "\t-v (verbose) " << std::to_string(command_line_opts.verbose) << endl;
         }
+        if (trace)
+                cout << "\t-tr (trace summaries) " << endl;
         cout << endl;
         cout << endl;
         ////////////////////////////////////////////
         ///////////////////////////////////////////
 
-        int B = command_line_opts.batchNum;
+        //int B = command_line_opts.batchNum; // looks like batchNum is renamed to jack_number (Njack)
         k_orig = command_line_opts.num_of_evec ;
         debug = command_line_opts.debugmode ;
         check_accuracy = command_line_opts.getaccuracy;
@@ -1871,19 +1878,28 @@ int main(int argc, char const *argv[]){
         double tk_res;
 
         std::ofstream outfile;
-        string add_output=command_line_opts.OUTPUT_FILE_PATH;
-        outfile.open(add_output.c_str(), std::ios_base::out);
-
+        //CHANGE(03/05): add trace summary files. input to -o is now just the prefix (all output file endings are fixed to .log)
+        std::ofstream trace_file;
+        std::ofstream meta_file;
+        string prefix=command_line_opts.OUTPUT_FILE_PATH;
+        string outpath=prefix + ".log";
+        outfile.open(outpath.c_str(), std::ios_base::out);
+        if (trace){
+            string trpath=prefix + ".trace";
+            string mnpath=prefix + ".MN";
+            trace_file.open(trpath.c_str(), std::ios_base::out);
+            trace_file << "TRACE,NSNPS_JACKKNIFE" << endl;
+            meta_file.open(mnpath.c_str(), std::ios_base::out);
+            meta_file << "NSAMPLE,NSNP,NBLK,NBIN" << endl << Nindv << "," << Nsnp << "," << Njack << "," << Nbin;
+            meta_file.close();
+        }
 
         for (jack_index=0;jack_index<=Njack;jack_index++){
-        
                 for(int k=0;k<Nbin;k++)
                         if( jack_index<Njack && len[k]==jack_bin[jack_index][k])
                                 jack_bin[jack_index][k]=0;
 
                 for (int i=0;i<Nbin;i++){
-
-
                         b_trk(i,0)=Nindv_mask;
                         // CHANGE (2/17)
                         int sum_num_nongen_bin = 0;
@@ -1964,6 +1980,21 @@ int main(int argc, char const *argv[]){
 
                 X_l<<A_trs,b_trk,b_trk.transpose(),NC;
                 Y_r<<c_yky,yy;
+
+                if (trace){
+                    trace_file << X_l.block(0, 0, Nbin, Nbin);
+                    if (jack_index < Njack){
+                        for (int j=0; j< Nbin; j++) // TODO: is this the right way to count SNPs in the jn block for partitioned heritability?
+                            trace_file << "," <<  Nsnp_annot - jack_bin[jack_index][j];
+                        trace_file << endl;
+                    }
+                    else{
+                        for (int j=0; j< Nbin; j++)
+                            trace_file << "," << len[j];
+                        trace_file << endl;
+
+                    }
+                }
                 
                 MatrixXdr herit=X_l.fullPivHouseholderQr().solve(Y_r);
 
@@ -2187,8 +2218,8 @@ int main(int argc, char const *argv[]){
                total_g_h2=0;
                total_snp=0;
                for (int k=0;k<gen_Nbin;k++){
-                        total_snp+=len[k]-jack_bin[j][k];
-                        total_g_h2+=jack_adj_gxe(k,j);
+                            total_snp+=len[k]-jack_bin[j][k];
+                            total_g_h2+=jack_adj_gxe(k,j);
                 }
                 denom=(double)total_g_h2/total_snp;
                for(int k=0;k<gen_Nbin;k++){
@@ -2384,6 +2415,11 @@ int main(int argc, char const *argv[]){
                         outfile<<"Enrichment gxe["<<j<<"] : "<<point_her_cat_ldsc(k,0)<<" SE: "<<se_her_cat_ldsc(k,0)<<endl;
                 }
         }
+        ////////////////////////////////////////////////////////
+        trace_file.close();
+        outfile.close();
+            
+
         ////////////////////////////////////////////////////////
         return 0;
 }

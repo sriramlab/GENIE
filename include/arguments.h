@@ -21,7 +21,6 @@ struct options{
 	std::string COVARIATE_FILE_PATH; 
 	std::string COVARIATE_NAME; 
 	std::string ENV_FILE_PATH;
-	std::string OUTPUT_PATH;
 	 std::string Annot_PATH;
 	
 
@@ -29,7 +28,7 @@ struct options{
 	  std::string maf_ld_PATH;
 
 
-	int batchNum; 
+	//int batchNum; 
 	int num_of_evec ;
 	int jack_number;
 
@@ -51,9 +50,11 @@ struct options{
 	bool normalize_proj_pheno;
 	bool cov_add_intercept;
 	int nthreads;
-	int verbose;
+	bool verbose;
 	//CHANGE(11/12)
 	// bool perm_E_in_GxE;
+    //CHANGE(03/04)
+    bool print_trace;
 };
 
 /*template<typename T, typename U>
@@ -103,9 +104,19 @@ public:
 	static T string_to_T(std::string const &val){
 		std::istringstream istr(val);
 		T returnVal;
+        int num;
+        //CHANGE(03/04): allow 0, 1 boolean
 		if(is_same<T,bool>::value){
-			if (!(istr >> std::boolalpha >> returnVal))
-				exitWithError("CFG: Not a valid bool received!\n");
+			if (!(istr >> std::boolalpha >> returnVal)){
+                std::istringstream istr(val);
+                if (istr >> num){
+                    if (num == 0 || num == 1){
+                        returnVal = num;
+                        return returnVal;
+                    }
+                }
+                exitWithError("CFG: Not a valid bool received!\n");
+            }
 			return returnVal;
 		}
 		else{
@@ -174,6 +185,7 @@ private:
 	}
 
 	void parseLine(const std::string &line, size_t const lineNo){
+        //TODO: Allow for boolean flags without "=". might have to do some input filtering
 		if (line.find('=') == line.npos)
 			exitWithError("CFG: Couldn't find separator on line: " + Convert::T_to_string(lineNo) + "\n");
 
@@ -247,7 +259,7 @@ void parse_args(int argc, char const *argv[]){
 	// Setting Default Values
 	command_line_opts.num_of_evec=10;
 	command_line_opts.debugmode=false;
-	command_line_opts.OUTPUT_PATH = "";
+	command_line_opts.OUTPUT_FILE_PATH = "";
 	bool got_genotype_file=false;
 	bool got_output_file = false;
 	bool got_phenotype_file = false;
@@ -267,11 +279,13 @@ void parse_args(int argc, char const *argv[]){
 	command_line_opts.normalize_proj_pheno = true;
 	command_line_opts.cov_add_intercept = true;
 	command_line_opts.nthreads = 1;
-	command_line_opts.verbose = 0;
+	command_line_opts.verbose = false;
 	//CHANGE(11/12)
 	// command_line_opts.perm_E_in_GxE=false;
+    // CHANGE(03/04)
+    command_line_opts.print_trace=false;
 
-	if(argc<6){
+	if(argc<2){
 		// cout<<"Correct Usage is "<<argv[0]<<" -p <parameter file>"<<endl;
 		
 		exitWithError (usage ());
@@ -281,27 +295,61 @@ void parse_args(int argc, char const *argv[]){
 //		cout <<  "\t[-s [random seed] -eXannot -norm_proj_pheno [0|1] -cov_add_intercept [0|1] -v [0|1]]"<<endl;
 //		exit(-1);
 	}
-
-	if(strcmp(argv[1],"-p")==0){
+    // using a config file instead of cmd-line args. TODO: have all the current options as config version. remove deprecated/redundant options
+	if(strcmp(argv[1],"--config")==0){
 		std::string cfg_filename = std::string(argv[2]);
 		ConfigFile cfg(cfg_filename);
 		got_genotype_file=cfg.keyExists("genotype");
-		command_line_opts.batchNum = cfg.getValueOfKey<int> ("batchNum",10); 
+	    command_line_opts.jack_number = cfg.getValueOfKey<int>("num_jack", 10);
+		//command_line_opts.batchNum = cfg.getValueOfKey<int> ("batchNum",10); 
 		command_line_opts.num_of_evec=cfg.getValueOfKey<int>("num_vec",2);
 		command_line_opts.getaccuracy=cfg.getValueOfKey<bool>("accuracy",false);
+		//command_line_opts.getaccuracy=cfg.keyExists("accuracy"); // config file parsing doesn't allow boolean flags... needs to be fixed
+		//command_line_opts.debugmode=cfg.getValueOfKey<bool>("debug",false);
 		command_line_opts.debugmode=cfg.getValueOfKey<bool>("debug",false);
 		command_line_opts.l=cfg.getValueOfKey<int>("l",0);
-		command_line_opts.OUTPUT_PATH = cfg.getValueOfKey<string>("output_path",string(""));
+		command_line_opts.OUTPUT_FILE_PATH = cfg.getValueOfKey<string>("output",string(""));
 		command_line_opts.GENOTYPE_FILE_PATH = cfg.getValueOfKey<string>("genotype",string(""));
 		command_line_opts.PHENOTYPE_FILE_PATH= cfg.getValueOfKey<string>("phenotype", string("")); 
 		command_line_opts.COVARIATE_FILE_PATH= cfg.getValueOfKey<string>("covariate", string(""));
+        command_line_opts.ENV_FILE_PATH = cfg.getValueOfKey<string>("environment", string(""));
+        command_line_opts.Annot_PATH = cfg.getValueOfKey<string>("annotation", string(""));
+        command_line_opts.nthreads = cfg.getValueOfKey<int>("nthreads", 1); 
 		command_line_opts.COVARIATE_NAME=cfg.getValueOfKey<string>("covariateName", string(""));  
 		command_line_opts.accelerated_em = cfg.getValueOfKey<int>("accelerated_em",0);
 		command_line_opts.memory_efficient = cfg.getValueOfKey<bool>("memory_efficient",false);	
 		command_line_opts.fast_mode = cfg.getValueOfKey<bool>("fast_mode",true);
 		command_line_opts.missing = cfg.getValueOfKey<bool>("missing",false);	
 		command_line_opts.text_version = cfg.getValueOfKey<bool>("text_version",false);						
-	}
+        command_line_opts.print_trace = cfg.getValueOfKey<bool>("trace", false);
+        command_line_opts.verbose = cfg.getValueOfKey<bool>("verbose", false);
+        //command_line_opts.print_trace = cfg.keyExists("print_trace");
+        //command_line_opts.verbose = cfg.keyExists("verbose");
+        command_line_opts.model = cfg.getValueOfKey<string>("model", string(""));
+        if (cfg.keyExists("model")){
+            const char* model_arg = command_line_opts.model.c_str();
+            if (strcmp(model_arg, "G")==0) {
+                command_line_opts.hetero_noise=false;
+                command_line_opts.gen_by_env=false;
+                command_line_opts.normalize_proj_pheno = false;
+                cout << "Estimation of G heritability" << endl;
+            } else if (strcmp(model_arg, "G+GxE")==0) {
+                command_line_opts.hetero_noise=false;
+                command_line_opts.gen_by_env=true;
+                cout << "Estimation of G and GxE heritability (no heterogeneous noise)" << endl;
+            } else if (strcmp(model_arg, "G+GxE+NxE")==0) {
+                command_line_opts.hetero_noise=true;
+                command_line_opts.gen_by_env=true;
+                cout << "Estimation of G and GxE heritability (with heterogeneous noise)" << endl;
+            } else {
+                cout << "model can only be G, G+GxE, or G+GxE+NxE. Using default G+GxE+NxE model" << endl;
+                command_line_opts.hetero_noise=true;
+                command_line_opts.gen_by_env=true;
+                cout << "Estimation of G and GxE heritability (with heterogeneous noise)" << endl;
+            }
+	    }
+    }
+        //currently, trace is only available for "G" model. (TODO for SUMRHE to have other options)
 	else {
 		//Add other default parameters here
 		ConfigFile cfg;
@@ -359,19 +407,18 @@ void parse_args(int argc, char const *argv[]){
 					cfg.insertKey ("covariate name", argv[i+1]);
 					i++;
 				}
-				else if(strcmp(argv[i],"-o")==0){
-					command_line_opts.OUTPUT_PATH = string(argv[i+1]);
-					i++;
-				}
 				else if(strcmp(argv[i],"-k")==0){
 					command_line_opts.num_of_evec = atoi(argv[i+1]);
 					cfg.insertKey ("num_vec", argv[i+1]);
 					i++;
 				}
+                //CHANGE(03/04): batchNum is deprecated
+                /*
 				else if(strcmp(argv[i],"-b")==0){
 					command_line_opts.batchNum=atoi(argv[i+1]); 
 					i++; 
 				}
+                */
 				else if(strcmp(argv[i],"-l")==0){
 					command_line_opts.l = atoi(argv[i+1]);
 					i++;
@@ -434,10 +481,12 @@ void parse_args(int argc, char const *argv[]){
 				} else if (strcmp(argv[i], "-t")==0) {
 					command_line_opts.nthreads = atoi(argv[i+1]);
 					i++;
-				} else if (strcmp(argv[i], "-v")==0) {
-					command_line_opts.verbose = atoi(argv[i+1]);
-					i++;
-				}
+                   // CHANGE(03/04): makes more sense to have flags as a boolean true. TODO: also, why aren't we using getopt_long?
+				} else if ((strcmp(argv[i], "-v")==0) || (strcmp(argv[i], "--verbose")==0)) {
+					command_line_opts.verbose = true;
+				} else if ((strcmp(argv[i], "-tr")==0) || (strcmp(argv[i], "--trace")==0)){
+                    command_line_opts.print_trace=true;
+                }
 							//CHANGE(11/12)
 							// else if (strcmp(argv[i], "-perm_E_in_GxE")==0) {
 							// 	command_line_opts.perm_E_in_GxE=true;

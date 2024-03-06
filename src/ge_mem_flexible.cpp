@@ -163,6 +163,7 @@ int unitsize;
 int nrow, ncol;
 unsigned char *gtype;
 int Nsnp;
+int Nsnp_annot=0;
 int Nindv;
 bool **bin_annot;
 int step_size;
@@ -192,9 +193,12 @@ bool hetero_noise;
 bool gen_by_env;
 bool cov_add_intercept;
 bool verbose;
+bool trace;
 int nthreads;
 MatMult mm;
 std::ofstream outfile;
+std::ofstream trace_file;
+std::ofstream meta_file;
 
 std::istream& newline(std::istream& in)
 {
@@ -727,6 +731,7 @@ void read_annot (string filename){
         }
 
         cout<<"Number of SNPs selected according to annotation file : " <<selected_snps<<endl;
+        Nsnp_annot = selected_snps;
 
 
         step_size=Nsnp/Njack;
@@ -750,6 +755,7 @@ void read_annot (string filename){
                                         temp=Njack-1;
                                 jack_bin[temp][j]++;
                         }
+        /*
         if (verbose == true) {
                 cout<<"jackbin"<<endl;
                 for (int i=0;i<Njack;i++){
@@ -757,7 +763,9 @@ void read_annot (string filename){
                                 cout<<jack_bin[i][j]<<" ";
                         cout<<endl;
                 }
+                
         }
+        */
 
 }
 
@@ -800,6 +808,7 @@ void read_annot_1col (string filename){
         cout<<"Total number of SNPs : "<<Nsnp<<endl;
         for (int i=0;i<Nbin;i++){
                 cout<<len[i]<<" SNPs in "<<i<<"-th bin"<<endl;
+                Nsnp_annot += len[i];
         }
 
 }
@@ -1536,6 +1545,13 @@ void genotype_stream_pass(string name, int pass_num){
                                 yXXy(bin_index,0)= yXXy(bin_index,1);
                         }
 
+                    if (trace){
+                        trace_file << X_l.block(0, 0, Nbin, Nbin);
+                        for (int j=0; j< Nbin; j++) // TODO: is this the right way to count SNPs in the jn block for partitioned heritability
+                            trace_file << "," <<  Nsnp_annot - jack_bin[jack_index][j];
+                        trace_file << endl;
+                    }
+
 
                 } //end if pass_num=2
 
@@ -1677,6 +1693,12 @@ void genotype_stream_pass(string name, int pass_num){
 
                 X_l<<A_trs,b_trk,b_trk.transpose(),NC;
                 Y_r<<c_yky,yy;
+                if (trace){
+                    trace_file << X_l.block(0, 0, Nbin, Nbin);
+                    for (int j=0; j< Nbin; j++)
+                        trace_file << "," << len[j];
+                    trace_file << endl;
+                }
 
                 herit=X_l.colPivHouseholderQr().solve(Y_r);
 
@@ -1710,7 +1732,8 @@ int main(int argc, char const *argv[]){
 
 
         parse_args(argc,argv);
-        verbose = (command_line_opts.verbose != 0);
+        verbose = command_line_opts.verbose;
+        trace = command_line_opts.print_trace;
 
         cout << "Active essential options: " << endl;
         if (command_line_opts.GENOTYPE_FILE_PATH != "")
@@ -1743,11 +1766,13 @@ int main(int argc, char const *argv[]){
                 cout << "\t-cov_add_intercept (intercept term added to covariates) " << std::to_string(command_line_opts.cov_add_intercept) << endl;
                 cout << "\t-v (verbose) " << std::to_string(command_line_opts.verbose) << endl;
         }
+        if (trace)
+                cout << "\t-tr (trace summaries) " << endl;
         cout << endl;
         cout << endl;
         ////////////////////////////////////////////
         ///////////////////////////////////////////
-        int B = command_line_opts.batchNum;
+        //int B = command_line_opts.batchNum;
         k_orig = command_line_opts.num_of_evec ;
         debug = command_line_opts.debugmode ;
         check_accuracy = command_line_opts.getaccuracy;
@@ -1993,8 +2018,19 @@ int main(int argc, char const *argv[]){
         cout << endl;
         cout<<"Reading genotypes ..."<<endl;
 
-        string add_output=command_line_opts.OUTPUT_FILE_PATH;
-        outfile.open(add_output.c_str(), std::ios_base::out);
+        //CHANGE(03/05): add trace summary files. input to -o is now just the prefix (all output file endings are fixed to .log)
+        string prefix=command_line_opts.OUTPUT_FILE_PATH;
+        string outpath=prefix + ".log";
+        outfile.open(outpath.c_str(), std::ios_base::out);
+        if (trace){
+            string trpath=prefix + ".trace";
+            string mnpath=prefix + ".MN";
+            trace_file.open(trpath.c_str(), std::ios_base::out);
+            trace_file << "TRACE,NSNPS_JACKKNIFE" << endl;
+            meta_file.open(mnpath.c_str(), std::ios_base::out);
+            meta_file << "NSAMPLE,NSNP,NBLK,NBIN" << endl << Nindv << "," << Nsnp << "," << Njack << "," << Nbin;
+            meta_file.close();
+        }
 
         genotype_stream_pass(name,1);
         genotype_stream_pass(name,2);
