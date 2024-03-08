@@ -1,0 +1,43 @@
+Number of individuals after filtering: 5000
+Number of covariates: 6
+Number of environments: 0
+LHS of Normal Eq
+7532.86 4994.28
+4994.28    4994
+RHS of Normal Eq
+5414.62
+4992.07
+Normal Equations info:
+The relative error is: 1.23494e-16
+Max sing.val: 11416.5
+Min sing.val: 1110.35
+Condition number: 10.2819
+
+
+*****
+Number of features in bin 0 : 10000
+*****
+Number of G variance components : 1
+Number of GxE variance components : 0
+Number of NxE variance components : 0
+*****
+OUTPUT: 
+Variance components: 
+Sigma^2_g[0] : 0.166361  SE : 0.0275103
+Sigma^2_e : 0.833243  SE : 0.0275123
+*****
+Heritabilities: 
+h2_g[0] : 0.166435 SE : 0.0275229
+Total h2 : 0.166435 SE: 0.0275229
+Total h2_g : 0.166435 SE: 0.0275229
+*****
+Enrichments:
+G enrichment
+Enrichment g[0] : 1 SE : 0
+*****
+*****
+Heritabilities and enrichments computed based on overlapping setting
+Heritabilities: 
+h2_g[0] : 0.166435 SE : 0.0275229
+Enrichments (overlapping def): 
+Enrichment g[0] : 1 SE : 3.95553e-13
