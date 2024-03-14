@@ -9,6 +9,10 @@ The following packages are required on a Linux machine to compile and use the so
 g++
 cmake
 make
+
+## If there are no boost/GSL libraries, one possible way to install them:
+# sudo apt-get install libboost-all-dev
+# sudo apt-get install libgsl-dev
 ```
 
 ## How to install :
