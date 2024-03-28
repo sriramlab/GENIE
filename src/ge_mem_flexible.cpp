@@ -2234,45 +2234,47 @@ int main(int argc, char const *argv[]){
                 outfile<<"Enrichment g["<<i<<"] : "<<enrich_g(i,0)<<" SE : "<<enrich_g_se(i,0)<<endl;
         }
         // compute enrich GxE
-        if (gen_by_env == true) {
-                MatrixXdr enrich_gxe;
-                MatrixXdr jack_enrich_gxe;
-                jack_enrich_gxe.resize(Nbin,Njack);
-                enrich_gxe.resize(Nbin,1);
-                double total_gxe_h2=0;
-                int total_snp=0;
-                for(int i=0;i<Nbin;i++){
-                        total_gxe_h2+=point_est_adj_gxe(Nbin+i,0);
-                        total_snp+=len[Nbin+i];
-                }
-                double numi;
-                double denom=(double)total_gxe_h2/total_snp;
-                for(int i=0;i<Nbin;i++){
-                        numi=point_est_adj_gxe(Nbin+i,0)/len[Nbin+i];
-                        enrich_gxe(i,0)=numi/denom;
-                }
-                for(int j=0;j<Njack;j++){
-                        total_gxe_h2=0;
-                        total_snp=0;
-                        for (int k=0;k<Nbin;k++){
-                                total_snp+=len[Nbin+k]-jack_bin[j][Nbin+k];
-                                total_gxe_h2+=jack_adj_gxe(Nbin+k,j);
+        if(Annot_x_E==true){
+                if (gen_by_env == true) {
+                        MatrixXdr enrich_gxe;
+                        MatrixXdr jack_enrich_gxe;
+                        jack_enrich_gxe.resize(Nbin,Njack);
+                        enrich_gxe.resize(Nbin,1);
+                        double total_gxe_h2=0;
+                        int total_snp=0;
+                        for(int i=0;i<Nbin;i++){
+                                total_gxe_h2+=point_est_adj_gxe(Nbin+i,0);
+                                total_snp+=len[Nbin+i];
                         }
-                        denom=(double)total_gxe_h2/total_snp;
-                        for(int k=0;k<Nbin;k++){
-                                numi=jack_adj_gxe(Nbin+k,j)/(len[Nbin+k]-jack_bin[j][Nbin+k]);
-                                jack_enrich_gxe(k,j)=numi/denom;
+                        double numi;
+                        double denom=(double)total_gxe_h2/total_snp;
+                        for(int i=0;i<Nbin;i++){
+                                numi=point_est_adj_gxe(Nbin+i,0)/len[Nbin+i];
+                                enrich_gxe(i,0)=numi/denom;
                         }
-                }
-                MatrixXdr enrich_gxe_se;
-                enrich_gxe_se=MatrixXdr::Zero(Nbin,1);
-                enrich_gxe_se=jack_se(jack_enrich_gxe);
-                
-                cout<<"GxE enrichment"<<endl;
-                outfile<<"GxE enrichment"<<endl;
-                for(int i=0;i<Nbin;i++){
-                        cout<<"Enrichment gxe["<<i<<"] : "<<enrich_gxe(i,0)<<" SE : "<<enrich_gxe_se(i,0)<<endl;
-                        outfile<<"Enrichment gxe["<<i<<"] : "<<enrich_gxe(i,0)<<" SE : "<<enrich_gxe_se(i,0)<<endl;
+                        for(int j=0;j<Njack;j++){
+                                total_gxe_h2=0;
+                                total_snp=0;
+                                for (int k=0;k<Nbin;k++){
+                                        total_snp+=len[Nbin+k]-jack_bin[j][Nbin+k];
+                                        total_gxe_h2+=jack_adj_gxe(Nbin+k,j);
+                                }
+                                denom=(double)total_gxe_h2/total_snp;
+                                for(int k=0;k<Nbin;k++){
+                                        numi=jack_adj_gxe(Nbin+k,j)/(len[Nbin+k]-jack_bin[j][Nbin+k]);
+                                        jack_enrich_gxe(k,j)=numi/denom;
+                                }
+                        }
+                        MatrixXdr enrich_gxe_se;
+                        enrich_gxe_se=MatrixXdr::Zero(Nbin,1);
+                        enrich_gxe_se=jack_se(jack_enrich_gxe);
+                        
+                        cout<<"GxE enrichment"<<endl;
+                        outfile<<"GxE enrichment"<<endl;
+                        for(int i=0;i<Nbin;i++){
+                                cout<<"Enrichment gxe["<<i<<"] : "<<enrich_gxe(i,0)<<" SE : "<<enrich_gxe_se(i,0)<<endl;
+                                outfile<<"Enrichment gxe["<<i<<"] : "<<enrich_gxe(i,0)<<" SE : "<<enrich_gxe_se(i,0)<<endl;
+                        }
                 }
         }
         cout<<"*****"<<endl;
@@ -2306,7 +2308,7 @@ int main(int argc, char const *argv[]){
                         for(int j=0;j<Nbin;j++){
                                 if(annot_bool[i][j]==1)
                                         her_per_snp(i,0)+=her_per_snp_inbin(j,0);
-                                if(annot_bool[i][Nbin+j]==1)
+                                if((annot_bool[i][Nbin+j]==1) && (Annot_x_E==true))
                                         her_per_snp(i,1)+=her_per_snp_inbin(Nbin+j,0);
                         }        
                         if(k==Njack){
@@ -2314,7 +2316,7 @@ int main(int argc, char const *argv[]){
                                 for(int j=0;j<Nbin;j++){
                                         if(annot_bool[i][j]==1)
                                                 point_her_cat_ldsc(j,0)+=her_per_snp(i,0);
-                                        if(annot_bool[i][Nbin+j]==1)
+                                        if((annot_bool[i][Nbin+j]==1) && (Annot_x_E==true))
                                                 point_her_cat_ldsc(Nbin+j,0)+=her_per_snp(i,1);
                                 }                
                         }else{
@@ -2324,7 +2326,7 @@ int main(int argc, char const *argv[]){
                                 for(int j=0;j<Nbin;j++){
                                         if(annot_bool[i][j]==1 && temp!=k)
                                                 her_cat_ldsc(j,k)+=her_per_snp(i,0);
-                                        if(annot_bool[i][Nbin+j]==1 && temp!=k)
+                                        if((annot_bool[i][Nbin+j]==1) && (temp!=k) && (Annot_x_E==true))
                                                 her_cat_ldsc(Nbin+j,k)+=her_per_snp(i,1);
                                 }                   
                         }     
@@ -2345,7 +2347,7 @@ int main(int argc, char const *argv[]){
                 cout<<"h2_g["<<j<<"] : "<<point_her_cat_ldsc(j,0)<<" SE : "<<se_her_cat_ldsc(j,0)<<endl;
                 outfile<<"h2_g["<<j<<"] : "<<point_her_cat_ldsc(j,0)<<" SE : "<<se_her_cat_ldsc(j,0)<<endl;
         }
-        if (gen_by_env == true) {
+        if ((gen_by_env == true) && (Annot_x_E==true)) {
                 for (int j=0;j<Nbin;j++){
                         int k=j+Nbin;
                         cout<<"h2_gxe["<<j<<"] : "<<point_her_cat_ldsc(k,0)<<" SE : "<<se_her_cat_ldsc(k,0)<<endl;
@@ -2362,12 +2364,12 @@ int main(int argc, char const *argv[]){
         double snp_por;
         for (int i=0;i<Nbin;i++){
                 point_her_cat_ldsc(i,0)=(double)point_her_cat_ldsc(i,0)/point_est_adj_gxe(T_Nbin+2,0);  //additive
-                if((gen_by_env==true))
+                if((gen_by_env==true) && (Annot_x_E==true))
                         point_her_cat_ldsc(i+Nbin,0)=(double)point_her_cat_ldsc(i+Nbin,0)/point_est_adj_gxe(T_Nbin+1,0);  //GxE
 
                 snp_por=(double)len[i]/all_snp;
                 point_her_cat_ldsc(i,0)=(double)point_her_cat_ldsc(i,0)/snp_por;
-                if((gen_by_env==true))
+                if((gen_by_env==true) && (Annot_x_E==true))
                         point_her_cat_ldsc(i+Nbin,0)=(double)point_her_cat_ldsc(i+Nbin,0)/snp_por;
         }
 
@@ -2379,12 +2381,12 @@ int main(int argc, char const *argv[]){
                 for(int j=0;j<Nbin;j++){
 
                         her_cat_ldsc(j,i)=(double)her_cat_ldsc(j,i)/jack_adj_gxe(T_Nbin+2,i);
-                        if((gen_by_env==true))
+                        if((gen_by_env==true) && (Annot_x_E==true))
                                 her_cat_ldsc(j+Nbin,i)=(double)her_cat_ldsc(j+Nbin,i)/jack_adj_gxe(T_Nbin+1,i);
 
                         snp_por=(double)(len[j]-jack_bin[i][j])/temp_size;
                         her_cat_ldsc(j,i)=(double)her_cat_ldsc(j,i)/snp_por;
-                        if((gen_by_env==true))
+                        if((gen_by_env==true) && (Annot_x_E==true))
                                 her_cat_ldsc(j+Nbin,i)=(double)her_cat_ldsc(j+Nbin,i)/snp_por;
 
 
@@ -2399,7 +2401,7 @@ int main(int argc, char const *argv[]){
                 cout<<"Enrichment g["<<j<<"] : "<<point_her_cat_ldsc(j,0)<<" SE : "<<se_her_cat_ldsc(j,0)<<endl;
                 outfile<<"Enrichment g["<<j<<"] : "<<point_her_cat_ldsc(j,0)<<" SE : "<<se_her_cat_ldsc(j,0)<<endl;
         }
-        if (gen_by_env == true) {
+        if ((gen_by_env == true) && (Annot_x_E==true)) {
                 for (int j=0;j<Nbin;j++){
                         int k=j+Nbin;
                         cout<<"Enrichment gxe["<<j<<"] : "<<point_her_cat_ldsc(k,0)<<" SE : "<<se_her_cat_ldsc(k,0)<<endl;
