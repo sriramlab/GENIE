@@ -1735,40 +1735,6 @@ int main(int argc, char const *argv[]){
         verbose = command_line_opts.verbose;
         trace = command_line_opts.print_trace;
 
-        // cout << "Active essential options: " << endl;
-        // if (command_line_opts.GENOTYPE_FILE_PATH != "")
-        //         cout << "\t-g (genotype) " << command_line_opts.GENOTYPE_FILE_PATH << endl;
-        // if (command_line_opts.Annot_PATH != "")
-        //         cout << "\t-annot (annotation) " << command_line_opts.Annot_PATH << endl;
-        // if (command_line_opts.PHENOTYPE_FILE_PATH != "")
-        //         cout << "\t-p (phenotype) " << command_line_opts.PHENOTYPE_FILE_PATH << endl;
-        // if (command_line_opts.COVARIATE_FILE_PATH != "")
-        //         cout << "\t-c (covariates) " << command_line_opts.COVARIATE_FILE_PATH << endl;
-        // if (command_line_opts.OUTPUT_FILE_PATH != "")
-        //         cout << "\t-o (output) " << command_line_opts.OUTPUT_FILE_PATH << endl;
-        // if (command_line_opts.ENV_FILE_PATH != "")
-        //         cout << "\t-e (environment) " << command_line_opts.ENV_FILE_PATH << endl;
-        // if (command_line_opts.model != "")
-        //         cout << "\t-m (model) " << command_line_opts.model << endl;
-        // if (command_line_opts.num_of_evec > 0) 
-        //         cout << "\t-k (# random vectors) " << std::to_string(command_line_opts.num_of_evec) << endl;
-        // if (command_line_opts.jack_number > 0)
-        //         cout << "\t-jn (# jackknife blocks) " << std::to_string(command_line_opts.jack_number) << endl;
-        // if (command_line_opts.nthreads > 0)
-        //         cout << "\t-t (# threads) " << std::to_string(command_line_opts.nthreads) << endl;
-        // if (command_line_opts.seed != -1)
-        //         cout << "\t-s (seed) " << std::to_string(command_line_opts.seed) << endl;
-        // if (command_line_opts.exannot == true)
-        //         cout << "\t-eXannt (paritioned GxE)" << endl;
-        // if (verbose) {
-        //         cout << "Other options: " << endl;
-        //         cout << "\t-norm_proj_pheno (normalize pheno after projection on covariates) " << std::to_string(command_line_opts.normalize_proj_pheno) << endl;
-        //         cout << "\t-cov_add_intercept (intercept term added to covariates) " << std::to_string(command_line_opts.cov_add_intercept) << endl;
-        //         cout << "\t-v (verbose) " << std::to_string(command_line_opts.verbose) << endl;
-        // }
-        // if (trace)
-        //         cout << "\t-tr (trace summaries) " << endl;
-        // cout << endl;
         cout << endl;
         ////////////////////////////////////////////
         ///////////////////////////////////////////
@@ -2020,8 +1986,53 @@ int main(int argc, char const *argv[]){
 
         //CHANGE(03/05): add trace summary files. input to -o is now just the prefix (all output file endings are fixed to .log)
         string prefix=command_line_opts.OUTPUT_FILE_PATH;
-        string outpath=prefix + ".log";
+        string outpath=prefix;
         outfile.open(outpath.c_str(), std::ios_base::out);
+        outfile << "##################################" << endl;
+        outfile << "#                                #" << endl;
+        outfile << "#          GENIE (v.1.0.0)       #" << endl;
+        outfile << "#                                #" << endl;
+        outfile << "##################################" << endl;
+        outfile << endl;
+        outfile << endl;
+
+        outfile << "Active essential options: " << endl;
+        if (command_line_opts.GENOTYPE_FILE_PATH != "")
+                outfile << "\t-g (genotype) " << command_line_opts.GENOTYPE_FILE_PATH << endl;
+        if (command_line_opts.Annot_PATH != "")
+                outfile << "\t-annot (annotation) " << command_line_opts.Annot_PATH << endl;
+        if (command_line_opts.PHENOTYPE_FILE_PATH != "")
+                outfile << "\t-p (phenotype) " << command_line_opts.PHENOTYPE_FILE_PATH << endl;
+        if (command_line_opts.COVARIATE_FILE_PATH != "")
+                outfile << "\t-c (covariates) " << command_line_opts.COVARIATE_FILE_PATH << endl;
+        if (command_line_opts.OUTPUT_FILE_PATH != "")
+                outfile << "\t-o (output) " << command_line_opts.OUTPUT_FILE_PATH << endl;
+        if (command_line_opts.ENV_FILE_PATH != "")
+                outfile << "\t-e (environment) " << command_line_opts.ENV_FILE_PATH << endl;
+        if (command_line_opts.model != "")
+                outfile << "\t-m (model) " << command_line_opts.model << endl;
+        if (command_line_opts.num_of_evec > 0) 
+                outfile << "\t-k (# random vectors) " << std::to_string(command_line_opts.num_of_evec) << endl;
+        if (command_line_opts.jack_number > 0)
+                outfile << "\t-jn (# jackknife blocks) " << std::to_string(command_line_opts.jack_number) << endl;
+        if (command_line_opts.nthreads > 0)
+                outfile << "\t-t (# threads) " << std::to_string(command_line_opts.nthreads) << endl;
+        if (command_line_opts.seed != -1)
+                outfile << "\t-s (seed) " << std::to_string(command_line_opts.seed) << endl;
+        if (command_line_opts.exannot == true)
+                outfile << "\t-eXannt (paritioned GxE)" << endl;
+        if (verbose) {
+                outfile << "Other options: " << endl;
+                outfile << "\t-norm_proj_pheno (normalize pheno after projection on covariates) " << std::to_string(command_line_opts.normalize_proj_pheno) << endl;
+                outfile << "\t-cov_add_intercept (intercept term added to covariates) " << std::to_string(command_line_opts.cov_add_intercept) << endl;
+                outfile << "\t-v (verbose) " << std::to_string(command_line_opts.verbose) << endl;
+        }
+        if (trace)
+                outfile << "\t-tr (trace summaries) " << endl;
+
+        outfile << endl;
+        outfile << endl;
+
         if (trace){
             string trpath=prefix + ".trace";
             string mnpath=prefix + ".MN";
