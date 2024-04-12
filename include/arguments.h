@@ -246,7 +246,7 @@ public:
 	void printVersion () {
 		io::println ("##################################",0);
 		io::println ("#                                #",0);
-		io::println ("#          GENIE (v.0.0.1)       #",0);
+		io::println ("#          GENIE (v.1.0.0)       #",0);
 		io::println ("#                                #",0);
 		io::println ("##################################",0);
 		io::println ("",0);

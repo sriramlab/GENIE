@@ -1,0 +1,57 @@
+##################################
+#                                #
+#          GENIE (v.1.0.0)       #
+#                                #
+##################################
+
+
+Active essential options: 
+	-g (genotype) test
+	-annot (annotation) single.annot
+	-p (phenotype) test.pheno
+	-c (covariates) test.cov
+	-o (output) test.out
+	-e (environment) test.env
+	-m (model) G+GxE+NxE
+	-k (# random vectors) 10
+	-jn (# jackknife blocks) 10
+	-t (# threads) 6
+
+
+Number of individuals after filtering: 5000
+Number of covariates: 7
+Number of environments: 1
+*****
+Number of features in bin 0 : 10000
+Number of features in bin 1 : 10000
+Number of features in bin 2 : 1
+*****
+Number of G variance components : 1
+Number of GxE variance components : 1
+Number of NxE variance components : 1
+*****
+OUTPUT: 
+Variance components: 
+Sigma^2_g[0] : 0.133475  SE : 0.0234499
+Sigma^2_gxe[0] : 0.203798  SE : 0.133063
+Sigma^2_nxe[0] : 0.200099  SE : 0.133147
+Sigma^2_e : 0.707476  SE : 0.0235342
+*****
+Heritabilities: 
+h2_g[0] : 0.133349 SE : 0.0234361
+h2_gxe[0] : 0.0809679 SE : 0.0527116
+h2_nxe[0] : 0.0790561 SE : 0.0526043
+Total h2 : 0.293373 SE: 0.023506
+Total h2_g : 0.133349 SE: 0.0234361
+Total h2_gxe : 0.0809679 SE: 0.0527116
+*****
+Enrichments:
+G enrichment
+Enrichment g[0] : 1 SE : 0
+*****
+*****
+Heritabilities and enrichments computed based on overlapping setting
+Heritabilities: 
+h2_g[0] : 0.133349 SE : 0.0234361
+Enrichments (overlapping def): 
+Enrichment g[0] : 1 SE : 4.78724e-13
