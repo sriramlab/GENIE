@@ -1853,7 +1853,7 @@ int main(int argc, char const *argv[]){
         
         outfile << "##################################" << endl;
         outfile << "#                                #" << endl;
-        outfile << "#          GENIE (v.1.0.0)       #" << endl;
+        outfile << "#          GENIE (v1.0.0)        #" << endl;
         outfile << "#                                #" << endl;
         outfile << "##################################" << endl;
         outfile << endl;

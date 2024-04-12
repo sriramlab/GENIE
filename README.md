@@ -125,6 +125,6 @@ Bogdan Pasaniuc, Sriram Sankararaman. Nature Communications (2020); doi: https:/
 
 ## Version
 ```
-v.1.0.0
+v1.0.0
 ```
 

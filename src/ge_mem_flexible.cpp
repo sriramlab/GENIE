@@ -1990,7 +1990,7 @@ int main(int argc, char const *argv[]){
         outfile.open(outpath.c_str(), std::ios_base::out);
         outfile << "##################################" << endl;
         outfile << "#                                #" << endl;
-        outfile << "#          GENIE (v.1.0.0)       #" << endl;
+        outfile << "#          GENIE (v1.0.0)        #" << endl;
         outfile << "#                                #" << endl;
         outfile << "##################################" << endl;
         outfile << endl;
