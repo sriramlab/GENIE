@@ -1,1 +1,0 @@
-/u/local/compilers/gcc/7.5.0/bin/g++   -std=c++0x -O3 -lrt -lpthread     CMakeFiles/GENIE_mem.dir/src/ge_mem_flexible.cpp.o CMakeFiles/GENIE_mem.dir/src/genotype.cpp.o CMakeFiles/GENIE_mem.dir/src/matmult.cpp.o CMakeFiles/GENIE_mem.dir/src/storage.cpp.o  -o GENIE_mem -rdynamic 
