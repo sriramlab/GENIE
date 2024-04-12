@@ -1,2 +1,0 @@
-/u/home/z/zhengton/project-sriram/GENIE_review/github/GENIE/build/CMakeFiles/GENIE.dir
-/u/home/z/zhengton/project-sriram/GENIE_review/github/GENIE/build/CMakeFiles/GENIE_mem.dir
