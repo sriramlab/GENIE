@@ -243,7 +243,17 @@ public:
 		contents[key] = value;		
 	}
 
-	void printParameters ()  {                                                                    
+	void printVersion () {
+		io::println ("##################################",0);
+		io::println ("#                                #",0);
+		io::println ("#          GENIE (v.0.0.1)       #",0);
+		io::println ("#                                #",0);
+		io::println ("##################################",0);
+		io::println ("",0);
+	}
+
+	void printParameters ()  {
+
 	    io::println ("###########Parameters#############",0);                                            
     	map<string,string>::iterator i;                                                                  
     	for (i = contents.begin(); i!=contents.end(); i++){                                            
@@ -299,6 +309,7 @@ void parse_args(int argc, char const *argv[]){
 	if(strcmp(argv[1],"--config")==0){
 		std::string cfg_filename = std::string(argv[2]);
 		ConfigFile cfg(cfg_filename);
+		cfg.printVersion();
 		got_genotype_file=cfg.keyExists("genotype");
 	    command_line_opts.jack_number = cfg.getValueOfKey<int>("num_jack", 10);
 		//command_line_opts.batchNum = cfg.getValueOfKey<int> ("batchNum",10); 
@@ -348,11 +359,13 @@ void parse_args(int argc, char const *argv[]){
                 cout << "Estimation of G and GxE heritability (with heterogeneous noise)" << endl;
             }
 	    }
+		cfg.printParameters ();
     }
         //currently, trace is only available for "G" model. (TODO for SUMRHE to have other options)
 	else {
 		//Add other default parameters here
 		ConfigFile cfg;
+		cfg.printVersion();
 		cfg.insertKey ("num_vec", "10");
 		cfg.insertKey ("num_block", "100");
 		cfg.insertKey ("debug", "0");
