@@ -1,0 +1,88 @@
+##################################
+#                                #
+#          GENIE (v1.0.0)        #
+#                                #
+##################################
+
+
+Active essential options: 
+	-g (genotype) test
+	-annot (annotation) single.annot
+	-p (phenotype) ./test.2.pheno
+	-c (covariates) test.cov
+	-o (output) test.2.out
+	-e (environment) test.env
+	-m (model) G+GxE+NxE
+	-k (# random vectors) 10
+	-jn (# jackknife blocks) 10
+	-t (# threads) 6
+
+
+Number of covariates : 7
+Number of environments : 1
+Number of individuals after filtering for phenotype 0 : 5000
+Number of individuals after filtering for phenotype 1 : 5000
+*****
+Number of features in bin 0 : 10000
+Number of features in bin 1 : 10000
+Number of features in bin 2 : 1
+*****
+Number of G variance components : 1
+Number of GxE variance components : 1
+Number of NxE variance components : 1
+*****
+
+
+OUTPUT: 
+
+Phenotype 0: 
+Variance components: 
+Sigma^2_g[0] : 0.127387  SE : 0.0236952
+Sigma^2_gxe[0] : 0.241197  SE : 0.123506
+Sigma^2_nxe[0] : 0.155659  SE : 0.12351
+Sigma^2_e : 0.716052  SE : 0.0238489
+*****
+Heritabilities: 
+h2_g[0] : 0.127211 SE : 0.0236612
+h2_gxe[0] : 0.0957798 SE : 0.0490203
+h2_nxe[0] : 0.0618165 SE : 0.0490491
+Total h2 : 0.284807 SE: 0.0238203
+Total h2_g : 0.127211 SE: 0.0236612
+Total h2_gxe : 0.0957798 SE: 0.0490203
+*****
+Enrichments:
+G enrichment
+Enrichment g[0] : 1 SE : 0
+*****
+*****
+Heritabilities and enrichments computed based on overlapping setting
+Heritabilities: 
+h2_g[0] : 0.127211 SE : 0.0236612
+Enrichments (overlapping def): 
+Enrichment g[0] : 1 SE : 4.03046e-13
+
+Phenotype 1: 
+Variance components: 
+Sigma^2_g[0] : 0.127387  SE : 0.0236952
+Sigma^2_gxe[0] : 0.241197  SE : 0.123506
+Sigma^2_nxe[0] : 0.155659  SE : 0.12351
+Sigma^2_e : 0.716052  SE : 0.0238489
+*****
+Heritabilities: 
+h2_g[0] : 0.127211 SE : 0.0236612
+h2_gxe[0] : 0.0957798 SE : 0.0490203
+h2_nxe[0] : 0.0618165 SE : 0.0490491
+Total h2 : 0.284807 SE: 0.0238203
+Total h2_g : 0.127211 SE: 0.0236612
+Total h2_gxe : 0.0957798 SE: 0.0490203
+*****
+Enrichments:
+G enrichment
+Enrichment g[0] : 1 SE : 0
+*****
+*****
+Heritabilities and enrichments computed based on overlapping setting
+Heritabilities: 
+h2_g[0] : 0.127211 SE : 0.0236612
+Enrichments (overlapping def): 
+Enrichment g[0] : 1 SE : 3.98454e-13
