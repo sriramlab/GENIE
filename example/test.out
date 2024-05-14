@@ -32,18 +32,18 @@ Number of NxE variance components : 1
 *****
 OUTPUT: 
 Variance components: 
-Sigma^2_g[0] : 0.125963  SE : 0.0228697
-Sigma^2_gxe[0] : 0.256651  SE : 0.135303
-Sigma^2_nxe[0] : 0.127948  SE : 0.133614
-Sigma^2_e : 0.721464  SE : 0.0227428
+Sigma^2_g[0] : 0.140248  SE : 0.02488
+Sigma^2_gxe[0] : 0.200688  SE : 0.135658
+Sigma^2_nxe[0] : 0.214095  SE : 0.134583
+Sigma^2_e : 0.697419  SE : 0.024598
 *****
 Heritabilities: 
-h2_g[0] : 0.125791 SE : 0.0228355
-h2_gxe[0] : 0.102426 SE : 0.0537314
-h2_nxe[0] : 0.0511853 SE : 0.053452
-Total h2 : 0.279402 SE: 0.0227155
-Total h2_g : 0.125791 SE: 0.0228355
-Total h2_gxe : 0.102426 SE: 0.0537314
+h2_g[0] : 0.140151 SE : 0.0248574
+h2_gxe[0] : 0.0791802 SE : 0.0532189
+h2_nxe[0] : 0.0840869 SE : 0.0528583
+Total h2 : 0.303418 SE: 0.0245685
+Total h2_g : 0.140151 SE: 0.0248574
+Total h2_gxe : 0.0791802 SE: 0.0532189
 *****
 Enrichments:
 G enrichment
@@ -52,6 +52,6 @@ Enrichment g[0] : 1 SE : 0
 *****
 Heritabilities and enrichments computed based on overlapping setting
 Heritabilities: 
-h2_g[0] : 0.125791 SE : 0.0228355
+h2_g[0] : 0.140151 SE : 0.0248574
 Enrichments (overlapping def): 
-Enrichment g[0] : 1 SE : 3.55834e-13
+Enrichment g[0] : 1 SE : 3.15633e-13
