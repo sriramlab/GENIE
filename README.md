@@ -36,6 +36,7 @@ If there are many annotations, then we recommend to run the following :
  ./GENIE_mem <command_line arguments>
 ```
 GENIE_mem is slower than GENIE, but it uses less memory than GENIE.
+
 GENIE_multi_pheno allows for the input of multi-trait phenotype file:
 ```
 ./GENIE_multi_pheno <command_line arguments>
