@@ -83,7 +83,8 @@ the covariates (the intercept term). To remove this intercept term, add "-cov_ad
 ## File formats
 ```
 Genotype: must be in PLINK BED format.
-Phenotype: must have a header in the following format (multiple phenotypes only supported by GENIE_multi_pheno): 
+Phenotype: must have a header in the following format 
+(multiple phenotypes only supported by GENIE_multi_pheno): 
     FID IID name_of_pheno_1 name_of_pheno_2  . . .   name_of_pheno_n
 Covariate: must have a header in the following format: 
     FID IID name_of_cov_1 name_of_cov_2  . . .   name_of_cov_n
