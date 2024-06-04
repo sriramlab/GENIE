@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.2)
 
 project(EM_C++ LANGUAGES CXX)
 
@@ -21,6 +21,10 @@ message(STATUS "CMake build type is set to ${CMAKE_BUILD_TYPE}")
 
 set(CMAKE_CXX_FLAGS "-lrt -lpthread ")
 
+# Find required dependencies
+find_package(Boost REQUIRED)
+find_package(GSL REQUIRED)
+
 IF (NOT DEFINED SSE_SUPPORT)
     SET(SSE_SUPPORT 0)
 ENDIF()
@@ -36,3 +40,7 @@ add_executable(GENIE_mem src/ge_mem_flexible.cpp src/genotype.cpp src/matmult.cp
 add_executable(GENIE src/ge_hetro_flexible.cpp src/genotype.cpp src/matmult.cpp src/storage.cpp)
 add_executable(GENIE_multi_pheno src/ge_hetro_flexible_multi_pheno.cpp src/genotype.cpp src/matmult.cpp src/storage.cpp)
 
+# Link executables against required dependencies
+target_link_libraries(GENIE PRIVATE Boost::headers GSL::gsl)
+target_link_libraries(GENIE_mem PRIVATE Boost::headers GSL::gsl)
+target_link_libraries(GENIE_multi_pheno PRIVATE Boost::headers GSL::gsl)
