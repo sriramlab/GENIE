@@ -1,0 +1,54 @@
+name: "Tests on Ubuntu"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  build-and-test:
+    name: Tests on Ubuntu
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cxx: "clang++-13"
+            build-type: "Debug"
+          - cxx: "clang++-14"
+            build-type: "Release"
+          - cxx: "g++-10"
+            build-type: "Release"
+          - cxx: "g++-12"
+            build-type: "Debug"
+
+    env:
+      CXX: ${{ matrix.cxx }}
+
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v4
+
+      - name: install system packages
+        run: |
+          sudo apt -y update
+          sudo apt -y install libboost-dev libgsl-dev
+
+      - name: make build directory
+        run: mkdir build_dir
+
+      - name: cmake configure
+        run: cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
+        working-directory: build_dir
+
+      - name: cmake build
+        run: cmake --build . --parallel 4
+        working-directory: build_dir
+
+      - name: cmake test
+        run: |
+          echo "test coming soon"
+        working-directory: build_dir
