@@ -4,7 +4,22 @@ project(EM_C++ LANGUAGES CXX)
 
 include_directories(include/)
 
-set(CMAKE_CXX_FLAGS "-std=c++0x -O3 -lrt -lpthread ")
+# Set the CMake standard
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Set a default build type to Release (-O3 -DNDEBUG for GCC)
+if (NOT CMAKE_BUILD_TYPE)
+    message(STATUS "Setting build type to 'Release' as none was specified.")
+    message(STATUS "  You can specify with the flag -DCMAKE_BUILD_TYPE=<Debug|Release|MinSizeRel|RelWithDebInfo>")
+    message(STATUS "  'Release' will build optimised binaries, but 'Debug' may be better while developing.")
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+endif ()
+
+message(STATUS "CMake build type is set to ${CMAKE_BUILD_TYPE}")
+
+set(CMAKE_CXX_FLAGS "-lrt -lpthread ")
 
 IF (NOT DEFINED SSE_SUPPORT)
     SET(SSE_SUPPORT 0)
