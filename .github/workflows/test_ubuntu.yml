@@ -61,6 +61,38 @@ jobs:
           covar=${EXAMPLE_DIR}/test.cov
           annot=${EXAMPLE_DIR}/single.annot
           env=${EXAMPLE_DIR}/test.env
-          ./GENIE -g $gen -p $phen -c $covar -e $env -m G+GxE+NxE  -k 10 -jn 10  -o ${TEST_OUTPUT_DIR}/test.out -annot $annot -t 6
-          cat ${TEST_OUTPUT_DIR}/test.out
+          ./GENIE -g $gen -p $phen -c $covar -e $env -m G+GxE+NxE -k 10 -jn 10 -o ${TEST_OUTPUT_DIR}/test.1.out -annot $annot -t 6
+          echo "\n\n###\n\n"
+          cat ${TEST_OUTPUT_DIR}/test.1.out
+        working-directory: ${{ env.BUILD_DIR }}
+
+      - name: test GENIE_multi_pheno
+        run: |
+          gen=${EXAMPLE_DIR}/test
+          phen=${EXAMPLE_DIR}/test.2.pheno
+          covar=${EXAMPLE_DIR}/test.cov
+          annot=${EXAMPLE_DIR}/single.annot
+          env=${EXAMPLE_DIR}/test.env
+          ./GENIE_multi_pheno -g $gen -p $phen -c $covar -e $env -m G+GxE+NxE -k 10 -jn 10 -o ${TEST_OUTPUT_DIR}/test.2.out -annot $annot -t 6
+          echo "\n\n###\n\n"
+          cat ${TEST_OUTPUT_DIR}/test.2.out
+        working-directory: ${{ env.BUILD_DIR }}
+
+      - name: test GENIE_mem
+        run: |
+          echo "genotype=${EXAMPLE_DIR}/test" > config.txt
+          echo "phenotype=${EXAMPLE_DIR}/test.pheno" >> config.txt
+          echo "covariate=${EXAMPLE_DIR}/test.cov" >> config.txt
+          echo "environment=${EXAMPLE_DIR}/test.env" >> config.txt
+          echo "annotation=${EXAMPLE_DIR}/single.annot" >> config.txt
+          echo "output=${TEST_OUTPUT_DIR}/test.3.out" >> config.txt
+          echo "nthreads=6" >> config.txt
+          echo "num_vec=20" >> config.txt
+          echo "num_jack=10" >> config.txt
+          echo "trace=1" >> config.txt
+          echo "model=G" >> config.txt
+          echo "verbose=1" >> config.txt
+          echo "\n\n###\n\n"
+          ./GENIE_mem --config ./config.txt
+          cat ${TEST_OUTPUT_DIR}/test.3.out
         working-directory: ${{ env.BUILD_DIR }}
