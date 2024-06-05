@@ -8,7 +8,10 @@
 #include "storage.h"
 #include <assert.h>
 #include <iostream>
+
+#if defined(SSE_SUPPORT) && SSE_SUPPORT == 1
 #include <emmintrin.h>
+#endif
 
 
 namespace mailman {
@@ -71,7 +74,7 @@ namespace mailman {
 	}
 
 
-	#if SSE_SUPPORT==1
+    #if defined(SSE_SUPPORT) && SSE_SUPPORT == 1
 		// k must be a multiple of 10
 	void fastmultiply_sse (int m, int n , int k, std::vector<int> &p, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &x, double *yint, double *c, double **y){
 		__m128d x0, x2, x4, x6, x8;
