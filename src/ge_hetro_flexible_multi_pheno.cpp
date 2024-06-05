@@ -6,7 +6,6 @@
 #include <vector> 
 //#include <random>
 
-#include <bits/stdc++.h>
 #include <Eigen/Dense>
 #include <Eigen/Core>
 #include <Eigen/LU>

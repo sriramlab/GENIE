@@ -1,9 +1,9 @@
 #ifndef HELPER_H
 #define HELPER_H
 
-#include <bits/stdc++.h>
 #include "time.h"
 
+#include <iostream>
 
 using namespace std;
 
