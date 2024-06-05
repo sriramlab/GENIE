@@ -24,9 +24,33 @@ find_package(Boost REQUIRED)
 find_package(GSL REQUIRED)
 find_package(Threads REQUIRED)
 
-IF (NOT DEFINED SSE_SUPPORT)
-    SET(SSE_SUPPORT 0)
-ENDIF()
+# Determine system architecture
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)")
+    set(ARCHITECTURE "amd64")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)")
+    set(ARCHITECTURE "arm64")
+else()
+    set(ARCHITECTURE "unknown")
+endif()
+
+# Print the detected architecture
+message(STATUS "Detected architecture: ${ARCHITECTURE}")
+
+# Handle user preference for SSE support (default: OFF)
+option(ENABLE_SSE "Enable SSE support" OFF)
+
+# Set SSE_SUPPORT based on the ENABLE_SSE option and architecture
+if (ENABLE_SSE)
+    if (ARCHITECTURE STREQUAL "amd64")
+        set(SSE_SUPPORT 1)
+    else()
+        message(WARNING "SSE support currently only available on amd64 platforms. Turning OFF SSE support.")
+        set(SSE_SUPPORT 0)
+    endif()
+else()
+    set(SSE_SUPPORT 0)
+endif()
+
 ADD_DEFINITIONS(-DSSE_SUPPORT=${SSE_SUPPORT})
 
 IF (NOT DEFINED DEBUG)
