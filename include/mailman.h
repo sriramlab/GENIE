@@ -7,6 +7,7 @@
 #include <Eigen/SVD>
 #include "storage.h"
 #include <assert.h>
+#include <iostream>
 #include <emmintrin.h>
 
 
