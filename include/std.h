@@ -25,7 +25,7 @@ using namespace std;
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
- #include <gsl/gsl_linalg.h>
+#include <gsl/gsl_linalg.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_sf_gamma.h>
 #include <gsl/gsl_errno.h>
@@ -41,22 +41,5 @@ using namespace std;
 #include <boost/numeric/ublas/io.hpp>
      
 #include <getopt.h>
-     
-#define UMILLION 1000000ULL
-#ifdef WINDOWS
-	void gettimeofday( struct timeval* p, void* );
-#endif
-
-#ifdef _WIN32
-#define rdtsc __rdtsc
-#else
-
-unsigned long long rdtsc(){
-    unsigned int lo,hi;
-    __asm__ __volatile__ ("rdtsc": "=a" (lo), "=d" (hi));
-    return ((unsigned long long)hi << 32) | lo;
-}
-#endif
-
 
 #endif
