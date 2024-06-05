@@ -18,12 +18,16 @@ jobs:
         include:
           - cxx: "clang++-13"
             build-type: "Debug"
+            sse: "ON"
           - cxx: "clang++-14"
             build-type: "Release"
+            sse: "OFF"
           - cxx: "g++-10"
             build-type: "Release"
+            sse: "ON"
           - cxx: "g++-12"
             build-type: "Debug"
+            sse: "OFF"
 
     env:
       CXX: ${{ matrix.cxx }}
@@ -47,7 +51,7 @@ jobs:
           ls -la
 
       - name: cmake configure
-        run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
+        run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} -DENABLE_SSE=${{ matrix.sse }}
         working-directory: ${{ env.BUILD_DIR }}
 
       - name: cmake build
