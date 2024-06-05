@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.5)
 
 project(EM_C++ LANGUAGES CXX)
 
@@ -19,11 +19,10 @@ endif ()
 
 message(STATUS "CMake build type is set to ${CMAKE_BUILD_TYPE}")
 
-set(CMAKE_CXX_FLAGS "-lrt -lpthread ")
-
 # Find required dependencies
 find_package(Boost REQUIRED)
 find_package(GSL REQUIRED)
+find_package(Threads REQUIRED)
 
 IF (NOT DEFINED SSE_SUPPORT)
     SET(SSE_SUPPORT 0)
@@ -41,6 +40,23 @@ add_executable(GENIE src/ge_hetro_flexible.cpp src/genotype.cpp src/matmult.cpp 
 add_executable(GENIE_multi_pheno src/ge_hetro_flexible_multi_pheno.cpp src/genotype.cpp src/matmult.cpp src/storage.cpp)
 
 # Link executables against required dependencies
-target_link_libraries(GENIE PRIVATE Boost::headers GSL::gsl)
-target_link_libraries(GENIE_mem PRIVATE Boost::headers GSL::gsl)
-target_link_libraries(GENIE_multi_pheno PRIVATE Boost::headers GSL::gsl)
+target_link_libraries(GENIE PRIVATE Boost::headers GSL::gsl Threads::Threads)
+target_link_libraries(GENIE_mem PRIVATE Boost::headers GSL::gsl Threads::Threads)
+target_link_libraries(GENIE_multi_pheno PRIVATE Boost::headers GSL::gsl Threads::Threads)
+
+
+# Check whether we need to link against the rt library
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles("
+#include <time.h>
+int main() {
+    struct timespec ts;
+    return clock_gettime(CLOCK_REALTIME, &ts);
+}
+" HAVE_CLOCK_GETTIME)
+
+IF (NOT HAVE_CLOCK_GETTIME)
+    target_link_libraries(GENIE PRIVATE rt)
+    target_link_libraries(GENIE_mem PRIVATE rt)
+    target_link_libraries(GENIE_multi_pheno PRIVATE rt)
+ENDIF ()
