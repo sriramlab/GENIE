@@ -1,6 +1,9 @@
-#include <bits/stdc++.h>
 #include "genotype.h"
 #include "storage.h"
+
+#include <iostream>
+#include <fstream>
+#include <vector>
 
 using namespace std;
 

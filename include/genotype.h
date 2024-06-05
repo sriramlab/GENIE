@@ -1,6 +1,5 @@
 #ifndef GENOTYPE_H
 #define GENOTYPE_H
-#include <bits/stdc++.h>
 #include "storage.h"
 #include <Eigen/Dense>
 #include <Eigen/Core>

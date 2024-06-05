@@ -5,7 +5,6 @@
 #include <Eigen/Core>
 #include <Eigen/LU>
 #include <Eigen/SVD>
-#include <bits/stdc++.h>
 #include "storage.h"
 #include <assert.h>
 #include <emmintrin.h>
