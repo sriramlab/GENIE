@@ -27,6 +27,9 @@ jobs:
 
     env:
       CXX: ${{ matrix.cxx }}
+      BUILD_DIR: ${{ github.workspace }}/build_dir
+      TEST_OUTPUT_DIR: ${{ github.workspace }}/test_output
+      EXAMPLE_DIR: ${{ github.workspace }}/example
 
     steps:
       - name: checkout repo
@@ -37,18 +40,27 @@ jobs:
           sudo apt -y update
           sudo apt -y install libboost-dev libgsl-dev
 
-      - name: make build directory
-        run: mkdir build_dir
+      - name: make directories
+        run: |
+          mkdir build_dir
+          mkdir test_output
+          ls -la
 
       - name: cmake configure
-        run: cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
-        working-directory: build_dir
+        run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
+        working-directory: ${{ env.BUILD_DIR }}
 
       - name: cmake build
         run: cmake --build . --parallel 4
-        working-directory: build_dir
+        working-directory: ${{ env.BUILD_DIR }}
 
-      - name: cmake test
+      - name: test GENIE
         run: |
-          echo "test coming soon"
-        working-directory: build_dir
+          gen=${EXAMPLE_DIR}/test
+          phen=${EXAMPLE_DIR}/test.pheno
+          covar=${EXAMPLE_DIR}/test.cov
+          annot=${EXAMPLE_DIR}/single.annot
+          env=${EXAMPLE_DIR}/test.env
+          ./GENIE -g $gen -p $phen -c $covar -e $env -m G+GxE+NxE  -k 10 -jn 10  -o ${TEST_OUTPUT_DIR}/test.out -annot $annot -t 6
+          cat ${TEST_OUTPUT_DIR}/test.out
+        working-directory: ${{ env.BUILD_DIR }}
