@@ -82,7 +82,7 @@ set(genie_lib_source
 
 add_library(genie_lib STATIC ${genie_lib_header} ${genie_lib_source})
 target_include_directories(genie_lib INTERFACE include)
-target_link_libraries(genie_lib PRIVATE Boost::headers Threads::Threads)
+target_link_libraries(genie_lib PUBLIC Boost::headers Threads::Threads)
 IF (NOT HAVE_CLOCK_GETTIME)
     target_link_libraries(genie_lib PRIVATE rt)
 ENDIF ()
@@ -92,9 +92,9 @@ add_executable(GENIE src/ge_hetro_flexible.cpp)
 add_executable(GENIE_multi_pheno src/ge_hetro_flexible_multi_pheno.cpp)
 
 # Link executables against required dependencies
-target_link_libraries(GENIE PUBLIC genie_lib)
-target_link_libraries(GENIE_mem PUBLIC genie_lib)
-target_link_libraries(GENIE_multi_pheno PUBLIC genie_lib)
+target_link_libraries(GENIE PRIVATE genie_lib)
+target_link_libraries(GENIE_mem PRIVATE genie_lib)
+target_link_libraries(GENIE_multi_pheno PRIVATE genie_lib)
 
 # Handle user preference for SSE support (default: OFF)
 option(BUILD_PYTHON_MODULE "Whether the python module is being built from the scikit-build-core context" OFF)
