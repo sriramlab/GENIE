@@ -4,7 +4,7 @@
 #include <string>
 #include <stdlib.h>
 #include <vector> 
-//#include <random>
+#include <random>
 
 #include <Eigen/Dense>
 #include <Eigen/Core>
@@ -21,8 +21,6 @@
 #include "matmult.h"
 #include "io.h"
 #include "std.h"
-
-#include <boost/random.hpp>
 
 // #if SSE_SUPPORT==1
 // 	#define fastmultiply fastmultiply_sse
@@ -1386,16 +1384,16 @@ int main(int argc, char const *argv[]){
         //define random vector z's
         all_zb= MatrixXdr::Random(Nindv,Nz);
 
-        boost::mt19937 seedr;
-        // seedr.seed(std::time(0));
+        std::mt19937 seedr;
         if (seed == -1) {
-                seedr.seed(std::time(0));  
+                std::random_device rd;
+                seedr.seed(rd());
         } else {
                 seedr.seed(seed);
         }
 
-        boost::normal_distribution<> dist(0,1);
-        boost::variate_generator<boost::mt19937&, boost::normal_distribution<> > z_vec(seedr, dist);
+        std::normal_distribution<> dist(0,1);
+        auto z_vec = std::bind(dist, seedr);
 
         for (int i=0;i<Nz;i++)
                 for(int j=0;j<Nindv;j++)
