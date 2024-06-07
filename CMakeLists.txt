@@ -92,9 +92,9 @@ add_executable(GENIE src/ge_hetro_flexible.cpp)
 add_executable(GENIE_multi_pheno src/ge_hetro_flexible_multi_pheno.cpp)
 
 # Link executables against required dependencies
-target_link_libraries(GENIE INTERFACE genie_lib)
-target_link_libraries(GENIE_mem INTERFACE genie_lib)
-target_link_libraries(GENIE_multi_pheno INTERFACE genie_lib)
+target_link_libraries(GENIE PUBLIC genie_lib)
+target_link_libraries(GENIE_mem PUBLIC genie_lib)
+target_link_libraries(GENIE_multi_pheno PUBLIC genie_lib)
 
 # Handle user preference for SSE support (default: OFF)
 option(BUILD_PYTHON_MODULE "Whether the python module is being built from the scikit-build-core context" OFF)
