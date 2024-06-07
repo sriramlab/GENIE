@@ -21,7 +21,6 @@ message(STATUS "CMake build type is set to ${CMAKE_BUILD_TYPE}")
 
 # Find required dependencies
 find_package(Boost REQUIRED)
-find_package(GSL REQUIRED)
 find_package(Threads REQUIRED)
 
 # Determine system architecture
@@ -83,7 +82,7 @@ set(genie_lib_source
 
 add_library(genie_lib STATIC ${genie_lib_header} ${genie_lib_source})
 target_include_directories(genie_lib INTERFACE include)
-target_link_libraries(genie_lib PRIVATE Boost::headers GSL::gsl Threads::Threads)
+target_link_libraries(genie_lib PRIVATE Boost::headers Threads::Threads)
 IF (NOT HAVE_CLOCK_GETTIME)
     target_link_libraries(genie_lib PRIVATE rt)
 ENDIF ()
