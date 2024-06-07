@@ -20,8 +20,6 @@ using namespace std;
 #include <sys/time.h>
 #include <assert.h>
 #include <iomanip>
-#include <boost/functional/hash/hash.hpp>
-#include <boost/algorithm/string.hpp>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
@@ -35,11 +33,7 @@ using namespace std;
 #include <gsl/gsl_sort.h>
 #include <gsl/gsl_statistics.h>
 #include <gsl/gsl_cdf.h>
-     
-#define BOOST_UBLAS_NDEBUG 1
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/io.hpp>
-     
+
 #include <getopt.h>
 
 #endif
