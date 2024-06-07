@@ -17,7 +17,9 @@ jobs:
       matrix:
         include:
           - os: "macos-13"
+            python: "3.11"
           - os: "macos-14"
+            python: "3.12"
 
     env:
       BUILD_DIR: ${{ github.workspace }}/build_dir
@@ -88,3 +90,15 @@ jobs:
           ./GENIE_mem --config ./config.txt
           cat ${TEST_OUTPUT_DIR}/test.3.out
         working-directory: ${{ env.BUILD_DIR }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: install python module
+        run: |
+          pip install . -v
+
+      - name: run python tests
+        run: |
+          python test/test.py

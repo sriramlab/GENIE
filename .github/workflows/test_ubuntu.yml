@@ -19,15 +19,19 @@ jobs:
           - cxx: "clang++-13"
             build-type: "Debug"
             sse: "OFF"
+            python: "3.8"
           - cxx: "clang++-14"
             build-type: "Release"
             sse: "OFF"
+            python: "3.9"
           - cxx: "g++-10"
             build-type: "Release"
             sse: "OFF"
+            python: "3.10"
           - cxx: "g++-12"
             build-type: "Debug"
             sse: "OFF"
+            python: "3.11"
 
     env:
       CXX: ${{ matrix.cxx }}
@@ -100,3 +104,15 @@ jobs:
           ./GENIE_mem --config ./config.txt
           cat ${TEST_OUTPUT_DIR}/test.3.out
         working-directory: ${{ env.BUILD_DIR }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: install python module
+        run: |
+          pip install . -v
+
+      - name: run python tests
+        run: |
+          python test/test.py
