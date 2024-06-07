@@ -43,11 +43,6 @@ jobs:
       - name: checkout repo
         uses: actions/checkout@v4
 
-      - name: install system packages
-        run: |
-          sudo apt -y update
-          sudo apt -y install libboost-dev libgsl-dev
-
       - name: make directories
         run: |
           mkdir build_dir
