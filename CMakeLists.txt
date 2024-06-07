@@ -53,22 +53,6 @@ endif()
 
 ADD_DEFINITIONS(-DSSE_SUPPORT=${SSE_SUPPORT})
 
-IF (NOT DEFINED DEBUG)
-    SET(DEBUG 0)
-ENDIF()
-ADD_DEFINITIONS(-DDEBUG=${DEBUG})
-
-
-add_executable(GENIE_mem src/ge_mem_flexible.cpp src/genotype.cpp src/matmult.cpp src/storage.cpp)
-add_executable(GENIE src/ge_hetro_flexible.cpp src/genotype.cpp src/matmult.cpp src/storage.cpp)
-add_executable(GENIE_multi_pheno src/ge_hetro_flexible_multi_pheno.cpp src/genotype.cpp src/matmult.cpp src/storage.cpp)
-
-# Link executables against required dependencies
-target_link_libraries(GENIE PRIVATE Boost::headers GSL::gsl Threads::Threads)
-target_link_libraries(GENIE_mem PRIVATE Boost::headers GSL::gsl Threads::Threads)
-target_link_libraries(GENIE_multi_pheno PRIVATE Boost::headers GSL::gsl Threads::Threads)
-
-
 # Check whether we need to link against the rt library
 include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("
@@ -79,8 +63,32 @@ int main() {
 }
 " HAVE_CLOCK_GETTIME)
 
+set(genie_lib_source
+        src/genotype.cpp
+        src/matmult.cpp
+        src/storage.cpp
+)
+
+add_library(genie_lib STATIC ${genie_lib_source})
+target_include_directories(genie_lib INTERFACE include)
+target_link_libraries(genie_lib PRIVATE Boost::headers GSL::gsl Threads::Threads)
 IF (NOT HAVE_CLOCK_GETTIME)
-    target_link_libraries(GENIE PRIVATE rt)
-    target_link_libraries(GENIE_mem PRIVATE rt)
-    target_link_libraries(GENIE_multi_pheno PRIVATE rt)
+    target_link_libraries(genie_lib PRIVATE rt)
 ENDIF ()
+
+add_executable(GENIE_mem src/ge_mem_flexible.cpp)
+add_executable(GENIE src/ge_hetro_flexible.cpp)
+add_executable(GENIE_multi_pheno src/ge_hetro_flexible_multi_pheno.cpp)
+
+# Link executables against required dependencies
+target_link_libraries(GENIE PRIVATE genie_lib)
+target_link_libraries(GENIE_mem PRIVATE genie_lib)
+target_link_libraries(GENIE_multi_pheno PRIVATE genie_lib)
+
+
+# Build optional Python bindings
+option(BUILD_PYTHON_BINDINGS "Whether to build python bindings" OFF)
+if (BUILD_PYTHON_BINDINGS)
+    set(PYBIND11_NEWPYTHON ON)
+    find_package(pybind11 CONFIG REQUIRED)
+endif ()
