@@ -55,7 +55,7 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.18.1
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: wheels-cloud
           path: ./wheelhouse/*.whl
@@ -68,10 +68,9 @@ jobs:
     if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
 
     steps:
-      - uses: actions/setup-python@v3
 
       - name: Download wheels from cloud runners
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wheels-cloud
           path: wheels
