@@ -63,13 +63,25 @@ int main() {
 }
 " HAVE_CLOCK_GETTIME)
 
+set(genie_lib_header
+        include/arguments.h
+        include/genotype.h
+        include/helper.h
+        include/io.h
+        include/mailman.h
+        include/matmult.h
+        include/printable.h
+        include/std.h
+        include/storage.h
+)
+
 set(genie_lib_source
         src/genotype.cpp
         src/matmult.cpp
         src/storage.cpp
 )
 
-add_library(genie_lib STATIC ${genie_lib_source})
+add_library(genie_lib STATIC ${genie_lib_header} ${genie_lib_source})
 target_include_directories(genie_lib INTERFACE include)
 target_link_libraries(genie_lib PRIVATE Boost::headers GSL::gsl Threads::Threads)
 IF (NOT HAVE_CLOCK_GETTIME)
