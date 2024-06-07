@@ -85,10 +85,8 @@ target_link_libraries(GENIE PRIVATE genie_lib)
 target_link_libraries(GENIE_mem PRIVATE genie_lib)
 target_link_libraries(GENIE_multi_pheno PRIVATE genie_lib)
 
-
-# Build optional Python bindings
-option(BUILD_PYTHON_BINDINGS "Whether to build python bindings" OFF)
-if (BUILD_PYTHON_BINDINGS)
-    set(PYBIND11_NEWPYTHON ON)
-    find_package(pybind11 CONFIG REQUIRED)
+# Handle user preference for SSE support (default: OFF)
+option(BUILD_PYTHON_MODULE "Whether the python module is being built from the scikit-build-core context" OFF)
+if (BUILD_PYTHON_MODULE)
+    install(TARGETS GENIE GENIE_mem GENIE_multi_pheno DESTINATION rhe)
 endif ()
