@@ -64,7 +64,7 @@ jobs:
   upload_all:
     name: Upload to PyPI
     needs: [build_wheels_cloud]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-${{ matrix.os }}
     if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
 
     steps:
@@ -72,7 +72,8 @@ jobs:
       - name: Download wheels from cloud runners
         uses: actions/download-artifact@v4
         with:
-          name: wheels-cloud
+          pattern: wheels-cloud-*
+          merge-multiple: true
           path: wheels
 
       - uses: pypa/gh-action-pypi-publish@v1.8.14
