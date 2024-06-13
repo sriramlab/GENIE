@@ -19,5 +19,30 @@ def run_genie(args: Union[str, List[str]]) -> str:
         raise ValueError("The 'args' parameter should be either a string or a list of strings.")
 
     executable_path = get_executable_path('GENIE')
+
+    result = subprocess.run([executable_path] + args, capture_output=True, text=True)
+    return result.stdout
+
+
+def run_genie_mem(args: Union[str, List[str]]) -> str:
+
+    if isinstance(args, str):
+        args = shlex.split(args)  # Split the string into a list of arguments
+    elif not isinstance(args, list):
+        raise ValueError("The 'args' parameter should be either a string or a list of strings.")
+
+    executable_path = get_executable_path('GENIE_mem')
+    result = subprocess.run([executable_path] + args, capture_output=True, text=True)
+    return result.stdout
+
+
+def run_genie_multi_pheno(args: Union[str, List[str]]) -> str:
+
+    if isinstance(args, str):
+        args = shlex.split(args)  # Split the string into a list of arguments
+    elif not isinstance(args, list):
+        raise ValueError("The 'args' parameter should be either a string or a list of strings.")
+
+    executable_path = get_executable_path('GENIE_multi_pheno')
     result = subprocess.run([executable_path] + args, capture_output=True, text=True)
     return result.stdout
