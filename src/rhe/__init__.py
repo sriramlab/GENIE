@@ -1,4 +1,5 @@
 from .runner import run_genie
+from .runner import run_genie_mem
+from .runner import run_genie_multi_pheno
 
-# Optionally, you can define __all__ to specify the public API of this module
-__all__ = ['run_genie']
+__all__ = ['run_genie', 'run_genie_mem', 'run_genie_multi_pheno']
