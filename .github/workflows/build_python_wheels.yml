@@ -57,14 +57,14 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: wheels-cloud
+          name: wheels-cloud-${{ matrix.os }}
           path: ./wheelhouse/*.whl
           retention-days: 1
 
   upload_all:
     name: Upload to PyPI
     needs: [build_wheels_cloud]
-    runs-on: ubuntu-latest-${{ matrix.os }}
+    runs-on: ubuntu-latest
     if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
 
     steps:
