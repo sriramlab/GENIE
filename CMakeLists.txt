@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(EM_C++ LANGUAGES CXX)
+project(GENIE LANGUAGES CXX)
 
 include_directories(include/)
 
