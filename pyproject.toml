@@ -6,7 +6,7 @@ build-backend = "scikit_build_core.build"
 name = "rhe"
 version = "1.0.0"
 description = "Gene Environment Interaction Estimator"
-readme = "README.md"
+readme = "README_PyPI.md"
 authors = [
     { name = "sriramlab" },
 ]
