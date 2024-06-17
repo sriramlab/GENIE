@@ -6,7 +6,6 @@
 #include <sstream>
 #include <map>
 #include <fstream>
-#include <bits/stdc++.h>
 #include "io.h"
 #include "std.h"
 
