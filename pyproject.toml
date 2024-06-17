@@ -1,0 +1,33 @@
+[build-system]
+requires = ["scikit-build-core>=0.9.5"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "rhe"
+version = "1.0.0"
+description = "Gene Environment Interaction Estimator"
+readme = "README_PyPI.md"
+authors = [
+    { name = "sriramlab" },
+]
+
+requires-python = ">=3.8"
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[tool.scikit-build]
+cmake.args = [
+    "-DENABLE_SSE=OFF",
+    "-DBUILD_PYTHON_MODULE=ON",
+]
+cmake.verbose = true
+cmake.build-type = "Release"

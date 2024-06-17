@@ -1,0 +1,113 @@
+name: "Tests on Ubuntu"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  build-and-test:
+    name: Tests on Ubuntu
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cxx: "clang++-13"
+            build-type: "Debug"
+            sse: "OFF"
+            python: "3.8"
+          - cxx: "clang++-14"
+            build-type: "Release"
+            sse: "OFF"
+            python: "3.9"
+          - cxx: "g++-10"
+            build-type: "Release"
+            sse: "OFF"
+            python: "3.10"
+          - cxx: "g++-12"
+            build-type: "Debug"
+            sse: "OFF"
+            python: "3.11"
+
+    env:
+      CXX: ${{ matrix.cxx }}
+      BUILD_DIR: ${{ github.workspace }}/build_dir
+      TEST_OUTPUT_DIR: ${{ github.workspace }}/test_output
+      EXAMPLE_DIR: ${{ github.workspace }}/example
+
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v4
+
+      - name: make directories
+        run: |
+          mkdir build_dir
+          mkdir test_output
+          ls -la
+
+      - name: cmake configure
+        run: cmake ${{ github.workspace }} -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} -DENABLE_SSE=${{ matrix.sse }}
+        working-directory: ${{ env.BUILD_DIR }}
+
+      - name: cmake build
+        run: cmake --build . --parallel 4
+        working-directory: ${{ env.BUILD_DIR }}
+
+      - name: test GENIE
+        run: |
+          gen=${EXAMPLE_DIR}/test
+          phen=${EXAMPLE_DIR}/test.pheno
+          covar=${EXAMPLE_DIR}/test.cov
+          annot=${EXAMPLE_DIR}/single.annot
+          env=${EXAMPLE_DIR}/test.env
+          ./GENIE -g $gen -p $phen -c $covar -e $env -m G+GxE+NxE -k 10 -jn 10 -o ${TEST_OUTPUT_DIR}/test.1.out -annot $annot -t 6
+          echo -e "\n\n###\n\n"
+          cat ${TEST_OUTPUT_DIR}/test.1.out
+        working-directory: ${{ env.BUILD_DIR }}
+
+      - name: test GENIE_multi_pheno
+        run: |
+          gen=${EXAMPLE_DIR}/test
+          phen=${EXAMPLE_DIR}/test.2.pheno
+          covar=${EXAMPLE_DIR}/test.cov
+          annot=${EXAMPLE_DIR}/single.annot
+          env=${EXAMPLE_DIR}/test.env
+          ./GENIE_multi_pheno -g $gen -p $phen -c $covar -e $env -m G+GxE+NxE -k 10 -jn 10 -o ${TEST_OUTPUT_DIR}/test.2.out -annot $annot -t 6
+          echo -e "\n\n###\n\n"
+          cat ${TEST_OUTPUT_DIR}/test.2.out
+        working-directory: ${{ env.BUILD_DIR }}
+
+      - name: test GENIE_mem
+        run: |
+          echo "genotype=${EXAMPLE_DIR}/test" > config.txt
+          echo "phenotype=${EXAMPLE_DIR}/test.pheno" >> config.txt
+          echo "covariate=${EXAMPLE_DIR}/test.cov" >> config.txt
+          echo "environment=${EXAMPLE_DIR}/test.env" >> config.txt
+          echo "annotation=${EXAMPLE_DIR}/single.annot" >> config.txt
+          echo "output=${TEST_OUTPUT_DIR}/test.3.out" >> config.txt
+          echo "nthreads=6" >> config.txt
+          echo "num_vec=20" >> config.txt
+          echo "num_jack=10" >> config.txt
+          echo "trace=1" >> config.txt
+          echo "model=G" >> config.txt
+          echo "verbose=1" >> config.txt
+          echo -e "\n\n###\n\n"
+          ./GENIE_mem --config ./config.txt
+          cat ${TEST_OUTPUT_DIR}/test.3.out
+        working-directory: ${{ env.BUILD_DIR }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: install python module
+        run: |
+          pip install . -v
+
+      - name: run python tests
+        run: |
+          python test/test.py
