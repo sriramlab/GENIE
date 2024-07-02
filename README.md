@@ -116,12 +116,14 @@ chmod +x test.sh
 ```
 
 ## Citation
-```
-1. Ali Pazokitoroudi, Andrew Dahl, Noah Zaitlen, Saharon Rosset, Sriram Sankararaman.
-bioRxiv 2023.12.12.571316; doi: https://doi.org/10.1101/2023.12.12.571316
-2. Ali Pazokitoroudi, Yue Wu, Kathryn S. Burch, Kangcheng Hou, Aaron Zhou, 
-Bogdan Pasaniuc, Sriram Sankararaman. Nature Communications (2020); doi: https://doi.org/10.1101/522003
-```
+
+1. Ali Pazokitoroudi, Zhengtong Liu, Andrew Dahl, Noah Zaitlen, Saharon Rosset, Sriram Sankararaman.
+   AJHG (2024); doi: [10.1016/j.ajhg.2024.05.015](https://doi.org/10.1016/j.ajhg.2024.05.015)
+
+2. Ali Pazokitoroudi, Yue Wu, Kathryn S. Burch, Kangcheng Hou, Aaron Zhou, Bogdan Pasaniuc, Sriram Sankararaman.
+   Nature Communications (2020); doi: [10.1038/s41467-020-17576-9](https://doi.org/10.1038/s41467-020-17576-9)
+
+
 
 ## Version
 ```
