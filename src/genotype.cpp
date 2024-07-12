@@ -665,7 +665,7 @@ double genotype::get_col_std(int snpindex){
 	return temp;
 }
 
-void genotype::generate_eigen_geno(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &geno_matrix,bool var_normalize){
+void genotype::generate_eigen_geno(MatrixXdr &geno_matrix,bool var_normalize){
 	for(int i=0;i<Nsnp;i++){
 		for(int j=0;j<Nindv;j++){
 			double m = msb[i][j];

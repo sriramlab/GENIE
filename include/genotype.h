@@ -14,16 +14,21 @@ class genotype {
 	//std::vector<int> columnsum2;
 	//std::vector<double> columnmeans;
 	//std::vector<double> columnmeans2;
+	#ifdef USE_DOUBLE
+		typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixXdr;
+	#else
+		typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixXdr;
+	#endif
 	
 	public:	
-	std::vector<int> columnsum;
+		std::vector<int> columnsum;
         std::vector<int> columnsum2;
         std::vector<double> columnmeans;
         std::vector<double> columnmeans2;
 
-	int index;
+		int index;
 
-	bool read_header;
+		bool read_header;
 		unsigned char mask;
     	int wordsize;
 	    unsigned int unitsperword;
@@ -72,7 +77,7 @@ class genotype {
 		double get_col_std(int snpindex);		
 		void update_col_mean(int snpindex,double value);
 
-		void generate_eigen_geno(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &geno_matrix,bool var_normalize);
+		void generate_eigen_geno(MatrixXdr &geno_matrix,bool var_normalize);
 
 
 };

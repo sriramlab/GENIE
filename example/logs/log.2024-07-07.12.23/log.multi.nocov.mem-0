@@ -1,0 +1,386 @@
+##################################
+#                                #
+#          GENIE (v1.0.0)        #
+#                                #
+##################################
+
+Estimating G heritability
+###########Parameters#############
+#annotation	inputs/multi.1.annot
+#cov_add_intercept	0
+#environment	inputs/test.env
+#genotype	inputs/test
+#jack_scheme	1
+#memopt1	0
+#model	G
+#nthreads	1
+#num_jack	10
+#num_vec	20
+#output	test.out
+#phenotype	inputs/test.pheno
+#seed	1
+#trace	1
+#verbose	2
+#################################
+Number of SNPs in bim file = 10000
+Number of SNPs in bim file = 10000
+Number of jackknife blocks = 10
+Number of SNPs per jackknife block = 1000
+Number of read blocks = 1000
+Number of individuals = 5000
+Number of annotations in annotation file = 2
+Number of SNPs in annotation 0 = 8015
+Number of SNPs in annotation 1 = 1985
+Number of SNPs selected according to annotation file = 10000
+No covariate file specified
+No intercept included
+
+Reading genotypes ...
+Pass 1: Reading jackknife block 0
+************Pass 1: Reading jackknife block 0 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 0
+1000 0 
+Number of SNPs in bin 0  = 1000
+Pass 1: 0 0	output(5000,20) 39.9062
+pheno(5000,1) 1.90735e-06
+Pass 1: 0 0	XXz(5000,80) 39.7397
+Pass 1: 0 0	temp_yXXy: 5.12095e+06
+Pass 1: 0 0	yXXy(2,2) 5.12095e+06
+Pass 1: 0 0	yXXy 5.12095e+06,0
+Number of SNPs in bin 1  = 0
+Pass 1: Reading jackknife block 1
+************Pass 1: Reading jackknife block 1 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 1
+1000 0 
+Number of SNPs in bin 0  = 1000
+Pass 1: 1 0	output(5000,20) -2.125
+pheno(5000,1) 1.90735e-06
+Pass 1: 1 0	XXz(5000,80) 37.5437
+Pass 1: 1 0	temp_yXXy: 5.44724e+06
+Pass 1: 1 0	yXXy(2,2) 1.05682e+07
+Pass 1: 1 0	yXXy 1.05682e+07,0
+Number of SNPs in bin 1  = 0
+Pass 1: Reading jackknife block 2
+************Pass 1: Reading jackknife block 2 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 2
+1000 0 
+Number of SNPs in bin 0  = 1000
+Pass 1: 2 0	output(5000,20) -21.688
+pheno(5000,1) 1.90735e-06
+Pass 1: 2 0	XXz(5000,80) 19.0027
+Pass 1: 2 0	temp_yXXy: 4.9424e+06
+Pass 1: 2 0	yXXy(2,2) 1.55106e+07
+Pass 1: 2 0	yXXy 1.55106e+07,0
+Number of SNPs in bin 1  = 0
+Pass 1: Reading jackknife block 3
+************Pass 1: Reading jackknife block 3 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 3
+1000 0 
+Number of SNPs in bin 0  = 1000
+Pass 1: 3 0	output(5000,20) -30.1914
+pheno(5000,1) 1.90735e-06
+Pass 1: 3 0	XXz(5000,80) -11.1635
+Pass 1: 3 0	temp_yXXy: 5.556e+06
+Pass 1: 3 0	yXXy(2,2) 2.10666e+07
+Pass 1: 3 0	yXXy 2.10666e+07,0
+Number of SNPs in bin 1  = 0
+Pass 1: Reading jackknife block 4
+************Pass 1: Reading jackknife block 4 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 4
+1000 0 
+Number of SNPs in bin 0  = 1000
+Pass 1: 4 0	output(5000,20) 47.2734
+pheno(5000,1) 1.90735e-06
+Pass 1: 4 0	XXz(5000,80) 32.8469
+Pass 1: 4 0	temp_yXXy: 4.75544e+06
+Pass 1: 4 0	yXXy(2,2) 2.5822e+07
+Pass 1: 4 0	yXXy 2.5822e+07,0
+Number of SNPs in bin 1  = 0
+Pass 1: Reading jackknife block 5
+************Pass 1: Reading jackknife block 5 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 5
+1000 0 
+Number of SNPs in bin 0  = 1000
+Pass 1: 5 0	output(5000,20) 5.19141
+pheno(5000,1) 1.90735e-06
+Pass 1: 5 0	XXz(5000,80) 41.9656
+Pass 1: 5 0	temp_yXXy: 5.17364e+06
+Pass 1: 5 0	yXXy(2,2) 3.09957e+07
+Pass 1: 5 0	yXXy 3.09957e+07,0
+Number of SNPs in bin 1  = 0
+Pass 1: Reading jackknife block 6
+************Pass 1: Reading jackknife block 6 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 6
+1000 0 
+Number of SNPs in bin 0  = 1000
+Pass 1: 6 0	output(5000,20) 10.252
+pheno(5000,1) 1.90735e-06
+Pass 1: 6 0	XXz(5000,80) 47.4491
+Pass 1: 6 0	temp_yXXy: 5.33602e+06
+Pass 1: 6 0	yXXy(2,2) 3.63317e+07
+Pass 1: 6 0	yXXy 3.63317e+07,0
+Number of SNPs in bin 1  = 0
+Pass 1: Reading jackknife block 7
+************Pass 1: Reading jackknife block 7 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 7
+1000 0 
+Number of SNPs in bin 0  = 1000
+Pass 1: 7 0	output(5000,20) -8.0918
+pheno(5000,1) 1.90735e-06
+Pass 1: 7 0	XXz(5000,80) 48.2632
+Pass 1: 7 0	temp_yXXy: 5.32797e+06
+Pass 1: 7 0	yXXy(2,2) 4.16597e+07
+Pass 1: 7 0	yXXy 4.16597e+07,0
+Number of SNPs in bin 1  = 0
+Pass 1: Reading jackknife block 8
+************Pass 1: Reading jackknife block 8 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 8
+15 985 
+Number of SNPs in bin 0  = 15
+Pass 1: 8 0	output(5000,20) -0.607422
+pheno(5000,1) 1.90735e-06
+Pass 1: 8 0	XXz(5000,80) 42.3394
+Pass 1: 8 0	temp_yXXy: 62469.4
+Pass 1: 8 0	yXXy(2,2) 4.17221e+07
+Pass 1: 8 0	yXXy 4.17221e+07,0
+Number of SNPs in bin 1  = 985
+Pass 1: 8 1	output(5000,20) -55.5977
+pheno(5000,1) 1.90735e-06
+Pass 1: 8 1	XXz(5000,80) -13.7781
+Pass 1: 8 1	temp_yXXy: 5.15729e+06
+Pass 1: 8 1	yXXy(2,2) 4.68794e+07
+Pass 1: 8 1	yXXy 4.17221e+07,5.15729e+06
+Pass 1: Reading jackknife block 9
+************Pass 1: Reading jackknife block 9 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 9
+0 1000 
+Number of SNPs in bin 0  = 0
+Number of SNPs in bin 1  = 1000
+Pass 1: 9 1	output(5000,20) -37.4375
+pheno(5000,1) 1.90735e-06
+Pass 1: 9 1	XXz(5000,80) -56.5651
+Pass 1: 9 1	temp_yXXy: 5.17222e+06
+Pass 1: 9 1	yXXy(2,2) 5.20516e+07
+Pass 1: 9 1	yXXy 4.17221e+07,1.03295e+07
+Finished reading and computing over all blocks
+
+
+Size of bins :
+bin 0 : 8015
+bin 1 : 1985
+Number of individuals without missing phenotype and enviroment: 5000
+
+
+Pass 2: Reading jackknife block 0
+************Pass 2: Reading jackknife block 0 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 0
+1000 0 
+Number of SNPs in bin 0  = 1000
+Pass 2: 0 0	output(5000,20) 39.9062
+pheno(5000,1) 1.90735e-06
+Pass 2: 0 0	XXz(5000,80) -125.369
+Pass 2: 0 0	temp_yXXy: 5.12095e+06
+Pass 2: 0 0	yXXy(2,2) 9.89823e+07
+Pass 2: 0 0	yXXy 4.17221e+07,1.03295e+07
+Number of SNPs in bin 1  = 0
+Jackknife block = 0
+Xl[0] = 8536.25 5029.97    5000
+5029.97   17654    5000
+   5000    5000    5000
+Yr[0] = 5217.56
+5203.78
+4798.02
+The relative error is: 7.8529e-08
+Condition number:  16.6649
+
+
+Pass 2: Reading jackknife block 1
+************Pass 2: Reading jackknife block 1 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 1
+1000 0 
+Number of SNPs in bin 0  = 1000
+Pass 2: 1 0	output(5000,20) -2.125
+pheno(5000,1) 1.90735e-06
+Pass 2: 1 0	XXz(5000,80) -83.9938
+Pass 2: 1 0	temp_yXXy: 5.44724e+06
+Pass 2: 1 0	yXXy(2,2) 9.8656e+07
+Pass 2: 1 0	yXXy 4.17221e+07,1.03295e+07
+Number of SNPs in bin 1  = 0
+Pass 2: Reading jackknife block 2
+************Pass 2: Reading jackknife block 2 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 2
+1000 0 
+Number of SNPs in bin 0  = 1000
+Pass 2: 2 0	output(5000,20) -21.688
+pheno(5000,1) 1.90735e-06
+Pass 2: 2 0	XXz(5000,80) -64.0162
+Pass 2: 2 0	temp_yXXy: 4.9424e+06
+Pass 2: 2 0	yXXy(2,2) 9.91609e+07
+Pass 2: 2 0	yXXy 4.17221e+07,1.03295e+07
+Number of SNPs in bin 1  = 0
+Jackknife block = 2
+Xl[2] = 8543.41 5039.56    5000
+5039.56   17654    5000
+   5000    5000    5000
+Yr[2] = 5243.01
+5203.78
+4798.02
+Pass 2: Reading jackknife block 3
+************Pass 2: Reading jackknife block 3 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 3
+1000 0 
+Number of SNPs in bin 0  = 1000
+Pass 2: 3 0	output(5000,20) -30.1914
+pheno(5000,1) 1.90735e-06
+Pass 2: 3 0	XXz(5000,80) -50.8873
+Pass 2: 3 0	temp_yXXy: 5.556e+06
+Pass 2: 3 0	yXXy(2,2) 9.85473e+07
+Pass 2: 3 0	yXXy 4.17221e+07,1.03295e+07
+Number of SNPs in bin 1  = 0
+Pass 2: Reading jackknife block 4
+************Pass 2: Reading jackknife block 4 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 4
+1000 0 
+Number of SNPs in bin 0  = 1000
+Pass 2: 4 0	output(5000,20) 47.2734
+pheno(5000,1) 1.90735e-06
+Pass 2: 4 0	XXz(5000,80) -139.411
+Pass 2: 4 0	temp_yXXy: 4.75544e+06
+Pass 2: 4 0	yXXy(2,2) 9.93478e+07
+Pass 2: 4 0	yXXy 4.17221e+07,1.03295e+07
+Number of SNPs in bin 1  = 0
+Pass 2: Reading jackknife block 5
+************Pass 2: Reading jackknife block 5 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 5
+1000 0 
+Number of SNPs in bin 0  = 1000
+Pass 2: 5 0	output(5000,20) 5.19141
+pheno(5000,1) 1.90735e-06
+Pass 2: 5 0	XXz(5000,80) -91.7711
+Pass 2: 5 0	temp_yXXy: 5.17364e+06
+Pass 2: 5 0	yXXy(2,2) 9.89296e+07
+Pass 2: 5 0	yXXy 4.17221e+07,1.03295e+07
+Number of SNPs in bin 1  = 0
+Pass 2: Reading jackknife block 6
+************Pass 2: Reading jackknife block 6 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 6
+1000 0 
+Number of SNPs in bin 0  = 1000
+Pass 2: 6 0	output(5000,20) 10.252
+pheno(5000,1) 1.90735e-06
+Pass 2: 6 0	XXz(5000,80) -83.8287
+Pass 2: 6 0	temp_yXXy: 5.33602e+06
+Pass 2: 6 0	yXXy(2,2) 9.87672e+07
+Pass 2: 6 0	yXXy 4.17221e+07,1.03295e+07
+Number of SNPs in bin 1  = 0
+Pass 2: Reading jackknife block 7
+************Pass 2: Reading jackknife block 7 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 7
+1000 0 
+Number of SNPs in bin 0  = 1000
+Pass 2: 7 0	output(5000,20) -8.0918
+pheno(5000,1) 1.90735e-06
+Pass 2: 7 0	XXz(5000,80) -68.2399
+Pass 2: 7 0	temp_yXXy: 5.32797e+06
+Pass 2: 7 0	yXXy(2,2) 9.87753e+07
+Pass 2: 7 0	yXXy 4.17221e+07,1.03295e+07
+Number of SNPs in bin 1  = 0
+Pass 2: Reading jackknife block 8
+************Pass 2: Reading jackknife block 8 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 8
+15 985 
+Number of SNPs in bin 0  = 15
+Pass 2: 8 0	output(5000,20) -0.607422
+pheno(5000,1) 1.90735e-06
+Pass 2: 8 0	XXz(5000,80) -74.9645
+Pass 2: 8 0	temp_yXXy: 62469.4
+Pass 2: 8 0	yXXy(2,2) 1.04041e+08
+Pass 2: 8 0	yXXy 4.17221e+07,1.03295e+07
+Number of SNPs in bin 1  = 985
+Pass 2: 8 1	output(5000,20) -55.5977
+pheno(5000,1) 1.90735e-06
+Pass 2: 8 1	XXz(5000,80) -35.5038
+Pass 2: 8 1	temp_yXXy: 5.15729e+06
+Pass 2: 8 1	yXXy(2,2) 9.88835e+07
+Pass 2: 8 1	yXXy 4.17221e+07,1.03295e+07
+Pass 2: Reading jackknife block 9
+************Pass 2: Reading jackknife block 9 ************
+read_Nsnp = 1000
+Number of SNPs in each bin in jackknife block 9
+0 1000 
+Number of SNPs in bin 0  = 0
+Number of SNPs in bin 1  = 1000
+Pass 2: 9 1	output(5000,20) -37.4375
+pheno(5000,1) 1.90735e-06
+Pass 2: 9 1	XXz(5000,80) -49.3988
+Pass 2: 9 1	temp_yXXy: 5.17222e+06
+Pass 2: 9 1	yXXy(2,2) 9.8931e+07
+Pass 2: 9 1	yXXy 4.17221e+07,1.03295e+07
+yXXy(bin,0) = 4.17221e+07, Number of SNPs in bin[0] 8015 Number of SNPs in jackknife block[9], bin[0] 0
+yXXy(bin,0) = 5.15729e+06, Number of SNPs in bin[1] 1985 Number of SNPs in jackknife block[9], bin[1] 1000
+Finished reading and computing over all blocks
+
+
+Whole-genome normal equations
+Xl
+8103.09 5021.46    5000
+5021.46   17654    5000
+   5000    5000    5000
+Yr
+5205.51
+5203.78
+4798.02
+*****
+Number of SNPs in bin 0 = 8015
+Number of SNPs in bin 1 = 1985
+*****
+Number of G variance components = 2
+Number of GxE variance components = 0
+Number of NxE variance components = 0
+*****
+
+OUTPUT: 
+Variance components: 
+Sigma^2_g[0] : 0.131096  SE : 0.0342216
+Sigma^2_g[1] : 0.0318435  SE : 0.0191707
+Sigma^2_e : 0.796664  SE : 0.0277756
+*****
+Heritabilities: 
+h2_g[0] : 0.136615 SE : 0.0356622
+h2_g[1] : 0.033184 SE : 0.0199777
+Total h2 : 0.169799 SE: 0.0289449
+Total h2_g : 0.169799 SE: 0.0289449
+*****
+Enrichments:
+G enrichment
+Enrichment g[0] : 1.00383 SE : 0.0537203
+Enrichment g[1] : 0.98454 SE : 0.20722
+*****
+*****
+Heritabilities and enrichments computed based on overlapping setting
+Heritabilities: 
+h2_g[0] : 0.136621 SE : 0.0356514
+h2_g[1] : 0.033184 SE : 0.0199776
+Enrichments (overlapping def): 
+Enrichment g[0] : 1.00387 SE : 0.053654
+Enrichment g[1] : 0.98454 SE : 0.20722
+GENIE ran successfully. Time elapsed = 2.68083 seconds 

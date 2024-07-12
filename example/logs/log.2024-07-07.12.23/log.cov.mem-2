@@ -1,0 +1,1467 @@
+##################################
+#                                #
+#          GENIE (v1.0.0)        #
+#                                #
+##################################
+
+Estimating G heritability
+###########Parameters#############
+#annotation	inputs/single.annot
+#covariate	inputs/test.cov
+#environment	inputs/test.env
+#genotype	inputs/test
+#jack_scheme	1
+#mem_Nsnp	30
+#memopt1	1
+#memopt2	1
+#model	G
+#nthreads	1
+#num_jack	10
+#num_vec	20
+#output	test.out
+#phenotype	inputs/test.pheno
+#seed	1
+#trace	1
+#verbose	1
+#################################
+Number of SNPs in bim file = 10000
+Number of SNPs in bim file = 10000
+Number of jackknife blocks = 10
+Number of SNPs per jackknife block = 1000
+Number of individuals = 5000
+Number of annotations in annotation file = 1
+Number of SNPs in annotation 0 = 10000
+Number of SNPs selected according to annotation file = 10000
+Reading in 5 covariates ...
+
+Reading genotypes ...
+************Pass 1: Reading jackknife block 0 ************
+Pass 1: Reading jackknife block 0
+Dividing jackknife block 0 into 33 read blocks each with 30 SNPs  (last block has 40 SNPs)
+Pass 1: Reading SNP block 0 in jackknife block 0, global SNP block index 0
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 1 in jackknife block 0, global SNP block index 1
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 2 in jackknife block 0, global SNP block index 2
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 3 in jackknife block 0, global SNP block index 3
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 4 in jackknife block 0, global SNP block index 4
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 5 in jackknife block 0, global SNP block index 5
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 6 in jackknife block 0, global SNP block index 6
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 7 in jackknife block 0, global SNP block index 7
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 8 in jackknife block 0, global SNP block index 8
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 9 in jackknife block 0, global SNP block index 9
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 10 in jackknife block 0, global SNP block index 10
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 11 in jackknife block 0, global SNP block index 11
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 12 in jackknife block 0, global SNP block index 12
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 13 in jackknife block 0, global SNP block index 13
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 14 in jackknife block 0, global SNP block index 14
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 15 in jackknife block 0, global SNP block index 15
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 16 in jackknife block 0, global SNP block index 16
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 17 in jackknife block 0, global SNP block index 17
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 18 in jackknife block 0, global SNP block index 18
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 19 in jackknife block 0, global SNP block index 19
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 20 in jackknife block 0, global SNP block index 20
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 21 in jackknife block 0, global SNP block index 21
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 22 in jackknife block 0, global SNP block index 22
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 23 in jackknife block 0, global SNP block index 23
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 24 in jackknife block 0, global SNP block index 24
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 25 in jackknife block 0, global SNP block index 25
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 26 in jackknife block 0, global SNP block index 26
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 27 in jackknife block 0, global SNP block index 27
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 28 in jackknife block 0, global SNP block index 28
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 29 in jackknife block 0, global SNP block index 29
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 30 in jackknife block 0, global SNP block index 30
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 31 in jackknife block 0, global SNP block index 31
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading SNP block 32 in jackknife block 0, global SNP block index 32
+read_Nsnp = 40
+Number of SNPs in each bin in jackknife block 0
+1000 
+************Pass 1: Reading jackknife block 1 ************
+Pass 1: Reading jackknife block 1
+Dividing jackknife block 1 into 33 read blocks each with 30 SNPs  (last block has 40 SNPs)
+Pass 1: Reading SNP block 0 in jackknife block 1, global SNP block index 33
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 1 in jackknife block 1, global SNP block index 34
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 2 in jackknife block 1, global SNP block index 35
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 3 in jackknife block 1, global SNP block index 36
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 4 in jackknife block 1, global SNP block index 37
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 5 in jackknife block 1, global SNP block index 38
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 6 in jackknife block 1, global SNP block index 39
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 7 in jackknife block 1, global SNP block index 40
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 8 in jackknife block 1, global SNP block index 41
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 9 in jackknife block 1, global SNP block index 42
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 10 in jackknife block 1, global SNP block index 43
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 11 in jackknife block 1, global SNP block index 44
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 12 in jackknife block 1, global SNP block index 45
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 13 in jackknife block 1, global SNP block index 46
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 14 in jackknife block 1, global SNP block index 47
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 15 in jackknife block 1, global SNP block index 48
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 16 in jackknife block 1, global SNP block index 49
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 17 in jackknife block 1, global SNP block index 50
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 18 in jackknife block 1, global SNP block index 51
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 19 in jackknife block 1, global SNP block index 52
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 20 in jackknife block 1, global SNP block index 53
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 21 in jackknife block 1, global SNP block index 54
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 22 in jackknife block 1, global SNP block index 55
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 23 in jackknife block 1, global SNP block index 56
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 24 in jackknife block 1, global SNP block index 57
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 25 in jackknife block 1, global SNP block index 58
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 26 in jackknife block 1, global SNP block index 59
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 27 in jackknife block 1, global SNP block index 60
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 28 in jackknife block 1, global SNP block index 61
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 29 in jackknife block 1, global SNP block index 62
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 30 in jackknife block 1, global SNP block index 63
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 31 in jackknife block 1, global SNP block index 64
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading SNP block 32 in jackknife block 1, global SNP block index 65
+read_Nsnp = 40
+Number of SNPs in each bin in jackknife block 1
+1000 
+************Pass 1: Reading jackknife block 2 ************
+Pass 1: Reading jackknife block 2
+Dividing jackknife block 2 into 33 read blocks each with 30 SNPs  (last block has 40 SNPs)
+Pass 1: Reading SNP block 0 in jackknife block 2, global SNP block index 66
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 1 in jackknife block 2, global SNP block index 67
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 2 in jackknife block 2, global SNP block index 68
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 3 in jackknife block 2, global SNP block index 69
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 4 in jackknife block 2, global SNP block index 70
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 5 in jackknife block 2, global SNP block index 71
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 6 in jackknife block 2, global SNP block index 72
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 7 in jackknife block 2, global SNP block index 73
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 8 in jackknife block 2, global SNP block index 74
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 9 in jackknife block 2, global SNP block index 75
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 10 in jackknife block 2, global SNP block index 76
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 11 in jackknife block 2, global SNP block index 77
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 12 in jackknife block 2, global SNP block index 78
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 13 in jackknife block 2, global SNP block index 79
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 14 in jackknife block 2, global SNP block index 80
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 15 in jackknife block 2, global SNP block index 81
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 16 in jackknife block 2, global SNP block index 82
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 17 in jackknife block 2, global SNP block index 83
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 18 in jackknife block 2, global SNP block index 84
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 19 in jackknife block 2, global SNP block index 85
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 20 in jackknife block 2, global SNP block index 86
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 21 in jackknife block 2, global SNP block index 87
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 22 in jackknife block 2, global SNP block index 88
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 23 in jackknife block 2, global SNP block index 89
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 24 in jackknife block 2, global SNP block index 90
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 25 in jackknife block 2, global SNP block index 91
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 26 in jackknife block 2, global SNP block index 92
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 27 in jackknife block 2, global SNP block index 93
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 28 in jackknife block 2, global SNP block index 94
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 29 in jackknife block 2, global SNP block index 95
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 30 in jackknife block 2, global SNP block index 96
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 31 in jackknife block 2, global SNP block index 97
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading SNP block 32 in jackknife block 2, global SNP block index 98
+read_Nsnp = 40
+Number of SNPs in each bin in jackknife block 2
+1000 
+************Pass 1: Reading jackknife block 3 ************
+Pass 1: Reading jackknife block 3
+Dividing jackknife block 3 into 33 read blocks each with 30 SNPs  (last block has 40 SNPs)
+Pass 1: Reading SNP block 0 in jackknife block 3, global SNP block index 99
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 1 in jackknife block 3, global SNP block index 100
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 2 in jackknife block 3, global SNP block index 101
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 3 in jackknife block 3, global SNP block index 102
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 4 in jackknife block 3, global SNP block index 103
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 5 in jackknife block 3, global SNP block index 104
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 6 in jackknife block 3, global SNP block index 105
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 7 in jackknife block 3, global SNP block index 106
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 8 in jackknife block 3, global SNP block index 107
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 9 in jackknife block 3, global SNP block index 108
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 10 in jackknife block 3, global SNP block index 109
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 11 in jackknife block 3, global SNP block index 110
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 12 in jackknife block 3, global SNP block index 111
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 13 in jackknife block 3, global SNP block index 112
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 14 in jackknife block 3, global SNP block index 113
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 15 in jackknife block 3, global SNP block index 114
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 16 in jackknife block 3, global SNP block index 115
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 17 in jackknife block 3, global SNP block index 116
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 18 in jackknife block 3, global SNP block index 117
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 19 in jackknife block 3, global SNP block index 118
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 20 in jackknife block 3, global SNP block index 119
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 21 in jackknife block 3, global SNP block index 120
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 22 in jackknife block 3, global SNP block index 121
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 23 in jackknife block 3, global SNP block index 122
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 24 in jackknife block 3, global SNP block index 123
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 25 in jackknife block 3, global SNP block index 124
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 26 in jackknife block 3, global SNP block index 125
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 27 in jackknife block 3, global SNP block index 126
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 28 in jackknife block 3, global SNP block index 127
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 29 in jackknife block 3, global SNP block index 128
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 30 in jackknife block 3, global SNP block index 129
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 31 in jackknife block 3, global SNP block index 130
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading SNP block 32 in jackknife block 3, global SNP block index 131
+read_Nsnp = 40
+Number of SNPs in each bin in jackknife block 3
+1000 
+************Pass 1: Reading jackknife block 4 ************
+Pass 1: Reading jackknife block 4
+Dividing jackknife block 4 into 33 read blocks each with 30 SNPs  (last block has 40 SNPs)
+Pass 1: Reading SNP block 0 in jackknife block 4, global SNP block index 132
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 1 in jackknife block 4, global SNP block index 133
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 2 in jackknife block 4, global SNP block index 134
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 3 in jackknife block 4, global SNP block index 135
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 4 in jackknife block 4, global SNP block index 136
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 5 in jackknife block 4, global SNP block index 137
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 6 in jackknife block 4, global SNP block index 138
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 7 in jackknife block 4, global SNP block index 139
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 8 in jackknife block 4, global SNP block index 140
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 9 in jackknife block 4, global SNP block index 141
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 10 in jackknife block 4, global SNP block index 142
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 11 in jackknife block 4, global SNP block index 143
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 12 in jackknife block 4, global SNP block index 144
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 13 in jackknife block 4, global SNP block index 145
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 14 in jackknife block 4, global SNP block index 146
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 15 in jackknife block 4, global SNP block index 147
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 16 in jackknife block 4, global SNP block index 148
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 17 in jackknife block 4, global SNP block index 149
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 18 in jackknife block 4, global SNP block index 150
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 19 in jackknife block 4, global SNP block index 151
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 20 in jackknife block 4, global SNP block index 152
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 21 in jackknife block 4, global SNP block index 153
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 22 in jackknife block 4, global SNP block index 154
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 23 in jackknife block 4, global SNP block index 155
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 24 in jackknife block 4, global SNP block index 156
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 25 in jackknife block 4, global SNP block index 157
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 26 in jackknife block 4, global SNP block index 158
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 27 in jackknife block 4, global SNP block index 159
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 28 in jackknife block 4, global SNP block index 160
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 29 in jackknife block 4, global SNP block index 161
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 30 in jackknife block 4, global SNP block index 162
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 31 in jackknife block 4, global SNP block index 163
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading SNP block 32 in jackknife block 4, global SNP block index 164
+read_Nsnp = 40
+Number of SNPs in each bin in jackknife block 4
+1000 
+************Pass 1: Reading jackknife block 5 ************
+Pass 1: Reading jackknife block 5
+Dividing jackknife block 5 into 33 read blocks each with 30 SNPs  (last block has 40 SNPs)
+Pass 1: Reading SNP block 0 in jackknife block 5, global SNP block index 165
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 1 in jackknife block 5, global SNP block index 166
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 2 in jackknife block 5, global SNP block index 167
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 3 in jackknife block 5, global SNP block index 168
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 4 in jackknife block 5, global SNP block index 169
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 5 in jackknife block 5, global SNP block index 170
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 6 in jackknife block 5, global SNP block index 171
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 7 in jackknife block 5, global SNP block index 172
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 8 in jackknife block 5, global SNP block index 173
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 9 in jackknife block 5, global SNP block index 174
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 10 in jackknife block 5, global SNP block index 175
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 11 in jackknife block 5, global SNP block index 176
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 12 in jackknife block 5, global SNP block index 177
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 13 in jackknife block 5, global SNP block index 178
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 14 in jackknife block 5, global SNP block index 179
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 15 in jackknife block 5, global SNP block index 180
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 16 in jackknife block 5, global SNP block index 181
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 17 in jackknife block 5, global SNP block index 182
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 18 in jackknife block 5, global SNP block index 183
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 19 in jackknife block 5, global SNP block index 184
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 20 in jackknife block 5, global SNP block index 185
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 21 in jackknife block 5, global SNP block index 186
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 22 in jackknife block 5, global SNP block index 187
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 23 in jackknife block 5, global SNP block index 188
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 24 in jackknife block 5, global SNP block index 189
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 25 in jackknife block 5, global SNP block index 190
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 26 in jackknife block 5, global SNP block index 191
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 27 in jackknife block 5, global SNP block index 192
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 28 in jackknife block 5, global SNP block index 193
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 29 in jackknife block 5, global SNP block index 194
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 30 in jackknife block 5, global SNP block index 195
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 31 in jackknife block 5, global SNP block index 196
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading SNP block 32 in jackknife block 5, global SNP block index 197
+read_Nsnp = 40
+Number of SNPs in each bin in jackknife block 5
+1000 
+************Pass 1: Reading jackknife block 6 ************
+Pass 1: Reading jackknife block 6
+Dividing jackknife block 6 into 33 read blocks each with 30 SNPs  (last block has 40 SNPs)
+Pass 1: Reading SNP block 0 in jackknife block 6, global SNP block index 198
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 1 in jackknife block 6, global SNP block index 199
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 2 in jackknife block 6, global SNP block index 200
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 3 in jackknife block 6, global SNP block index 201
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 4 in jackknife block 6, global SNP block index 202
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 5 in jackknife block 6, global SNP block index 203
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 6 in jackknife block 6, global SNP block index 204
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 7 in jackknife block 6, global SNP block index 205
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 8 in jackknife block 6, global SNP block index 206
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 9 in jackknife block 6, global SNP block index 207
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 10 in jackknife block 6, global SNP block index 208
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 11 in jackknife block 6, global SNP block index 209
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 12 in jackknife block 6, global SNP block index 210
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 13 in jackknife block 6, global SNP block index 211
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 14 in jackknife block 6, global SNP block index 212
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 15 in jackknife block 6, global SNP block index 213
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 16 in jackknife block 6, global SNP block index 214
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 17 in jackknife block 6, global SNP block index 215
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 18 in jackknife block 6, global SNP block index 216
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 19 in jackknife block 6, global SNP block index 217
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 20 in jackknife block 6, global SNP block index 218
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 21 in jackknife block 6, global SNP block index 219
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 22 in jackknife block 6, global SNP block index 220
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 23 in jackknife block 6, global SNP block index 221
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 24 in jackknife block 6, global SNP block index 222
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 25 in jackknife block 6, global SNP block index 223
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 26 in jackknife block 6, global SNP block index 224
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 27 in jackknife block 6, global SNP block index 225
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 28 in jackknife block 6, global SNP block index 226
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 29 in jackknife block 6, global SNP block index 227
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 30 in jackknife block 6, global SNP block index 228
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 31 in jackknife block 6, global SNP block index 229
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading SNP block 32 in jackknife block 6, global SNP block index 230
+read_Nsnp = 40
+Number of SNPs in each bin in jackknife block 6
+1000 
+************Pass 1: Reading jackknife block 7 ************
+Pass 1: Reading jackknife block 7
+Dividing jackknife block 7 into 33 read blocks each with 30 SNPs  (last block has 40 SNPs)
+Pass 1: Reading SNP block 0 in jackknife block 7, global SNP block index 231
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 1 in jackknife block 7, global SNP block index 232
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 2 in jackknife block 7, global SNP block index 233
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 3 in jackknife block 7, global SNP block index 234
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 4 in jackknife block 7, global SNP block index 235
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 5 in jackknife block 7, global SNP block index 236
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 6 in jackknife block 7, global SNP block index 237
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 7 in jackknife block 7, global SNP block index 238
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 8 in jackknife block 7, global SNP block index 239
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 9 in jackknife block 7, global SNP block index 240
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 10 in jackknife block 7, global SNP block index 241
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 11 in jackknife block 7, global SNP block index 242
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 12 in jackknife block 7, global SNP block index 243
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 13 in jackknife block 7, global SNP block index 244
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 14 in jackknife block 7, global SNP block index 245
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 15 in jackknife block 7, global SNP block index 246
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 16 in jackknife block 7, global SNP block index 247
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 17 in jackknife block 7, global SNP block index 248
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 18 in jackknife block 7, global SNP block index 249
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 19 in jackknife block 7, global SNP block index 250
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 20 in jackknife block 7, global SNP block index 251
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 21 in jackknife block 7, global SNP block index 252
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 22 in jackknife block 7, global SNP block index 253
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 23 in jackknife block 7, global SNP block index 254
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 24 in jackknife block 7, global SNP block index 255
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 25 in jackknife block 7, global SNP block index 256
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 26 in jackknife block 7, global SNP block index 257
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 27 in jackknife block 7, global SNP block index 258
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 28 in jackknife block 7, global SNP block index 259
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 29 in jackknife block 7, global SNP block index 260
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 30 in jackknife block 7, global SNP block index 261
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 31 in jackknife block 7, global SNP block index 262
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading SNP block 32 in jackknife block 7, global SNP block index 263
+read_Nsnp = 40
+Number of SNPs in each bin in jackknife block 7
+1000 
+************Pass 1: Reading jackknife block 8 ************
+Pass 1: Reading jackknife block 8
+Dividing jackknife block 8 into 33 read blocks each with 30 SNPs  (last block has 40 SNPs)
+Pass 1: Reading SNP block 0 in jackknife block 8, global SNP block index 264
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 1 in jackknife block 8, global SNP block index 265
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 2 in jackknife block 8, global SNP block index 266
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 3 in jackknife block 8, global SNP block index 267
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 4 in jackknife block 8, global SNP block index 268
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 5 in jackknife block 8, global SNP block index 269
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 6 in jackknife block 8, global SNP block index 270
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 7 in jackknife block 8, global SNP block index 271
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 8 in jackknife block 8, global SNP block index 272
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 9 in jackknife block 8, global SNP block index 273
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 10 in jackknife block 8, global SNP block index 274
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 11 in jackknife block 8, global SNP block index 275
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 12 in jackknife block 8, global SNP block index 276
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 13 in jackknife block 8, global SNP block index 277
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 14 in jackknife block 8, global SNP block index 278
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 15 in jackknife block 8, global SNP block index 279
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 16 in jackknife block 8, global SNP block index 280
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 17 in jackknife block 8, global SNP block index 281
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 18 in jackknife block 8, global SNP block index 282
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 19 in jackknife block 8, global SNP block index 283
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 20 in jackknife block 8, global SNP block index 284
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 21 in jackknife block 8, global SNP block index 285
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 22 in jackknife block 8, global SNP block index 286
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 23 in jackknife block 8, global SNP block index 287
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 24 in jackknife block 8, global SNP block index 288
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 25 in jackknife block 8, global SNP block index 289
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 26 in jackknife block 8, global SNP block index 290
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 27 in jackknife block 8, global SNP block index 291
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 28 in jackknife block 8, global SNP block index 292
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 29 in jackknife block 8, global SNP block index 293
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 30 in jackknife block 8, global SNP block index 294
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 31 in jackknife block 8, global SNP block index 295
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading SNP block 32 in jackknife block 8, global SNP block index 296
+read_Nsnp = 40
+Number of SNPs in each bin in jackknife block 8
+1000 
+************Pass 1: Reading jackknife block 9 ************
+Pass 1: Reading jackknife block 9
+Dividing jackknife block 9 into 33 read blocks each with 30 SNPs  (last block has 40 SNPs)
+Pass 1: Reading SNP block 0 in jackknife block 9, global SNP block index 297
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 1 in jackknife block 9, global SNP block index 298
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 2 in jackknife block 9, global SNP block index 299
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 3 in jackknife block 9, global SNP block index 300
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 4 in jackknife block 9, global SNP block index 301
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 5 in jackknife block 9, global SNP block index 302
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 6 in jackknife block 9, global SNP block index 303
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 7 in jackknife block 9, global SNP block index 304
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 8 in jackknife block 9, global SNP block index 305
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 9 in jackknife block 9, global SNP block index 306
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 10 in jackknife block 9, global SNP block index 307
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 11 in jackknife block 9, global SNP block index 308
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 12 in jackknife block 9, global SNP block index 309
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 13 in jackknife block 9, global SNP block index 310
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 14 in jackknife block 9, global SNP block index 311
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 15 in jackknife block 9, global SNP block index 312
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 16 in jackknife block 9, global SNP block index 313
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 17 in jackknife block 9, global SNP block index 314
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 18 in jackknife block 9, global SNP block index 315
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 19 in jackknife block 9, global SNP block index 316
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 20 in jackknife block 9, global SNP block index 317
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 21 in jackknife block 9, global SNP block index 318
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 22 in jackknife block 9, global SNP block index 319
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 23 in jackknife block 9, global SNP block index 320
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 24 in jackknife block 9, global SNP block index 321
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 25 in jackknife block 9, global SNP block index 322
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 26 in jackknife block 9, global SNP block index 323
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 27 in jackknife block 9, global SNP block index 324
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 28 in jackknife block 9, global SNP block index 325
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 29 in jackknife block 9, global SNP block index 326
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 30 in jackknife block 9, global SNP block index 327
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 31 in jackknife block 9, global SNP block index 328
+read_Nsnp = 30
+Number of SNPs in each bin in jackknife block 9
+1000 
+Pass 1: Reading SNP block 32 in jackknife block 9, global SNP block index 329
+read_Nsnp = 40
+Number of SNPs in each bin in jackknife block 9
+1000 
+Finished reading and computing over all blocks
+
+
+Size of bins :
+bin 0 : 10000
+Number of individuals without missing phenotype and enviroment = 5000
+
+
+Pass 2: Reading jackknife block 0
+************Pass 2: Reading jackknife block 0 ************
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 2: Reading jackknife block 1
+************Pass 2: Reading jackknife block 1 ************
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 2: Reading jackknife block 2
+************Pass 2: Reading jackknife block 2 ************
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 2: Reading jackknife block 3
+************Pass 2: Reading jackknife block 3 ************
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 2: Reading jackknife block 4
+************Pass 2: Reading jackknife block 4 ************
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 2: Reading jackknife block 5
+************Pass 2: Reading jackknife block 5 ************
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 2: Reading jackknife block 6
+************Pass 2: Reading jackknife block 6 ************
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 2: Reading jackknife block 7
+************Pass 2: Reading jackknife block 7 ************
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 2: Reading jackknife block 8
+************Pass 2: Reading jackknife block 8 ************
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 2: Reading jackknife block 9
+************Pass 2: Reading jackknife block 9 ************
+Number of SNPs in each bin in jackknife block 9
+1000 
+Finished reading and computing over all blocks
+
+
+*****
+Number of SNPs in bin 0 = 10000
+*****
+Number of G variance components = 1
+Number of GxE variance components = 0
+Number of NxE variance components = 0
+*****
+
+OUTPUT: 
+Variance components: 
+Sigma^2_g[0] : 0.169024  SE : 0.0295581
+Sigma^2_e : 0.83055  SE : 0.0295557
+*****
+Heritabilities: 
+h2_g[0] : 0.169129 SE : 0.0295672
+Total h2 : 0.169129 SE: 0.0295672
+Total h2_g : 0.169129 SE: 0.0295672
+*****
+Enrichments:
+G enrichment
+Enrichment g[0] : 1 SE : 0
+*****
+*****
+Heritabilities and enrichments computed based on overlapping setting
+Heritabilities: 
+h2_g[0] : 0.169128 SE : 0.0295731
+Enrichments (overlapping def): 
+Enrichment g[0] : 0.999995 SE : 0.000167359
+GENIE ran successfully. Time elapsed = 3.36108 seconds 

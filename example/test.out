@@ -6,52 +6,71 @@
 
 
 Active essential options: 
-	-g (genotype) test
-	-annot (annotation) single.annot
-	-p (phenotype) test.pheno
-	-c (covariates) test.cov
-	-o (output) test.out
-	-e (environment) test.env
-	-m (model) G+GxE+NxE
-	-k (# random vectors) 10
-	-jn (# jackknife blocks) 10
-	-t (# threads) 6
+	 - g (genotype) inputs/test
+	 - annot (annotation) inputs/multi.1.annot
+	 - p (phenotype) inputs/test.pheno
+	 - c (covariates) inputs/test.cov
+	 - o (output) test.out
+	 - e (environment) inputs/test.env
+	 - m (model) G
+	 - k (# random vectors) 20
+	 - jn (# jackknife blocks) 10
+	 - t (# threads) 1
+	 - s (seed) 1
+Other options: 
+	 - norm_proj_pheno (normalize pheno after projection on covariates) 0
+	 - cov_add_intercept (intercept term added to covariates) 1
+	 - v (verbose) 3
+	 - tr (trace summaries) 
 
 
-Number of individuals after filtering: 5000
-Number of covariates: 7
-Number of environments: 1
+Number of individuals after filtering = 5000
+Number of covariates = 6
+Number of environments = 0
+Jackknife block = 0
+Xl[0] = 8524.55 5025.76 4995.18
+5025.76 17628.4 4994.74
+4995.18 4994.74    4994
+Yr[0] = 5428.16
+5404.06
+4992.07
+Normal Equations info:
+The relative error is: 7.55282e-08
+Max sing.val: 22410.2
+Min sing.val: 1343.42
+Condition number: 16.6815
+
+
 *****
-Number of features in bin 0 : 10000
-Number of features in bin 1 : 10000
-Number of features in bin 2 : 1
+Number of SNPs in bin 0 = 8015
+Number of SNPs in bin 1 = 1985
 *****
-Number of G variance components : 1
-Number of GxE variance components : 1
-Number of NxE variance components : 1
+Number of G variance components = 2
+Number of GxE variance components = 0
+Number of NxE variance components = 0
 *****
 OUTPUT: 
 Variance components: 
-Sigma^2_g[0] : 0.140248  SE : 0.02488
-Sigma^2_gxe[0] : 0.200688  SE : 0.135658
-Sigma^2_nxe[0] : 0.214095  SE : 0.134583
-Sigma^2_e : 0.697419  SE : 0.024598
+Sigma^2_g[0] : 0.136719  SE : 0.0362664
+Sigma^2_g[1] : 0.0323202  SE : 0.0194803
+Sigma^2_e : 0.830534  SE : 0.0296515
 *****
 Heritabilities: 
-h2_g[0] : 0.140151 SE : 0.0248574
-h2_gxe[0] : 0.0791802 SE : 0.0532189
-h2_nxe[0] : 0.0840869 SE : 0.0528583
-Total h2 : 0.303418 SE: 0.0245685
-Total h2_g : 0.140151 SE: 0.0248574
-Total h2_gxe : 0.0791802 SE: 0.0532189
+h2_g[0] : 0.136807 SE : 0.0362822
+h2_g[1] : 0.0323374 SE : 0.0194907
+Total h2 : 0.169144 SE: 0.029663
+Total h2_g : 0.169144 SE: 0.029663
 *****
 Enrichments:
 G enrichment
-Enrichment g[0] : 1 SE : 0
+Enrichment g[0] : 1.00913 SE : 0.0544947
+Enrichment g[1] : 0.963136 SE : 0.215183
 *****
 *****
 Heritabilities and enrichments computed based on overlapping setting
 Heritabilities: 
-h2_g[0] : 0.140151 SE : 0.0248574
+h2_g[0] : 0.136805 SE : 0.0362711
+h2_g[1] : 0.0323371 SE : 0.0194909
 Enrichments (overlapping def): 
-Enrichment g[0] : 1 SE : 3.15633e-13
+Enrichment g[0] : 1.00911 SE : 0.0544469
+Enrichment g[1] : 0.963125 SE : 0.2152

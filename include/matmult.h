@@ -7,7 +7,13 @@
 #include <Eigen/Dense>
 #include <Eigen/Core>
 using namespace Eigen;
-typedef Matrix<double, Dynamic, Dynamic, RowMajor> MatrixXdr;
+//typedef Matrix<float, Dynamic, Dynamic, RowMajor> MatrixXdr;
+//typedef Matrix<double, Dynamic, Dynamic, RowMajor> MatrixXdr;
+#ifdef USE_DOUBLE
+	typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixXdr;
+#else
+	typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixXdr;
+#endif
 
 class MatMult {
  public:

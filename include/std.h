@@ -23,4 +23,5 @@ using namespace std;
 
 #include <getopt.h>
 
+#define UMILLION 1000000ULL
 #endif
