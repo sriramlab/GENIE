@@ -14,9 +14,7 @@
 #include "time.h"
 
 #include "genotype.h"
-// #include "mailman.h"
 #include "arguments.h"
-//#include "helper.h"
 #include "storage.h"
 #include "matmult.h"
 #include "io.h"
@@ -34,8 +32,11 @@ using namespace Eigen;
 using namespace std;
 
 // Storing in RowMajor Form
-typedef Matrix<double, Dynamic, Dynamic, RowMajor> MatrixXdr;
-//typedef Matrix<int, Dynamic, Dynamic, RowMajor> MatrixXdrInt;
+#ifdef USE_DOUBLE
+	typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixXdr;
+#else
+	typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixXdr;
+#endif
 
 class data {
 
@@ -2017,7 +2018,12 @@ int main(int argc, char const *argv[]){
                                 cout<<"RHS of Normal Eq"<<endl<<Y_r<<endl;
                                 double relative_error = (X_l*herit - Y_r).norm() / Y_r.norm(); // norm() is L2 norm
                                 cout << "The relative error is: " << relative_error << endl;
-                                JacobiSVD<MatrixXd> svd(X_l);
+								#ifdef USE_DOUBLE
+									JacobiSVD<MatrixXd> svd(X_l);
+								#else
+									JacobiSVD<MatrixXf> svd(X_l);
+								#endif
+
                                 double cond = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
                                 cout<<"condition number:  "<< cond<<endl;
 

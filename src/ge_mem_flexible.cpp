@@ -13,13 +13,13 @@
 #include "time.h"
 
 #include "genotype.h"
-// #include "mailman.h"
 #include "arguments.h"
-//#include "helper.h"
 #include "storage.h"
 #include "matmult.h"
 #include "io.h"
 #include "std.h"
+#include "functions.h"
+#include "vectorfn.h"
 
 // #if SSE_SUPPORT == 1
 // 	#define fastmultiply fastmultiply_sse
@@ -33,14 +33,28 @@ using namespace Eigen;
 using namespace std;
 
 // Storing in RowMajor Form
+#ifdef USE_DOUBLE
+int use_double = 1;
 typedef Matrix<double, Dynamic, Dynamic, RowMajor> MatrixXdr;
-//typedef Matrix<int, Dynamic, Dynamic, RowMajor> MatrixXdrInt;
+#else
+int use_double = 0;
+typedef Matrix<float, Dynamic, Dynamic, RowMajor> MatrixXdr;
+#endif
 
 class data {
 	public:
 		MatrixXdr gen;
 		int index;
 };
+
+// When true, writes to a file after pass 1 
+// Reads from file in pass 2
+bool opt1 = true;
+
+// Reads SNPs in block that can be controlled based on memory constraints
+int opt2 = 0 ;
+int mem_Nsnp = -1;
+int mem_alloc = -1;
 
 //ENV
 // Partition the GxE component with respect to the annotations in the annotation file
@@ -120,11 +134,27 @@ bool use_cov = false;
 
 //// jackknife index wich are computed based on annotation file
 MatrixXdr dic_index;
+
+// Not used
 MatrixXdr jack_bin_size;
-vector<int> len;
+
+// Not used
 vector<int> Annot;
-int Njack = 100;
+
+
+int jack_scheme;
+int Njack = 1000;
+int jack_size;
+bool use_ysum;
+bool keep_xsum;
+
+int Nreadblocks; 
+
 int Nbin = 160;
+// Total number of bins
+// Number of VCs = Number of bins  + 1 (sigma_e)
+// (1 for G model with single annotation)
+int T_Nbin ;
 int Nz = 10;
 int Ncov;
 int Nindv_mask;
@@ -136,8 +166,6 @@ MatrixXdr enrich_jack;
 MatrixXdr enrich_point_est;
 
 
-
-
 //define random vector z's
 MatrixXdr  all_zb;
 MatrixXdr  all_Uzb;
@@ -145,6 +173,7 @@ MatrixXdr res;
 MatrixXdr XXz;
 MatrixXdr Xy;
 MatrixXdr yXXy;
+MatrixXdr jack_yXXy;
 
 
 ///
@@ -159,13 +188,34 @@ int unitsize;
 int nrow, ncol;
 unsigned char *gtype;
 int Nsnp;
+
+// Sum of number of SNPs assigned to each annotation 
+// Can be greater than or less than or equal to the number of SNPs in the bim file
 int Nsnp_annot = 0;
+
 int Nindv;
 bool **bin_annot;
 int step_size;
 int step_size_rem;
-std::vector<std::vector<bool> > annot_bool;
-std::vector<std::vector<int> > jack_bin;
+vector<vector<bool> > annot_bool;
+
+// Number of SNPs in each bin
+vector<int> len;
+
+// Number of SNPs in each bin in a jackknife block
+// Njack X (Total number of annotations (depends on the specific model used)
+vector<vector<int> > jack_bin;
+vector<int>  jack_block_size;
+vector<int>  snp_to_jackblock;
+
+
+vector<vector<int> > read_bin;
+vector<int> jack_to_read_block;
+vector<int> snp_to_read_block;
+
+vector<vector<int> > mem_bin;
+vector<int>  mem_block_size;
+
 vector <data> allgen;
 vector <genotype> allgen_mail;
 int global_snp_index;
@@ -188,14 +238,31 @@ bool hetero_noise;
 //CHANGE (2/27)
 bool gen_by_env;
 bool cov_add_intercept;
-bool verbose;
+int verbose;
 bool trace;
 int nthreads;
 MatMult mm;
 std::ofstream outfile;
 std::ofstream trace_file;
 std::ofstream meta_file;
+
+bool use_summary_genotypes = false;
+string wgxsumfile;
+string xsumfilepath;
+string xsum_path;
+string wgxsum_path;
+string ysum_path;
+std::ofstream xsum_ofs;
+std::ofstream wgxsum_ofs;
+std::ifstream wgxsum_ifs;
+std::ifstream xsum_ifs;
+std::ofstream ysum_ofs;
+std::ifstream ysum_ifs;
 string prefix;
+
+int seed;
+std::mt19937 seedr;
+std::uniform_real_distribution<> udis (0,1);
 
 std::istream& newline(std::istream& in)
 {
@@ -353,10 +420,10 @@ int read_cov (int Nind, std::string filename) {
 	}
 
 	if (gen_by_env == true) {
-		if (verbose == true) {
-			cout << "The shape of Env: " << Enviro.rows() << " " << Enviro.cols() << endl;
-			cout << "The shape of Cov: " << covariate.rows() << " " << covariate.cols() << endl;
-			cout << "Number of covariates: " << covNum<< ", the number of environments: " << Nenv << endl;
+		if (verbose >= 1) {
+			cout << "Shape of Env = " << Enviro.rows() << " " << Enviro.cols() << endl;
+			cout << "Shape of Cov = " << covariate.rows() << " " << covariate.cols() << endl;
+			cout << "Number of covariates = " << covNum<< ", number of environments = " << Nenv << endl;
 		}
 		if(add_env_to_cov == true){
 			for(int i = 0 ; i < Nenv ; i++){
@@ -438,7 +505,7 @@ void initial_var(){
 }
 
 
-void read_pheno2(int Nind, std::string filename){       
+void read_pheno2(int Nind, std::string filename){
 	ifstream ifs(filename.c_str(), ios::in); 
 
 	if (!ifs.is_open()){
@@ -485,23 +552,43 @@ void read_pheno2(int Nind, std::string filename){
 	}
 }
 
-double compute_yXXy(int num_snp,MatrixXdr vec){
-	MatrixXdr res(num_snp, 1);
+// Compute y^T X X^T y : output is a scalar
+// X = X0[1:Nindv,index:(index+num_snp-1)]
+// X0 : genotype matrix of Nindv X Nsnp
+// vec (matrix of dimension Nindv X 1) (usually phenotype)
+double compute_yXXy(int num_snp, MatrixXdr vec){
+	MatrixXdr res = MatrixXdr::Zero (num_snp, 1);
+	
+	if (verbose >= 3){
+		cout << "***In compute_yXXy***" << endl;
+		cout << "res = " << res.rows() << "," << res.cols () << "\t" << res.sum()<<endl;
+		cout << "means = " << means.rows() << "," << means.cols () << "\t" << means.sum()<<endl;
+		cout << "stds = " << stds.rows() << "," << stds.cols () << "\t" << stds.sum()<<endl;
+	}
 	// if(use_mailman == true)
 	//         multiply_y_pre_fast(vec,1,res,false);
 	// else
 	//          res = gen * vec;
-	mm.multiply_y_pre(vec,1,res,false);
+	mm.multiply_y_pre(vec, 1, res, false);
+
+	if (verbose >= 4)
+		cout << "res = " << res.rows() << "," << res.cols () << "\t" << res.sum()<<endl;
 
 	res = res.cwiseProduct(stds);
 	MatrixXdr resid(num_snp, 1);
 	resid = means.cwiseProduct(stds);
 	resid = resid *vec.sum();
+	
+	if (verbose >= 4)
+		cout << "resid = " << resid.rows() << "," << resid.cols () << "\t" << resid.sum()<<endl;
+
 	MatrixXdr Xy(num_snp,1);
 	Xy = res - resid;
 
-	double yXXy = (Xy.array()* Xy.array()).sum();
+	if (verbose >= 4)
+		cout << "Xy = " << Xy.rows() << "," << Xy.cols () << "\t" << Xy.sum()<<endl;
 
+	double yXXy = (Xy.array()* Xy.array()).sum();
 	return yXXy;
 }
 
@@ -513,7 +600,7 @@ double compute_yVXXVy(int num_snp){
 		//         multiply_y_pre_fast(new_pheno,1,res,false);
 		// else
 		//          res = gen * new_pheno;
-	mm.multiply_y_pre(new_pheno,1,res,false);
+	mm.multiply_y_pre(new_pheno, 1, res, false);
 
 	res = res.cwiseProduct(stds);
 	MatrixXdr resid(num_snp, 1);
@@ -525,28 +612,48 @@ double compute_yVXXVy(int num_snp){
 	return ytVXXVy;
 }
 
+// Compute X X^T Z : Nindv X Nz matrix
+// X = X0[1:Nindv,index:(index+num_snp-1)]
+// X0 : genotype matrix of Nindv X Nsnp
+// Z  : Zvec (matrix of dimension Nindv X Nz) (usually random vectors)
+MatrixXdr  compute_XXz (int num_snp, MatrixXdr Zvec){
+	MatrixXdr res = MatrixXdr::Zero (num_snp, Nz);
 
-MatrixXdr  compute_XXz (int num_snp,MatrixXdr Zvec){
-	res.resize(num_snp, Nz);
-
+	if (verbose >= 3) {		
+		cout << "***In compute_XXz***" << endl;
+		cout << "res = " << res.rows() << "," << res.cols () << "\t" << res.sum()<<endl;
+		cout << "Zvec = " << Zvec.rows() << "," << Zvec.cols () << "\t" << Zvec.sum()<<endl;
+	}
 		// if(use_mailman == true)
 		//         multiply_y_pre_fast(Zvec,Nz,res, false);
 		// else
 		//         res = gen * Zvec;
-	mm.multiply_y_pre(Zvec,Nz,res, false);
+	mm.multiply_y_pre(Zvec, Nz, res, false);
 
+	if (verbose >= 4) {
+		cout << "res = " << res.rows() << "," << res.cols () << "\t" << res.sum()<<endl;
+		cout << "means = " << means.rows() << "," << means.cols () << "\t" << means.sum()<<endl;
+		cout << "stds = " << stds.rows() << "," << stds.cols () << "\t" << stds.sum()<<endl;
+	}
 
 	MatrixXdr zb_sum = Zvec.colwise().sum();
-
 
 	for(int j = 0; j < num_snp; j++)
 		for(int k = 0; k < Nz ; k++)
 			res(j,k) = res(j,k) * stds(j,0);
 
+	if (verbose >= 4)
+		cout << "res = " << res.rows() << "," << res.cols () << "\t" << res.sum()<<endl;
+
 	MatrixXdr resid(num_snp, Nz);
 	MatrixXdr inter = means.cwiseProduct(stds);
 	resid = inter * zb_sum;
 	MatrixXdr inter_zb = res - resid;
+
+	if (verbose >= 4) {
+		cout << "resid = " << resid.rows() << "," << resid.cols () << "\t" << resid.sum()<<endl;
+		cout << "inter_zb = " << inter_zb.rows() << "," << inter_zb.cols () << "\t" << inter_zb.sum()<<endl;
+	}
 
 	for(int k = 0; k < Nz; k++)
 		for(int j = 0; j < num_snp ; j++)
@@ -560,6 +667,8 @@ MatrixXdr  compute_XXz (int num_snp,MatrixXdr Zvec){
 		// else
 		//         new_res = new_zb * gen;
 	mm.multiply_y_post(new_zb, Nz, new_res, false);
+	if (verbose >= 4)
+		cout << "new_res = " << new_res.rows() << "," << new_res.cols () << "\t" << new_res.sum()<<endl;
 
 	MatrixXdr new_resid(Nz, num_snp);
 	MatrixXdr zb_scale_sum = new_zb * means;
@@ -567,19 +676,21 @@ MatrixXdr  compute_XXz (int num_snp,MatrixXdr Zvec){
 		/// new zb 
 	MatrixXdr temp = new_res - new_resid;
 
+	if (verbose >= 4)
+		cout << "temp = " << temp.rows() << "," << temp.cols () << "\t" << temp.sum()<<endl;
+
 	for (int i = 0 ; i < Nz ; i++)
 		for(int j = 0 ; j < Nindv ; j++)
 			temp(i,j) = temp(i,j) * mask(j,0);
 
+	if (verbose >= 3)
+		cout << "temp = " << temp.rows() << "," << temp.cols () << "\t" << temp.sum()<<endl;
 
 	return temp.transpose();
 }
 
-
-
 MatrixXdr  compute_XXUz (int num_snp){
 	res.resize(num_snp, Nz);
-
 
 	// if(use_mailman == true)
 	//         multiply_y_pre_fast(all_Uzb,Nz,res, false);
@@ -602,7 +713,7 @@ MatrixXdr  compute_XXUz (int num_snp){
 
 	for(int k = 0; k < Nz; k++)
 		for(int j = 0; j < num_snp ; j++)
-			inter_zb(j,k) =inter_zb(j,k) *stds(j,0);
+			inter_zb(j,k) =inter_zb(j,k) * stds(j,0);
 	MatrixXdr new_zb = inter_zb.transpose();
 	MatrixXdr new_res(Nz, Nindv);
 
@@ -654,6 +765,43 @@ MatrixXdr  compute_Xz (int num_snp){
 			temp(i,j) = temp(i,j) * mask(j,0);
 
 	return temp.transpose();
+}
+
+
+void setup_read_blocks ()  {
+
+	int snpindex = 0;
+	int blockindex = 0 ;
+
+	jack_to_read_block.resize (Njack);		
+	snp_to_read_block.resize (Nsnp);
+
+	for (int i = 0; i < Njack; i++) { 
+		int jack_Nsnp = jack_block_size[i];
+		int read_max_Nsnp = jack_Nsnp > mem_Nsnp ? mem_Nsnp: jack_Nsnp;
+		int num_blocks = jack_Nsnp/read_max_Nsnp;
+
+		jack_to_read_block[i] = num_blocks;
+		for (int j = 0 ; j < num_blocks * read_max_Nsnp; j++) {
+			snp_to_read_block[snpindex] = blockindex + j/read_max_Nsnp;
+			snpindex ++ ;
+		}
+		for (int j = num_blocks * read_max_Nsnp; j < jack_Nsnp; j++){
+			snp_to_read_block[snpindex] = blockindex + num_blocks - 1;
+			snpindex ++ ;
+		}	
+		blockindex += num_blocks;
+	}
+	Nreadblocks = blockindex; 
+
+	if (verbose >= 2) { 
+		cout << "Number of read blocks = " << Nreadblocks << endl;
+
+		if (verbose >= 4){
+			vectorfn::printvector (jack_to_read_block); cout << endl;
+			vectorfn::printvector (snp_to_read_block); cout << endl;
+		}
+	}
 }
 
 void read_annot (string filename){
@@ -725,36 +873,48 @@ void read_annot (string filename){
 
 	Nsnp = linenum;
 	//cout << "Total number of SNPs : " << Nsnp << endl;
+	cout << "Number of annotations in annotation file = " << num_parti << endl;
 	int selected_snps = 0;
 	for (int i = 0 ; i < num_parti ; i++){
-		cout << len[i]<<" SNPs in bin " << i << endl;
+		cout << "Number of SNPs in annotation " << i << " = " << len[i] <<endl;
 		selected_snps += len[i];
 	}
 
-	cout << "Number of SNPs selected according to annotation file : " <<selected_snps << endl;
+	cout << "Number of SNPs selected according to annotation file = " <<selected_snps << endl;
 	Nsnp_annot = selected_snps;
 
 
+/*
 	step_size = Nsnp / Njack;
 	step_size_rem = Nsnp%Njack;
 	cout << "Number of SNPs per jackknife block : " << step_size << endl;   
+*/
 
 	int Total_Nbin;
 	if(Annot_x_E == false){
 		jack_bin.resize(Njack, vector<int>(Nbin + Nenv + Nenv,0));
+		read_bin.resize(Nreadblocks, vector<int>(Nbin + Nenv + Nenv,0));
 		Total_Nbin = Nbin + Nenv;
 	}else{
 		jack_bin.resize(Njack, vector<int>(Nbin + (Nenv * Nbin) + Nenv,0));
+		read_bin.resize(Nreadblocks, vector<int>(Nbin + (Nenv * Nbin) + Nenv,0));
 		Total_Nbin = Nbin + (Nenv * Nbin);
 	}
-	int temp;
 	for (int i = 0 ; i < Nsnp ; i++)
 		for(int j = 0 ; j < Total_Nbin ; j++)
 			if (annot_bool[i][j]==1){
+				/*
 				temp = i / step_size;
 				if (temp>=Njack)
 					temp = Njack - 1;
 				jack_bin[temp][j]++;
+				*/
+
+				int temp = snp_to_jackblock[i];
+				jack_bin[temp][j]++;
+
+				temp = snp_to_read_block[i];
+				read_bin[temp][j]++;
 			}
 }
 
@@ -798,6 +958,42 @@ void read_annot_1col (string filename){
 	}
 }
 
+
+// Read bim file to get number of SNPs 
+// filename: name of .bim file
+// Return number of SNPs
+// This is needed for defining jackknife blocks based on the total number (jackknife scheme == 1 or 2)
+int get_number_of_snps (string bimfilename){
+	ifstream inp(bimfilename.c_str());
+	if (!inp.is_open()){
+		cerr << "Error reading file "<< bimfilename <<endl;
+		exit(1);
+	}
+	string line;
+
+	int j = 0 ;
+	int linenum = 0 ;
+
+	while(std::getline (inp, line)){
+		linenum ++;
+		char c = line[0];
+		if (c=='#')
+			continue;
+		istringstream ss (line);
+		if (line.empty())
+			continue;
+
+		j++;
+	}
+	int Nsnp = j;
+	inp.close();
+	if (verbose >= 1) { 
+		cout << "Number of SNPs in bim file = "<< Nsnp << endl;
+	}
+
+	return Nsnp;
+}
+
 // Read bim file
 // filename: name of .bim file
 // Return number of SNPs
@@ -808,8 +1004,18 @@ int read_bim (string filename){
 		exit(1);
 	}
 	string line;
+
 	int j = 0 ;
+	int jchr = 0 ;
+	int jlastpos = 0;
+	int jlastphyspos = 0;
+	int jblockchr = 0 ;
+
+	int jack_index = 0;
 	int linenum = 0 ;
+	string prevchrname = "";
+
+
 	while(std::getline (inp, line)){
 		linenum ++;
 		char c = line[0];
@@ -818,12 +1024,105 @@ int read_bim (string filename){
 		istringstream ss (line);
 		if (line.empty())
 			continue;
+
+		vector<string> toks;
+		functions::tokenize (line, toks, "\t ");
+			
+		if (toks.size () <6) {
+			exitWithError ("Bad .bim file:");
+			exit (1);	
+		}
+
+		bool newchr = false;
+		string chrname = toks[0];
+		string snpid = toks[1];
+		int physpos = atoi(toks[3].c_str());
+
+		if (jack_scheme == 1) {
+			if ( j > 0 && j % step_size == 0) {
+				jack_block_size.push_back (j - jlastpos);
+				jack_index ++;
+				jlastpos = j;
+			}
+		} else if (jack_scheme == 2) {
+			if (j > 0 && chrname != prevchrname){ 
+				jack_block_size.push_back (j - jlastpos);
+				jack_index ++;
+				jblockchr ++;
+				jlastpos = j;
+				jlastphyspos = physpos;
+			} else if (jchr > 0 && jchr % step_size == 0) {
+				jack_block_size.push_back (j - jlastpos);
+				jack_index ++;
+				jblockchr ++;
+				jlastpos = j;
+				jlastphyspos = physpos;		
+			}
+
+		} else if (jack_scheme == 3) { 
+			if (j > 0 && chrname != prevchrname){ 
+				jack_block_size.push_back (j - jlastpos);
+				jack_index ++;
+				jblockchr ++;
+				jlastpos = j;
+				jlastphyspos = physpos;
+			} else if ( physpos - jlastphyspos >= jack_size) {
+				jack_block_size.push_back (j - jlastpos);
+				jack_index ++;
+				jblockchr ++;
+				jlastpos = j;
+				jlastphyspos = physpos;		
+			}
+		}	
+
+		if (chrname != prevchrname) {
+			jchr = 0;
+			jlastphyspos = physpos;
+			jblockchr = 0;
+		}
+		snp_to_jackblock.push_back(jack_index);
+
 		j++;
+		jchr ++;
+
+		prevchrname = chrname;
 	}
 	int Nsnp = j;
+	if (jack_scheme == 1) {
+		if ( Nsnp > 0 ) {
+			if ( Nsnp % Njack == 0)
+				jack_block_size.push_back (j - jlastpos);
+			else {
+				jack_block_size[jack_index-1] += (Nsnp%Njack);
+				for (int k  = jlastpos; k < j; k++)
+					snp_to_jackblock[k] = jack_index - 1;
+			}
+		}	
+	} else if (jack_scheme == 2) {
+		jack_block_size.push_back (j - jlastpos);
+	} else if (jack_scheme == 3) { 
+		jack_block_size.push_back (j - jlastpos);
+	}	
+		
+	if (jack_scheme > 0)
+		Njack = jack_block_size.size();
+
 	inp.close();
-	if (verbose == true)
-		cout << "Number of SNPs in bim file: "<< Nsnp <<endl;
+	if (verbose >= 1) { 
+		cout << "Number of SNPs in bim file = "<< Nsnp << endl;
+		if (jack_scheme > 0) { 
+			Njack = jack_block_size.size();
+			cout << "Number of jackknife blocks = " << Njack << endl;
+			if (jack_scheme == 1|| jack_scheme == 2)
+				cout << "Number of SNPs per jackknife block = " << step_size << endl;   
+		}
+
+		if (verbose >= 5) {
+			vectorfn::printvector(jack_block_size); cout << endl;
+			vectorfn::printvector(snp_to_jackblock); cout << endl;
+		}
+	}
+
 	return Nsnp;
 }
 
@@ -881,8 +1180,8 @@ void set_metadata() {
 
 
 int simulate2_geno_from_random(float p_j){
-	float rval = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-	float dist_pj[3] = { (1 - p_j) * (1 - p_j), 2 * p_j * (1 - p_j), p_j * p_j };
+	float rval = udis (seedr);
+	float dist_pj[3] = { (1 - p_j)*(1 - p_j), 2*p_j*(1 - p_j), p_j*p_j };
 	if(rval < dist_pj[0] )
 		return 0;
 	else if( rval >= dist_pj[0] && rval < (dist_pj[0]+dist_pj[1]))
@@ -890,6 +1189,7 @@ int simulate2_geno_from_random(float p_j){
 	else
 		return 2;
 }
+
 
 float get_observed_pj(const unsigned char* line){
 	int y[4];
@@ -929,7 +1229,7 @@ float get_observed_pj(const unsigned char* line){
 }
 
 
-void read_bed2 (std::istream& ifs,bool allow_missing,int num_snp)  {
+void read_bed2 (std::istream& ifs, bool allow_missing, int num_snp)  {
 	//ifstream ifs (filename.c_str(), ios::in|ios::binary);
 	char magic[3];
 	set_metadata ();
@@ -948,6 +1248,7 @@ void read_bed2 (std::istream& ifs,bool allow_missing,int num_snp)  {
 
 	int bin_pointer;
 
+	// for a given snp, the set of annotations (bins) that the SNP belongs to
 	vector<int> pointer_bins;
 
 	for(int i = 0 ; i < num_snp ; i++){
@@ -956,10 +1257,11 @@ void read_bed2 (std::istream& ifs,bool allow_missing,int num_snp)  {
 		float p_j = get_observed_pj(gtype);
 
 
+		// for this snp, add all annotations (bins) it belongs to
 		pointer_bins.clear();      
 		for(int bin_index = 0 ; bin_index < Nbin ; bin_index++)
-			if(annot_bool[global_snp_index][bin_index]==1)
-		pointer_bins.push_back(bin_index);
+			if(annot_bool[global_snp_index][bin_index] == 1)
+				pointer_bins.push_back(bin_index);
 		//bin_pointer = bin_index;
 
 		for (int k = 0 ;k < ncol ; k++) {
@@ -977,15 +1279,18 @@ void read_bed2 (std::istream& ifs,bool allow_missing,int num_snp)  {
 				lmax = (lmax == 0)?4:lmax;
 			}
 			for ( int l = 0 ; l < lmax; l++){
+				// j: index over individuals
 				int j = j0 + l ;
-				// Extract  PLINK coded genotype and convert into 0 / 1/2
+				// Extract  PLINK coded genotype and convert into 0/1/2
 				// PLINK coding: 
 				// 00->0
 				// 01->missing
 				// 10->1
 				// 11->2
+				// val:  genotype
 				int val = y[l];
 				if(val == 1 && !allow_missing){
+					// Impute by sampling from the distribution of genotype frequencies
 					val = simulate2_geno_from_random(p_j);
 					val++;
 					val = (val == 1) ? 0 : val;
@@ -995,8 +1300,11 @@ void read_bed2 (std::istream& ifs,bool allow_missing,int num_snp)  {
 				val =  (val < 0 ) ? 0 :val ;
 				sum += val;
 
+				// Loop over all bins (=annotations) this SNP belong to
 				for(int bin_index = 0 ; bin_index < pointer_bins.size();bin_index++){
 					bin_pointer = pointer_bins[bin_index];
+
+					// snp_index: index over SNPs that depends on the bin being considered
 					int snp_index;
 					if(use_mailman == true){
 						snp_index = allgen_mail[bin_pointer].index;
@@ -1015,14 +1323,15 @@ void read_bed2 (std::istream& ifs,bool allow_missing,int num_snp)  {
 			}
 		}
 
+		// Update number of SNPs in each bin
 		for(int bin_index = 0 ; bin_index < pointer_bins.size();bin_index++){
 			bin_pointer = pointer_bins[bin_index];
 			if(use_mailman == true)
 				allgen_mail[bin_pointer].index++;
 			else
 				allgen[bin_pointer].index++;
-			}
 		}
+	}
 
 	sum = 0 ;
 	delete[] gtype;
@@ -1052,7 +1361,7 @@ void read_bed_1colannot (std::istream& ifs,bool allow_missing,int num_snp)  {
 	for(int i = 0 ; i < num_snp ; i++){
 		global_snp_index++;
 		ifs.read (reinterpret_cast<char*>(gtype), ncol * sizeof(unsigned char));
-		float p_j = get_observed_pj(gtype);
+		float p_j = get_observed_pj (gtype);
 
 		for (int k = 0 ;k < ncol ; k++) {
 			unsigned char c = gtype [k];
@@ -1116,6 +1425,8 @@ void read_bed_1colannot (std::istream& ifs,bool allow_missing,int num_snp)  {
 
 }
 
+// Compute jackknife SEs
+// jack: matrix with statistics along rows and jackknife estimates along columns
 MatrixXdr jack_se(MatrixXdr jack){
 	int nrows = jack.rows();
 	int ncols = jack.cols();
@@ -1136,14 +1447,623 @@ MatrixXdr jack_se(MatrixXdr jack){
 	return SEjack;
 }
 
-void genotype_stream_pass(string name, int pass_num){
-	int T_Nbin;
-	if (hetero_noise == true)
+
+void genotype_stream_pass_mem_efficient (string name){
+	MatrixXdr output_yXXy;
+	MatrixXdr output_XXz;
+	MatrixXdr tmpoutput_XXz;		
+	MatrixXdr output_XXUz;
+	MatrixXdr output_env;
+	MatrixXdr output;
+	double temp_yXXy;
+
+
+	if (hetero_noise == true) {
 		T_Nbin = Nbin + nongen_Nbin + Nenv;
-	else
+
+		output_XXz = MatrixXdr::Zero(Nindv,T_Nbin * Nz);
+		tmpoutput_XXz = MatrixXdr::Zero(Nindv, Nz);
+
+		if(both_side_cov == true){
+			output_XXUz = MatrixXdr::Zero(Nindv, T_Nbin * Nz);
+		}
+		output_yXXy = MatrixXdr::Zero(T_Nbin, 1);
+		jack_yXXy = MatrixXdr::Zero(T_Nbin, Njack);
+
+	} else {
 		T_Nbin = Nbin + nongen_Nbin;
 
+		output_XXz = MatrixXdr::Zero(Nindv, T_Nbin * Nz);
+		tmpoutput_XXz = MatrixXdr::Zero(Nindv, Nz);
+
+		if(both_side_cov == true){
+			output_XXUz = MatrixXdr::Zero(Nindv, T_Nbin * Nz);
+		}
+		output_yXXy = MatrixXdr::Zero(T_Nbin, 1);
+		jack_yXXy = MatrixXdr::Zero(T_Nbin, Njack);
+
+	}
+
+	if (verbose >= 3) { 		
+		cout << "both_side_cov = " << both_side_cov << endl;
+		cout << "cov_add_intercept = " << cov_add_intercept << endl;
+		cout << "T_Nbin = " << T_Nbin << " Nbin = " << Nbin << " nongen_Nbin = " << nongen_Nbin << endl;
+		cout << "Nz = " << Nz << endl;
+		cout << "tmpoutput(" << tmpoutput_XXz.rows() <<"," << tmpoutput_XXz.cols() << ") "<< tmpoutput_XXz.sum() << endl;
+		cout << "output(" << output_XXz.rows() <<"," << output_XXz.cols() << ") "<< output_XXz.sum() << endl;
+	}
+
+	if (opt1){ 
+		string prefix = command_line_opts.OUTPUT_FILE_PATH;
+
+		if (!use_summary_genotypes) {
+			xsum_path = prefix + ".xsum";
+			xsum_ofs.open(xsum_path.c_str(), std::ios_base::out);
+		}
+		if (use_ysum) {
+			ysum_path = prefix + ".ysum";
+			ysum_ofs.open(ysum_path.c_str(), std::ios_base::out);
+		}
+	}
+
 	ifstream ifs (name.c_str(), ios::in|ios::binary);
+	if (!ifs.is_open()){
+		cerr << "Error reading file "<< name <<endl;
+		exit(1);
+	}
+
+	read_header = true;
+	global_snp_index=-1;
+
+	MatrixXdr vec1;
+	MatrixXdr w1;
+	MatrixXdr w2;
+	MatrixXdr w3;
+
+	MatrixXdr  A_trs(T_Nbin,T_Nbin);
+	MatrixXdr b_trk(T_Nbin,1);
+	MatrixXdr c_yky(T_Nbin,1);
+
+	MatrixXdr X_l(T_Nbin + 1,T_Nbin + 1);
+	MatrixXdr Y_r(T_Nbin + 1,1);
+	MatrixXdr B1;
+	MatrixXdr B2;
+	MatrixXdr C1;
+	MatrixXdr C2;
+	double trkij;
+	double yy = (pheno.array() * pheno.array()).sum();
+
+	if(both_side_cov == true){
+		yy = (new_pheno.array() * new_pheno.array()).sum();
+	}
+
+	Nindv_mask = mask.sum();
+	if(both_side_cov == true)
+		NC = Nindv_mask - Ncov;
+	else
+		NC = Nindv_mask;
+
+	MatrixXdr herit;
+
+	// Matrix of jacknife estimates
+	// Rows: statistics (=variance components including sigma_e). Hence number of rows = T_Nbin + 1
+	// Columns: jackknife estimates
+	jack.resize(T_Nbin + 1,Njack);
+
+	// Matrix of variance components
+	// Includes sigma_e. Hence number of entries = T_Nbin + 1
+	point_est.resize(T_Nbin + 1,1);
+
+	point_est_adj_gxe = MatrixXdr::Zero(T_Nbin + 3,1);
+	jack_adj_gxe = MatrixXdr::Zero(T_Nbin + 3,Njack);
+
+	enrich_jack.resize(T_Nbin,Njack);
+	enrich_point_est.resize(T_Nbin,1);
+
+
+	MatrixXdr h1;
+	MatrixXdr h2;
+	MatrixXdr h3;
+
+	double trkij_res1;
+	double trkij_res2;
+	double trkij_res3;
+	double tk_res;
+
+	int global_block_index = 0;
+	for (int jack_index = 0 ; jack_index < Njack ; jack_index++){
+
+		if (hetero_noise == true) {
+			output_XXz = MatrixXdr::Zero(Nindv,T_Nbin * Nz);
+
+			if(both_side_cov == true){
+				output_XXUz = MatrixXdr::Zero(Nindv, T_Nbin * Nz);
+			}
+			output_yXXy = MatrixXdr::Zero(T_Nbin,1);
+		} else {
+			T_Nbin = Nbin + nongen_Nbin;
+
+			output_XXz = MatrixXdr::Zero(Nindv, T_Nbin * Nz);
+
+			if(both_side_cov == true){
+				output_XXUz = MatrixXdr::Zero(Nindv, T_Nbin * Nz);
+			}
+			output_yXXy = MatrixXdr::Zero(T_Nbin, 1);
+		}	
+
+		int jack_Nsnp = jack_block_size [jack_index];	
+		int read_Nsnp = jack_Nsnp > mem_Nsnp ? mem_Nsnp: jack_Nsnp;
+		int num_blocks = jack_to_read_block [jack_index];
+//		int read_Nsnp = jack_Nsnp/num_blocks;
+		int rem = jack_Nsnp - num_blocks * read_Nsnp;
+
+		if (verbose >= 1) 
+			cout << "************Pass 1: Reading jackknife block " << jack_index << " ************" <<endl;
+
+		cout << "Pass 1: Reading jackknife block " << jack_index << endl;
+		cout << "Dividing jackknife block " << jack_index << " into " << num_blocks << " read blocks each with " << read_Nsnp << " SNPs ";
+		if (rem > 0)
+			cout << " (last block has " << read_Nsnp + rem << " SNPs)";
+		cout << endl;
+
+		for (int block_index = 0; block_index < num_blocks; block_index ++, global_block_index++ ){
+			read_Nsnp += (block_index < (num_blocks - 1))? 0 : rem;
+
+			cout << "Pass 1: Reading SNP block " << block_index << " in jackknife block " << jack_index << ", global SNP block index " << global_block_index << endl;
+
+			if (verbose >= 1)
+				cout << "read_Nsnp = " << read_Nsnp << endl;
+
+			if(use_mailman == true){
+				if (verbose >= 1) { 
+					cout << "Number of SNPs in each bin in jackknife block "<< jack_index << endl;
+					vectorfn::printvector (jack_bin[jack_index]); cout << endl;
+				}
+				for (int i = 0 ; i < Nbin ; i++){
+					allgen_mail[i].segment_size_hori = floor(log(Nindv) / log(3)) - 2 ;
+					allgen_mail[i].Nsegments_hori = ceil(read_bin[global_block_index][i]*1.0 / (allgen_mail[i].segment_size_hori * 1.0));
+					allgen_mail[i].p.resize(allgen_mail[i].Nsegments_hori,vector<int>(Nindv));
+					//allgen_mail[i].not_O_i.resize(jack_bin[jack_index][i]);
+					//allgen_mail[i].not_O_j.resize(Nindv);
+					
+					// number of SNPs in this annotation (bin) in this jackknife block
+					allgen_mail[i].index = 0;
+					allgen_mail[i].Nsnp = read_bin[global_block_index][i];
+					allgen_mail[i].Nindv = Nindv;
+
+					allgen_mail[i].columnsum.resize(read_bin[global_block_index][i],1);
+					for (int index_temp = 0 ; index_temp < read_bin[global_block_index][i];index_temp++)
+						allgen_mail[i].columnsum[index_temp]=0;
+				}
+			} else {
+				for (int k = 0 ; k < Nbin ; k++){
+					allgen[k].gen.resize(read_bin[global_block_index][k],Nindv);
+					// number of SNPs in this annotation (bin) in this jackknife block
+					allgen[k].index = 0;
+				}
+			}
+
+			if(use_1col_annot == true)
+				read_bed_1colannot(ifs, missing, read_Nsnp);
+			else
+				read_bed2(ifs, missing, read_Nsnp);
+			read_header = false;
+
+			for (int bin_index = 0 ; bin_index < Nbin ; bin_index++){
+				int num_snp;
+				if (use_mailman == true)
+					num_snp = allgen_mail[bin_index].index;
+				else
+					num_snp = allgen[bin_index].index;
+
+				if (verbose >= 2)
+					cout << "Number of SNPs in bin " << bin_index << "  = " << num_snp << endl; 
+
+				// The case where the read block for this bin is empty
+				// Can skip this bin unless this is the last read block inside jackknife block
+				// In that case, we need to update the whole-genome statistics computed so far 
+				// We also need to write the relevant statistics to the file
+				if (num_snp == 0)  {
+					if (block_index == num_blocks - 1){
+
+						if (!use_summary_genotypes){
+						for (int z_index = 0 ; z_index < Nz ; z_index++){
+							XXz.col((bin_index * 2 * Nz) + Nz + z_index) += output_XXz.col(bin_index * Nz + z_index);   /// save whole sample contribution
+
+							if(both_side_cov == true) {
+								vec1 = output_XXz.col(bin_index * Nz + z_index);
+								w1 = covariate.transpose() * vec1;
+								w2 = Q * w1;
+								w3 = covariate * w2;
+								UXXz.col((bin_index * 2 * Nz) + Nz + z_index) += w3;
+								UXXz.col((bin_index * 2 * Nz) + z_index) += w3;
+							}
+						}
+						}
+
+						yXXy(bin_index,1) += output_yXXy(bin_index, 0);
+
+
+						if (opt1) {
+							// Check the number of SNPs in this bin within the jackknife block
+							int tmpsnp = jack_bin[jack_index][bin_index];
+							// If the bin is also empty for the jackknife block 
+							// Only need to write the number of SNPs (=0)
+							// So that this bin within the jackknnife block can be skipped in pass number 2
+							if (use_summary_genotypes){
+								double temp_yXXy = output_yXXy(bin_index, 0);
+								
+								if (use_ysum)
+									ysum_ofs.write((char *) (&temp_yXXy), sizeof(double));
+								else
+									jack_yXXy(bin_index, jack_index) = temp_yXXy;
+							} else {
+							xsum_ofs.write((char *) (&tmpsnp), sizeof(int));
+							if (tmpsnp != 0){
+
+								// Handle non-empty bin within jackknife block
+								// First write XXz, XXUz.
+								MatrixXdr tmpoutput = output_XXz.block (0, bin_index * Nz, output_XXz.rows(), Nz);	
+
+								write_matrix (xsum_ofs, tmpoutput);
+								if (both_side_cov == true ) {
+									MatrixXdr tmpoutput = output_XXUz.block (0, bin_index * Nz, output_XXUz.rows(), Nz);	
+									write_matrix (xsum_ofs, tmpoutput);
+								}
+
+								double temp_yXXy = output_yXXy(bin_index, 0);
+								if (use_ysum)
+									ysum_ofs.write((char *) (&temp_yXXy), sizeof(double));
+								else
+									jack_yXXy(bin_index, jack_index) = temp_yXXy;
+							}
+							}
+						}
+					}
+					continue; 
+				} // End of code to handle empty blocks
+
+				stds.resize(num_snp,1);
+				means.resize(num_snp,1);
+
+				if(use_mailman == true){
+					for (int i = 0 ; i < num_snp ; i++)
+						means(i,0) = (double)allgen_mail[bin_index].columnsum[i]/Nindv;
+				} else	  
+					means = allgen[bin_index].gen.rowwise().mean();
+
+
+				for (int i = 0 ; i < num_snp ; i++)
+					stds(i,0) = 1 / sqrt((means(i,0) * (1-(0.5 * means(i,0)))));
+
+				if (use_mailman == true){
+					g = allgen_mail[bin_index];
+					g.segment_size_hori = floor(log(Nindv) / log(3)) - 2 ;
+					g.Nsegments_hori = ceil(read_bin[global_block_index][bin_index]*1.0 / (g.segment_size_hori * 1.0));
+					g.p.resize(g.Nsegments_hori,vector<int>(Nindv));
+					//g.not_O_i.resize(jack_bin[jack_index][bin_index]);
+					//g.not_O_j.resize(Nindv);
+					initial_var();
+
+				} else {
+					gen = allgen[bin_index].gen;
+				}
+
+				// Setup data structures for mailman
+				mm = MatMult(g, gen, debug, var_normalize, memory_efficient, missing, use_mailman, nthreads, Nz);
+
+				if (!use_summary_genotypes){
+				tmpoutput_XXz = compute_XXz(num_snp, all_zb);
+
+				for (int z_index = 0 ; z_index < Nz ; z_index++)
+					output_XXz.col(bin_index * Nz + z_index) = output_XXz.col(bin_index * Nz + z_index) + tmpoutput_XXz.col(z_index);
+
+				if (verbose >= 3) {
+					cout << "all_zb = " << all_zb.rows() << "," << all_zb.cols() << "\t" << all_zb.sum () << endl;
+					cout << "Pass 1: " << jack_index << " " << block_index << " " << bin_index << "\ttmpoutput(" << tmpoutput_XXz.rows() <<"," << tmpoutput_XXz.cols() << ") "<< tmpoutput_XXz.sum() << endl;
+					cout << "Pass 1: " << jack_index << " " << block_index << " " << bin_index << "\toutput(" << output_XXz.rows() <<"," << output_XXz.cols() << ") "<< output_XXz.sum() << endl;
+				}
+
+				if (opt1 && block_index == (num_blocks - 1)) {
+					int tmpsnp = jack_bin[jack_index][bin_index];
+					MatrixXdr tmpoutput = output_XXz.block (0, bin_index * Nz, output_XXz.rows(), Nz);	
+					if (verbose >= 3) {
+						cout << "output(" << tmpoutput.rows() <<"," << tmpoutput.cols() << ") "<< tmpoutput.sum() << endl;
+					}
+
+					xsum_ofs.write((char *) (&tmpsnp), sizeof(int));
+					write_matrix (xsum_ofs, tmpoutput);
+				}
+
+				// begin gxe computations
+				// This code block has not been tested for the memory optimized setting
+				MatrixXdr scaled_pheno;
+				if (gen_by_env == true) {
+				// This code block not tested
+					for (int env_index = 0 ; env_index < Nenv ; env_index++){
+						MatrixXdr env_all_zb = all_zb.array().colwise() * Enviro.col(env_index).array();
+						output_env = compute_XXz(num_snp,env_all_zb);
+						output_env = output_env.array().colwise() * Enviro.col(env_index).array();
+
+						int gxe_bin_index;
+						if(Annot_x_E == true)
+							gxe_bin_index = Nbin + (env_index * Nbin) + bin_index;
+						else
+							gxe_bin_index = Nbin + env_index;
+
+						for (int z_index = 0 ; z_index < Nz ; z_index++){
+							XXz.col((gxe_bin_index * 2*Nz) + Nz + z_index)+=output_env.col(z_index);   /// save whole sample
+							XXz.col((gxe_bin_index * 2*Nz) + z_index)+=output_env.col(z_index);
+
+							if(both_side_cov == true) {
+								vec1 = output_env.col(z_index);
+								w1 = covariate.transpose() * vec1;
+								w2 = Q * w1;
+								w3 = covariate * w2;
+
+								UXXz.col((gxe_bin_index * 2*Nz) + Nz + z_index)+=w3;
+								UXXz.col((gxe_bin_index * 2*Nz) + z_index)+=w3;
+							}
+						}
+
+						if (both_side_cov == true){
+							MatrixXdr env_all_Uzb = all_Uzb.array().colwise() * Enviro.col(env_index).array();
+							output_env = compute_XXz(num_snp,env_all_Uzb);
+							output_env = output_env.array().colwise() * Enviro.col(env_index).array();
+
+							for (int z_index = 0 ; z_index < Nz ; z_index++){
+								XXUz.col((gxe_bin_index * 2*Nz) + Nz + z_index)+=output_env.col(z_index);   /// save whole sample
+								XXUz.col((gxe_bin_index * 2*Nz) + z_index)+=output_env.col(z_index); 
+							}
+						}
+						if(both_side_cov == true)
+							scaled_pheno = new_pheno.array() * Enviro.col(env_index).array();
+						else
+							scaled_pheno= pheno.array() * Enviro.col(env_index).array();
+
+
+						double temp_e_yxxy;
+						temp_e_yxxy= compute_yXXy(num_snp,scaled_pheno);
+
+						yXXy(gxe_bin_index,1)+=temp_e_yxxy;
+						yXXy(gxe_bin_index,0)+=temp_e_yxxy;
+
+					}
+				}//end gxe computations
+
+				if (block_index == num_blocks - 1){
+					for (int z_index = 0 ; z_index < Nz ; z_index++){
+						XXz.col((bin_index * 2 * Nz) + Nz + z_index) += output_XXz.col(bin_index * Nz + z_index);   /// save whole sample contribution
+
+						if(both_side_cov == true) {
+							vec1 = output_XXz.col(bin_index * Nz + z_index);
+							w1 = covariate.transpose() * vec1;
+							w2 = Q * w1;
+							w3 = covariate * w2;
+							UXXz.col((bin_index * 2 * Nz) + Nz + z_index) += w3;
+							UXXz.col((bin_index * 2 * Nz) + z_index) += w3;
+						}
+					}
+				}
+
+				if (both_side_cov == true){
+					output = compute_XXUz(num_snp); 
+					for (int z_index = 0 ; z_index < Nz ; z_index++)
+						output_XXUz.col(bin_index * Nz + z_index) = output_XXUz.col(bin_index * Nz + z_index) + output.col(z_index);
+
+					if (opt1 && block_index == num_blocks - 1) { 
+						MatrixXdr tmpoutput = output_XXUz.block (0, bin_index * Nz, output_XXUz.rows(), Nz);	
+
+						int rows = static_cast<int>(tmpoutput.rows());
+					    int cols = static_cast<int>(tmpoutput.cols());
+						write_matrix (xsum_ofs, tmpoutput);
+					}
+					if (block_index == num_blocks - 1){
+						for (int z_index = 0 ; z_index < Nz ; z_index++){
+							XXUz.col((bin_index * 2 * Nz) + Nz + z_index) += output_XXUz.col(bin_index * Nz + z_index);   /// save whole sample
+						}	 
+					}
+				}
+
+				if (verbose >= 2)
+					cout << "pheno(" << pheno.rows() << "," << pheno.cols () << ") " << pheno.sum() << endl;
+
+				}
+
+				if(both_side_cov == false) {
+					temp_yXXy = compute_yXXy(num_snp, pheno);
+					output_yXXy(bin_index, 0) += temp_yXXy;
+				} else {
+					temp_yXXy = compute_yVXXVy(num_snp);
+					output_yXXy(bin_index, 0) += temp_yXXy;
+				}				
+				if (opt1 && block_index == num_blocks - 1) {
+					temp_yXXy = output_yXXy(bin_index, 0);
+					if (use_ysum)
+						ysum_ofs.write((char *) (&temp_yXXy), sizeof(double));
+					else
+						jack_yXXy(bin_index, jack_index) = temp_yXXy;
+				}
+				if (block_index == num_blocks - 1) 
+					yXXy(bin_index,1) += output_yXXy(bin_index, 0);
+
+
+				if (verbose >= 2) { 
+					cout << "Pass 1: " << jack_index << " " << block_index << " " << bin_index << "\tXXz(" << XXz.rows() <<"," << XXz.cols() << ") "<< XXz.sum() << endl;
+					cout << "Pass 1: " << jack_index << " " << block_index << " " << bin_index << "\ttemp_yXXy : " << temp_yXXy << endl;
+					cout << "Pass 1: " << jack_index <<" " << block_index << " " << bin_index << "\tyXXy(" << yXXy.rows() <<"," << yXXy.cols() << ") "<< yXXy.sum() << endl;
+					if (yXXy.rows () > 1) {
+						cout << "Pass 1: " << jack_index <<" " << block_index << " " << bin_index << "\toutput_yXXy " << output_yXXy(0,0) <<", " << output_yXXy(1,0) << endl;
+						cout << "Pass 1: " << jack_index <<" " << block_index << " " << bin_index << "\tyXXy " << yXXy(0,1) <<", " << yXXy(1,1) << endl;
+					}
+				}
+
+				mm.clean_up();
+				if(use_mailman == true){
+					delete[] sum_op;
+					delete[] partialsums;
+					delete[] yint_e;
+					delete[] yint_m;
+					for (int i  = 0 ; i < hsegsize; i++)
+						delete[] y_m [i];
+					delete[] y_m;
+
+					for (int i  = 0 ; i < g.Nindv; i++)
+						delete[] y_e[i];
+					delete[] y_e;
+
+					vector< vector<int> >().swap(g.p);
+					vector< vector<int> >().swap(allgen_mail[bin_index].p);
+					g.columnsum.clear();
+					g.columnsum2.clear();
+					g.columnmeans.clear();
+					g.columnmeans2.clear();
+					allgen_mail[bin_index].columnsum.clear();
+					allgen_mail[bin_index].columnsum2.clear();
+					allgen_mail[bin_index].columnmeans.clear();
+					allgen_mail[bin_index].columnmeans2.clear();
+				}
+			} // loop over bins
+
+		} // loop over read blocks
+
+	}//end loop over jackknife blocks
+	cout << "Finished reading and computing over all blocks" << endl;
+	cout << endl;
+	cout << endl;
+
+	if (hetero_noise == true) {
+		MatrixXdr hetro_all_Uzb;
+		for (int env_index = 0 ; env_index < Nenv ; env_index++){
+		/// add hetero env noise
+			MatrixXdr hetro_all_zb = all_zb.array().colwise() * Enviro.col(env_index).array();
+			hetro_all_zb = hetro_all_zb.array().colwise() * Enviro.col(env_index).array();
+
+			if(both_side_cov == true){
+				hetro_all_Uzb = all_Uzb.array().colwise() * Enviro.col(env_index).array();
+				hetro_all_Uzb = hetro_all_Uzb.array().colwise() * Enviro.col(env_index).array();
+			}
+
+			int hetro_index;
+			if(Annot_x_E == true)
+				hetro_index = Nbin + (Nenv * Nbin) + env_index;
+			else
+				hetro_index = Nbin + Nenv + env_index;
+			for (int z_index = 0 ; z_index < Nz ; z_index++){
+				XXz.col(((hetro_index) * 2*Nz) + Nz + z_index) = hetro_all_zb.col(z_index);
+				if(both_side_cov == true){
+					vec1 = hetro_all_zb.col(z_index);
+					w1 = covariate.transpose() * vec1;
+					w2 = Q * w1;
+					w3 = covariate * w2;
+					UXXz.col(((hetro_index) * 2*Nz) + Nz + z_index) = w3;
+					XXUz.col(((hetro_index) * 2*Nz) + Nz + z_index) = hetro_all_Uzb.col(z_index);
+				}
+			}
+
+			MatrixXdr scaled_pheno;
+			if(both_side_cov == true)
+				scaled_pheno = new_pheno.array() * Enviro.col(env_index).array();
+			else
+				scaled_pheno= pheno.array() * Enviro.col(env_index).array();
+
+			yXXy(hetro_index,1) = (scaled_pheno.array() * scaled_pheno.array()).sum();
+			len.push_back(1);
+		}
+	}
+
+	if (verbose == 1) {
+		cout << "Size of bins :" << endl;
+		if (hetero_noise == true) {
+			for(int i = 0 ; i < Nbin + nongen_Nbin + Nenv ; i++)
+				cout << "bin " << i<<" : " << len[i]<<endl;
+		} else {
+			for(int i = 0 ; i < Nbin + nongen_Nbin ; i++)
+				cout << "bin " << i<<" : " << len[i]<<endl;
+		}
+	}
+
+	cout << "Number of individuals without missing phenotype and enviroment = " << mask.sum() << endl;
+	cout << endl;
+	cout << endl;
+
+	//handle when jackknife block does not include any SNPs from a bin//refill
+	for (int bin_index = 0 ; bin_index < T_Nbin ; bin_index++){
+		for (int z_index = 0 ; z_index < Nz ; z_index++){
+			XXz.col((bin_index * 2 * Nz) + z_index) = XXz.col((bin_index * 2 * Nz) + Nz + z_index);
+			if(both_side_cov == true){
+				UXXz.col((bin_index * 2*Nz) + z_index) = UXXz.col((bin_index * 2 * Nz) + Nz + z_index);
+				XXUz.col((bin_index * 2*Nz) + z_index) = XXUz.col((bin_index * 2 * Nz) + Nz + z_index);  
+			}
+		}
+		yXXy(bin_index,0)= yXXy(bin_index,1);
+	}
+
+	if (opt1)  {
+		if (!use_summary_genotypes){
+			string prefix = command_line_opts.OUTPUT_FILE_PATH;
+			string wgxsum_path = prefix + ".wgxsum";
+			wgxsum_ofs.open(wgxsum_path.c_str(), std::ios_base::out);
+			for (int bin_index = 0 ; bin_index < T_Nbin ; bin_index++){
+				MatrixXdr tmpoutput = XXz.block (0, bin_index * 2 * Nz + Nz, XXz.rows(), Nz);
+				write_matrix (wgxsum_ofs, tmpoutput);
+				
+				if (both_side_cov) {
+					tmpoutput = UXXz.block (0, bin_index * 2 * Nz + Nz, UXXz.rows(), Nz);
+					write_matrix (wgxsum_ofs, tmpoutput);
+					tmpoutput = XXUz.block (0, bin_index * 2 * Nz + Nz, XXUz.rows(), Nz);
+					write_matrix (wgxsum_ofs, tmpoutput);
+				}
+			}
+			wgxsum_ofs.close ();
+		}
+
+		if (!use_summary_genotypes)
+			xsum_ofs.close();
+		if (use_ysum)
+			ysum_ofs.close();
+	}
+}
+
+
+void genotype_stream_pass (string name, int pass_num){
+	if (verbose >= 3) {
+			cout << "both_side_cov = " << both_side_cov << endl;
+			cout << "cov_add_intercept = " << cov_add_intercept << endl;
+			cout << "T_Nbin = " << T_Nbin << " Nbin = " << Nbin << " nongen_Nbin = " << nongen_Nbin << endl;
+			cout << "Nz = " << Nz << endl;
+	}	
+	if (opt1){ 
+		string prefix = command_line_opts.OUTPUT_FILE_PATH;
+		if (use_summary_genotypes) {
+			xsum_path = xsumfilepath + ".xsum";
+			wgxsum_path = xsumfilepath + ".wgxsum";
+		} else
+			xsum_path = prefix + ".xsum";
+		ysum_path = prefix + ".ysum";
+		if (pass_num==1) {
+			if (!use_summary_genotypes)  
+				xsum_ofs.open(xsum_path.c_str(), std::ios_base::out);
+			if (use_ysum)	
+				ysum_ofs.open(ysum_path.c_str(), std::ios_base::out);
+		} else {
+			xsum_ifs.open(xsum_path.c_str(), std::ios_base::in);
+			if (!xsum_ifs.is_open()) {	
+				cerr << "Error reading file "<< xsum_path <<endl;
+				exit(1);
+			}
+			if (use_ysum)	
+				ysum_ifs.open(ysum_path.c_str(), std::ios_base::in);
+		}
+	}
+
+
+	ifstream ifs (name.c_str(), ios::in|ios::binary);
+	if (!ifs.is_open()){
+		cerr << "Error reading file "<< name <<endl;
+		exit(1);
+	}
+
 	read_header = true;
 	global_snp_index=-1;
 
@@ -1180,7 +2100,13 @@ void genotype_stream_pass(string name, int pass_num){
 
 	MatrixXdr herit;
 
+	// Matrix of jacknife estimates
+	// Rows: statistics (=variance components including sigma_e). Hence number of rows = T_Nbin + 1
+	// Columns: jackknife estimates
 	jack.resize(T_Nbin + 1,Njack);
+
+	// Matrix of variance components
+	// Includes sigma_e. Hence number of entries = T_Nbin + 1
 	point_est.resize(T_Nbin + 1,1);
 
 	point_est_adj_gxe = MatrixXdr::Zero(T_Nbin + 3,1);
@@ -1199,18 +2125,67 @@ void genotype_stream_pass(string name, int pass_num){
 	double trkij_res3;
 	double tk_res;
 
+
+	if (pass_num == 2) {
+		if (use_summary_genotypes){
+
+			wgxsum_ifs.open(wgxsum_path.c_str(), std::ios_base::in);
+			if (!wgxsum_ifs.is_open()) {	
+				cerr << "Error reading file "<< wgxsum_path <<endl;
+				exit(1);
+			}
+
+			for (int bin_index = 0 ; bin_index < T_Nbin ; bin_index++){
+				read_matrix (wgxsum_ifs, output);
+				XXz.block (0, bin_index * 2 * Nz + Nz, Nindv, Nz) = output;
+				if (both_side_cov) {
+					read_matrix (wgxsum_ifs, output);
+					UXXz.block (0, bin_index * 2 * Nz + Nz, Nindv, Nz) = output;
+					read_matrix (wgxsum_ifs, output);
+					XXUz.block (0, bin_index * 2 * Nz + Nz, Nindv, Nz) = output;
+				}
+			}
+
+
+			// Handle when a jackknife block does not include any SNPs from a bin
+			// Only need to do this for genotype matrices (XXz, UXXz, XXUz) since
+			// the phenotype summaries (yXXy) are being generated
+
+			for (int bin_index = 0 ; bin_index < T_Nbin ; bin_index++){
+				for (int z_index = 0 ; z_index < Nz ; z_index++){
+					XXz.col((bin_index * 2*Nz) + z_index) = XXz.col((bin_index * 2*Nz) + Nz + z_index);
+					if(both_side_cov == true){
+						UXXz.col((bin_index * 2*Nz) + z_index) = UXXz.col((bin_index * 2*Nz) + Nz + z_index);
+						XXUz.col((bin_index * 2*Nz) + z_index) = XXUz.col((bin_index * 2*Nz) + Nz + z_index);
+					}
+				}
+//				yXXy(bin_index,0)= yXXy(bin_index,1);
+			}
+
+			wgxsum_ifs.close ();
+		}
+	}
+
 	for (int jack_index = 0 ; jack_index < Njack ; jack_index++){
 
-		int read_Nsnp = (jack_index<(Njack - 1)) ? (step_size) : (step_size + step_size_rem);
-		cout << "Reading block " << jack_index << " in pass " << pass_num << endl;
+		int read_Nsnp = jack_block_size[jack_index];	
+		cout << "Pass "<< pass_num << ": Reading jackknife block " << jack_index << endl;
+		
+		if (verbose >= 1)  {
+			cout << "************Pass " << pass_num << ": Reading jackknife block " << jack_index << " ************" <<endl;
+			if (verbose >= 2)
+			cout << "read_Nsnp = " << read_Nsnp << endl;
+		}
 
 		if(use_mailman == true){
 			for (int i = 0 ; i < Nbin ; i++){
 				allgen_mail[i].segment_size_hori = floor(log(Nindv) / log(3)) - 2 ;
 				allgen_mail[i].Nsegments_hori = ceil(jack_bin[jack_index][i]*1.0 / (allgen_mail[i].segment_size_hori * 1.0));
-				allgen_mail[i].p.resize(allgen_mail[i].Nsegments_hori,std::vector<int>(Nindv));
+				allgen_mail[i].p.resize(allgen_mail[i].Nsegments_hori,vector<int>(Nindv));
 				//allgen_mail[i].not_O_i.resize(jack_bin[jack_index][i]);
 				//allgen_mail[i].not_O_j.resize(Nindv);
+				
+				// number of SNPs in this annotation (bin) in this jackknife block
 				allgen_mail[i].index = 0;
 				allgen_mail[i].Nsnp = jack_bin[jack_index][i];
 				allgen_mail[i].Nindv = Nindv;
@@ -1219,35 +2194,62 @@ void genotype_stream_pass(string name, int pass_num){
 				for (int index_temp = 0 ; index_temp < jack_bin[jack_index][i];index_temp++)
 					allgen_mail[i].columnsum[index_temp]=0;
 			}
-		}else{
+		} else {
 			for (int k = 0 ; k < Nbin ; k++){
 				allgen[k].gen.resize(jack_bin[jack_index][k],Nindv);
+				// number of SNPs in this annotation (bin) in this jackknife block
 				allgen[k].index = 0;
 			}
 		}
 
-		if(use_1col_annot == true)
-			read_bed_1colannot(ifs,missing,read_Nsnp);
-		else
-			read_bed2(ifs,missing,read_Nsnp);
-		read_header = false;
+		if (opt1  && pass_num == 2) {}
+		else { 
+			if(use_1col_annot == true)
+				read_bed_1colannot(ifs, missing, read_Nsnp);
+			else
+				read_bed2(ifs, missing, read_Nsnp);
+			read_header = false;
+		}
 
+		if (verbose >= 1) { 
+			cout << "Number of SNPs in each bin in jackknife block "<< jack_index << endl;
+			vectorfn::printvector (jack_bin[jack_index]); cout << endl;
+		}
 		for (int bin_index = 0 ; bin_index < Nbin ; bin_index++){
 			int num_snp;
-			if (use_mailman == true)
-				num_snp = allgen_mail[bin_index].index;
-			else
-				num_snp = allgen[bin_index].index;
+			if (opt1 && pass_num == 2) { 
+				xsum_ifs.read((char *) (&num_snp), sizeof(int)); 
+			} else { 
+				if (use_mailman == true)
+					num_snp = allgen_mail[bin_index].index;
+				else
+					num_snp = allgen[bin_index].index;
+			}
 
-			if(num_snp != 0){
+			if (verbose >= 2)
+				cout << "Number of SNPs in bin " << bin_index << "  = " << num_snp << endl; 
+	
+			// Skip empty bin
+			if (num_snp == 0)  {
+				if (opt1 && pass_num == 1) 
+					xsum_ofs.write((char *) (&num_snp), sizeof(int));
+				continue;
+			}
+
+			if (opt1 && pass_num==2) {
+				read_matrix (xsum_ifs, output);
+				
+				if (verbose >= 2) {
+					cout << "Pass "<< pass_num << ": " << jack_index << " " << bin_index << "\toutput(" << output.rows() <<"," << output.cols() << ") "<< output.sum() << endl;
+				}
+			} else {
 				stds.resize(num_snp,1);
 				means.resize(num_snp,1);
 
 				if(use_mailman == true){
 					for (int i = 0 ; i < num_snp ; i++)
 						means(i,0) = (double)allgen_mail[bin_index].columnsum[i]/Nindv;
-				}			
-				else	  
+				} else	  
 					means = allgen[bin_index].gen.rowwise().mean();
 
 
@@ -1258,132 +2260,183 @@ void genotype_stream_pass(string name, int pass_num){
 					g = allgen_mail[bin_index];
 					g.segment_size_hori = floor(log(Nindv) / log(3)) - 2 ;
 					g.Nsegments_hori = ceil(jack_bin[jack_index][bin_index]*1.0 / (g.segment_size_hori * 1.0));
-					g.p.resize(g.Nsegments_hori,std::vector<int>(Nindv));
+					g.p.resize(g.Nsegments_hori,vector<int>(Nindv));
 					//g.not_O_i.resize(jack_bin[jack_index][bin_index]);
 					//g.not_O_j.resize(Nindv);
 					initial_var();
 
-				}else{
+				} else {
 					gen = allgen[bin_index].gen;
 				}
 
-				mm = MatMult(g, gen, false, var_normalize, memory_efficient, missing, use_mailman, nthreads, Nz);
-				output = compute_XXz(num_snp,all_zb);
+				mm = MatMult(g, gen, debug, var_normalize, memory_efficient, missing, use_mailman, nthreads, Nz);
+				output = compute_XXz(num_snp, all_zb);
 
-				MatrixXdr scaled_pheno;
-				if (gen_by_env == true) { 
-					for (int env_index = 0 ; env_index < Nenv ; env_index++){
-						MatrixXdr env_all_zb = all_zb.array().colwise() * Enviro.col(env_index).array();
-						output_env = compute_XXz(num_snp,env_all_zb);
+				if (verbose >= 2) 
+					cout << "Pass "<< pass_num << ": " << jack_index << " " << bin_index << "\toutput(" << output.rows() <<"," << output.cols() << ") " << output.sum() << endl;
+
+				if (opt1) {
+					xsum_ofs.write((char *) (&num_snp), sizeof(int));
+					write_matrix (xsum_ofs, output);
+				}
+			}
+
+			// begin gxe computations
+			// This code block has not been tested for the memory optimized setting
+			MatrixXdr scaled_pheno;
+			if (gen_by_env == true) { 
+				// Not tested
+				for (int env_index = 0 ; env_index < Nenv ; env_index++){
+					MatrixXdr env_all_zb = all_zb.array().colwise() * Enviro.col(env_index).array();
+					output_env = compute_XXz(num_snp,env_all_zb);
+					output_env = output_env.array().colwise() * Enviro.col(env_index).array();
+
+					int gxe_bin_index;
+					if(Annot_x_E == true)
+						gxe_bin_index = Nbin + (env_index * Nbin) + bin_index;
+					else
+						gxe_bin_index = Nbin + env_index;
+
+					for (int z_index = 0 ; z_index < Nz ; z_index++){
+						if(pass_num == 1){
+							XXz.col((gxe_bin_index * 2*Nz) + Nz + z_index)+=output_env.col(z_index);   /// save whole sample
+							XXz.col((gxe_bin_index * 2*Nz) + z_index)+=output_env.col(z_index);
+						}
+						else if(num_snp != len[bin_index])
+							XXz.col((gxe_bin_index * 2*Nz) + z_index) = XXz.col((gxe_bin_index * 2*Nz) + z_index)-output_env.col(z_index);   /// save corresponding jack contrib
+
+						if(both_side_cov == true) {
+							vec1 = output_env.col(z_index);
+							w1 = covariate.transpose() * vec1;
+							w2 = Q * w1;
+							w3 = covariate * w2;
+
+							if(pass_num == 1){
+								UXXz.col((gxe_bin_index * 2*Nz) + Nz + z_index)+=w3;
+								UXXz.col((gxe_bin_index * 2*Nz) + z_index)+=w3;
+							}
+							else //if(num_snp != len[bin_index])
+								UXXz.col((gxe_bin_index * 2*Nz) + z_index) = UXXz.col((gxe_bin_index * 2*Nz) + z_index)-w3;
+						}
+					}
+
+					if (both_side_cov == true){
+						MatrixXdr env_all_Uzb = all_Uzb.array().colwise() * Enviro.col(env_index).array();
+						output_env = compute_XXz(num_snp,env_all_Uzb);
 						output_env = output_env.array().colwise() * Enviro.col(env_index).array();
-
-						int gxe_bin_index;
-						if(Annot_x_E == true)
-							gxe_bin_index = Nbin + (env_index * Nbin) + bin_index;
-						else
-							gxe_bin_index = Nbin + env_index;
 
 						for (int z_index = 0 ; z_index < Nz ; z_index++){
 							if(pass_num == 1){
-								XXz.col((gxe_bin_index * 2*Nz) + Nz + z_index)+=output_env.col(z_index);   /// save whole sample
-								XXz.col((gxe_bin_index * 2*Nz) + z_index)+=output_env.col(z_index);
+								XXUz.col((gxe_bin_index * 2*Nz) + Nz + z_index)+=output_env.col(z_index);   /// save whole sample
+								XXUz.col((gxe_bin_index * 2*Nz) + z_index)+=output_env.col(z_index); 
 							}
-							else if(num_snp != len[bin_index])
-								XXz.col((gxe_bin_index * 2*Nz) + z_index) = XXz.col((gxe_bin_index * 2*Nz) + z_index)-output_env.col(z_index);   /// save corresponding jack contrib
-
-							if(both_side_cov == true) {
-								vec1 = output_env.col(z_index);
-								w1 = covariate.transpose() * vec1;
-								w2 = Q * w1;
-								w3 = covariate * w2;
-
-								if(pass_num == 1){
-									UXXz.col((gxe_bin_index * 2*Nz) + Nz + z_index)+=w3;
-									UXXz.col((gxe_bin_index * 2*Nz) + z_index)+=w3;
-								}
-								else //if(num_snp != len[bin_index])
-									UXXz.col((gxe_bin_index * 2*Nz) + z_index) = UXXz.col((gxe_bin_index * 2*Nz) + z_index)-w3;
-							}
+							else
+								XXUz.col((gxe_bin_index * 2*Nz) + z_index) = XXUz.col((gxe_bin_index * 2*Nz) + z_index)-output_env.col(z_index);
 						}
-
-						if (both_side_cov == true){
-							MatrixXdr env_all_Uzb = all_Uzb.array().colwise() * Enviro.col(env_index).array();
-							output_env = compute_XXz(num_snp,env_all_Uzb);
-							output_env = output_env.array().colwise() * Enviro.col(env_index).array();
-
-							for (int z_index = 0 ; z_index < Nz ; z_index++){
-								if(pass_num == 1){
-									XXUz.col((gxe_bin_index * 2*Nz) + Nz + z_index)+=output_env.col(z_index);   /// save whole sample
-									XXUz.col((gxe_bin_index * 2*Nz) + z_index)+=output_env.col(z_index); 
-								}
-								else
-									XXUz.col((gxe_bin_index * 2*Nz) + z_index) = XXUz.col((gxe_bin_index * 2*Nz) + z_index)-output_env.col(z_index);
-							}
-						}
-						if(both_side_cov == true)
-							scaled_pheno = new_pheno.array() * Enviro.col(env_index).array();
-						else
-							scaled_pheno= pheno.array() * Enviro.col(env_index).array();
+					}
+					if(both_side_cov == true)
+						scaled_pheno = new_pheno.array() * Enviro.col(env_index).array();
+					else
+						scaled_pheno= pheno.array() * Enviro.col(env_index).array();
 
 
-						double temp_e_yxxy;
-						temp_e_yxxy= compute_yXXy(num_snp,scaled_pheno);
+					double temp_e_yxxy;
+					temp_e_yxxy= compute_yXXy(num_snp,scaled_pheno);
 
-						if(pass_num == 1){
-							yXXy(gxe_bin_index,1)+=temp_e_yxxy;
-							yXXy(gxe_bin_index,0)+=temp_e_yxxy;
-						}
-						else 
-							yXXy(gxe_bin_index,0)= yXXy(gxe_bin_index,0)-temp_e_yxxy;      
+					if(pass_num == 1){
+						yXXy(gxe_bin_index,1)+=temp_e_yxxy;
+						yXXy(gxe_bin_index,0)+=temp_e_yxxy;
+					}
+					else 
+						yXXy(gxe_bin_index,0)= yXXy(gxe_bin_index,0)-temp_e_yxxy;      
 
-					}//end gxe computations
 				}
+			}//end gxe computations
 
+			// Number of columns = 2 * Number of annotations * Number of random vectors
+			// For each annotation, the second half of XXz contains the whole genome statistic
+			// The first half contains the jackknife statistic for the current jackknife block
+			// These jackknife statistics are used to compute the jackknife variance components before moving onto the next jackknife block
+			for (int z_index = 0 ; z_index < Nz ; z_index++){
+				if(pass_num == 1){
+					XXz.col((bin_index * 2 * Nz) + Nz + z_index) += output.col(z_index);   /// save whole genome contribution
+				}
+				else //if(num_snp != len[bin_index])
+					XXz.col((bin_index * 2 * Nz) + z_index) = XXz.col((bin_index * 2 * Nz) + Nz + z_index)-output.col(z_index);   /// save corresponding jack contribution
+
+				if(both_side_cov == true) {
+					vec1 = output.col(z_index);
+					w1 = covariate.transpose() * vec1;
+					w2 = Q * w1;
+					w3 = covariate * w2;
+					if(pass_num == 1){
+						UXXz.col((bin_index * 2*Nz) + Nz + z_index)+=w3;
+						UXXz.col((bin_index * 2*Nz) + z_index)+=w3;
+					}
+					else if(num_snp != len[bin_index])
+						UXXz.col((bin_index * 2*Nz) + z_index) = UXXz.col((bin_index * 2*Nz) + Nz + z_index)-w3;
+				}
+			}
+
+			if (both_side_cov == true){
+				if (opt1 && pass_num == 2) { 
+					read_matrix (xsum_ifs, output);
+				} else {
+					output = compute_XXUz(num_snp); 
+					if (opt1) {
+						write_matrix (xsum_ofs, output);
+					}
+				}
 				for (int z_index = 0 ; z_index < Nz ; z_index++){
 					if(pass_num == 1){
-						XXz.col((bin_index * 2*Nz) + Nz + z_index)+=output.col(z_index);   /// save whole sample
+						XXUz.col((bin_index * 2 * Nz) + Nz + z_index) += output.col(z_index);   /// save whole sample
 					}
 					else //if(num_snp != len[bin_index])
-						XXz.col((bin_index * 2*Nz) + z_index) = XXz.col((bin_index * 2*Nz) + Nz + z_index)-output.col(z_index);   /// save corresponding jack contrib
+						XXUz.col((bin_index * 2 * Nz) + z_index) = XXUz.col((bin_index * 2*Nz) + Nz + z_index)-output.col(z_index);
+				}	 
+			}
 
-					if(both_side_cov == true) {
-						vec1 = output.col(z_index);
-						w1 = covariate.transpose() * vec1;
-						w2 = Q * w1;
-						w3 = covariate * w2;
-						if(pass_num == 1){
-							UXXz.col((bin_index * 2*Nz) + Nz + z_index)+=w3;
-							UXXz.col((bin_index * 2*Nz) + z_index)+=w3;
-						}
-						else if(num_snp != len[bin_index])
-							UXXz.col((bin_index * 2*Nz) + z_index) = UXXz.col((bin_index * 2*Nz) + Nz + z_index)-w3;
-					}
-				}
-
-				if (both_side_cov == true){
-					output = compute_XXUz(num_snp); 
-					for (int z_index = 0 ; z_index < Nz ; z_index++){
-						if(pass_num == 1){
-							XXUz.col((bin_index * 2*Nz) + Nz + z_index)+=output.col(z_index);   /// save whole sample
-						}
-						else //if(num_snp != len[bin_index])
-							XXUz.col((bin_index * 2*Nz) + z_index) = XXUz.col((bin_index * 2*Nz) + Nz + z_index)-output.col(z_index);
-						}	 
-				}
-
-				//compute yXXy
-				double temp_yxxy;
-				if(both_side_cov == false)
-					temp_yxxy= compute_yXXy(num_snp,pheno);
+			//compute yXXy
+			double temp_yXXy;
+			if (opt1 && pass_num == 2) { 
+				if (use_ysum) 
+					ysum_ifs.read((char *) (&temp_yXXy), sizeof(double)); 
 				else
-					temp_yxxy= compute_yVXXVy(num_snp);
+					temp_yXXy = jack_yXXy(bin_index, jack_index);
+			} else {
+				if (verbose >= 2)
+					cout << "pheno(" << pheno.rows() << "," << pheno.cols () << ") " << pheno.sum() << endl;
+				if(both_side_cov == false)
+					temp_yXXy = compute_yXXy(num_snp, pheno);
+				else
+					temp_yXXy = compute_yVXXVy(num_snp);
+					
+				if (opt1) {
+					jack_yXXy(bin_index, jack_index) = temp_yXXy;
+					ysum_ofs.write((char *) (&temp_yXXy), sizeof(double));
+				}	
+			}
 
-				if(pass_num == 1){
-					yXXy(bin_index,1)+=temp_yxxy;
-				}
-				else 
-					yXXy(bin_index,0)= yXXy(bin_index,1)-temp_yxxy;
+			// In the first pass, compute the whole-sample statistics: yXXy(,1)
+			// In the second pass, compute the jackknife statistic for the current block
+			// These jackknife statistics are used to compute the jackknife variance components before moving onto the next jackknife block
+			if(pass_num == 1){
+				yXXy(bin_index,1) += temp_yXXy;
+			}
+			else 
+				yXXy(bin_index,0)= yXXy(bin_index , 1)-temp_yXXy;
 
+
+			if (verbose >= 2) {
+				cout << "Pass "<< pass_num << ": " << jack_index << " " << bin_index << "\tXXz(" << XXz.rows() <<"," << XXz.cols() << ") "<< XXz.sum() << endl;
+				cout << "Pass "<< pass_num << ": " << jack_index << " " <<  bin_index << "\ttemp_yXXy: " << temp_yXXy << endl;
+				cout << "Pass "<< pass_num << ": " << jack_index << " " << bin_index << "\tyXXy(" << yXXy.rows() <<"," << yXXy.cols() << ") "<< yXXy.sum() << endl;
+				if (yXXy.rows () > 1)
+					cout << "Pass " << pass_num << ": " << jack_index <<" " << bin_index << "\tyXXy " << yXXy(0,1) <<"," << yXXy(1,1) << endl;
+			}
+
+			if (opt1 && pass_num == 2){ 
+			} else {
 				mm.clean_up();
 				if(use_mailman == true){
 
@@ -1399,8 +2452,8 @@ void genotype_stream_pass(string name, int pass_num){
 						delete[] y_e[i];
 					delete[] y_e;
 
-					std::vector< std::vector<int> >().swap(g.p);
-					std::vector< std::vector<int> >().swap(allgen_mail[bin_index].p);
+					vector< vector<int> >().swap(g.p);
+					vector< vector<int> >().swap(allgen_mail[bin_index].p);
 					g.columnsum.clear();
 					g.columnsum2.clear();
 					g.columnmeans.clear();
@@ -1411,20 +2464,28 @@ void genotype_stream_pass(string name, int pass_num){
 					allgen_mail[bin_index].columnmeans2.clear();
 				}
 			}
-		}
+		} // loop over bins
 
 		if(pass_num == 2){
+			// 	
+			// Compute variance components for each jackknife subsample
+			//
 			for(int l = 0 ; l < T_Nbin ; l++)
 				if( len[l]==jack_bin[jack_index][l])
-			jack_bin[jack_index][l]=0;
+					jack_bin[jack_index][l]=0;
 
 			for (int i = 0 ; i < T_Nbin ; i++){
 				b_trk(i,0) = Nindv_mask;
 
-				if(i>=(T_Nbin-(nongen_Nbin + Nenv)) ){
-					B1 = XXz.block(0,(i * 2*Nz),Nindv,Nz);
+				if(i >= (T_Nbin-(nongen_Nbin + Nenv)) ){
+					B1 = XXz.block(0, (i * 2 * Nz), Nindv, Nz);
 					B1 =all_zb.array() * B1.array();
 					b_trk(i,0) = B1.sum() / (len[i]-jack_bin[jack_index][i]) / Nz;
+				}
+
+				if (jack_index == Njack - 1){
+					if (verbose >= 2)
+						cout << "yXXy(bin,0) = " << yXXy(i,0) << ", Number of SNPs in bin[" <<i<<"] " << len[i] << " Number of SNPs in jackknife block[" << jack_index << "], bin[" <<i<<"] " << jack_bin[jack_index][i] << endl;
 				}
 
 				c_yky(i,0) = yXXy(i,0) / (len[i]-jack_bin[jack_index][i]);
@@ -1480,22 +2541,30 @@ void genotype_stream_pass(string name, int pass_num){
 			Y_r << c_yky,yy;
 			herit = X_l.colPivHouseholderQr().solve(Y_r);
 
-			if(jack_index == 0){
-				outfile << "Number of individuals after filtering: " << Nindv_mask << endl;
-				outfile << "Number of covariates: " << Ncov << endl;
-				outfile << "Number of environments: " << Nenv << endl;
 
-				if (verbose == true) {
-					cout << "LHS of Normal Eq" << endl << X_l << endl;
-					cout << "RHS of Normal Eq" << endl << Y_r << endl;
+			if(jack_index == 0){
+				outfile << "Number of individuals after filtering = " << Nindv_mask << endl;
+				outfile << "Number of covariates = " << Ncov << endl;
+				outfile << "Number of environments = " << Nenv << endl;
+
+				if (verbose >= 2) {
+					cout << "Jackknife block = " << jack_index << endl;
+					cout << "Xl[" << jack_index << "] = " << X_l << endl;
+					cout << "Yr[" << jack_index << "] = " << Y_r << endl;
 					double relative_error = (X_l * herit - Y_r).norm() / Y_r.norm(); // norm() is L2 norm
 					cout << "The relative error is: " << relative_error << endl;
-					JacobiSVD<MatrixXd> svd(X_l);
+					
+					#ifdef USE_DOUBLE
+						JacobiSVD<MatrixXd> svd(X_l);
+					#else
+						JacobiSVD<MatrixXf> svd(X_l);
+					#endif
 					double cond = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
-					cout << "condition number:  "<< cond << endl;
+					cout << "Condition number:  "<< cond << endl;
 
-					outfile << "LHS of Normal Eq" << endl << X_l << endl;
-					outfile << "RHS of Normal Eq" << endl << Y_r << endl;
+					outfile << "Jackknife block = " << jack_index << endl;
+					outfile << "Xl[" << jack_index << "] = " << X_l << endl;
+					outfile << "Yr[" << jack_index << "] = " << Y_r << endl;
 					outfile << "Normal Equations info:" << endl;
 					outfile << "The relative error is: " << relative_error << endl;
 					outfile << "Max sing.val: " << svd.singularValues()(0) << endl;
@@ -1507,6 +2576,16 @@ void genotype_stream_pass(string name, int pass_num){
 					outfile << endl;
 				}
 			}
+
+			if (jack_index == 2){
+				if (verbose >= 2){
+					cout << "Jackknife block = " << jack_index << endl;
+					cout << "Xl[" << jack_index << "] = " << X_l << endl;
+					cout << "Yr[" << jack_index << "] = " << Y_r << endl;
+				}
+			}
+
+			// Fill in the jackknife statistics
 			for(int i = 0 ; i<(T_Nbin + 1);i++)
 				jack(i,jack_index) = herit(i,0);
 
@@ -1540,13 +2619,12 @@ void genotype_stream_pass(string name, int pass_num){
 
 		} //end if pass_num = 2
 
-	}//end loop over jack
+	}//end loop over jackknife blocks
 	cout << "Finished reading and computing over all blocks" << endl;
 	cout << endl;
 	cout << endl;
 
 	if(pass_num == 1){
-		cout << "pass = " << pass_num << endl;
 		if (hetero_noise == true) {
 			MatrixXdr hetro_all_Uzb;
 			for (int env_index = 0 ; env_index < Nenv ; env_index++){
@@ -1586,15 +2664,17 @@ void genotype_stream_pass(string name, int pass_num){
 				len.push_back(1);
 			}
 		}
-		cout << "Size of bins :" << endl;
-		if (hetero_noise == true) {
-			for(int i = 0 ; i < Nbin + nongen_Nbin + Nenv ; i++)
-				cout << "bin " << i<<" : " << len[i]<<endl;
-		} else {
-			for(int i = 0 ; i < Nbin + nongen_Nbin ; i++)
-				cout << "bin " << i<<" : " << len[i]<<endl;
-		}
 
+		if (verbose >= 1) { 
+			cout << "Size of bins :" << endl;
+			if (hetero_noise == true) {
+				for(int i = 0 ; i < Nbin + nongen_Nbin + Nenv ; i++)
+					cout << "bin " << i<<" : " << len[i]<<endl;
+			} else {
+				for(int i = 0 ; i < Nbin + nongen_Nbin ; i++)
+					cout << "bin " << i<<" : " << len[i]<<endl;
+			}
+		}
 
 		cout << "Number of individuals without missing phenotype and enviroment: " << mask.sum() << endl;
 		cout << endl;
@@ -1614,9 +2694,12 @@ void genotype_stream_pass(string name, int pass_num){
 			yXXy(bin_index,0)= yXXy(bin_index,1);
 		}
 
-	}
+	} // pass 1
 
 	if(pass_num == 2){
+		//
+		// Compute variance components for the full sample
+		//
 		for (int i = 0 ; i < T_Nbin ; i++){
 			c_yky(i,0) = yXXy(i,1) / len[i];
 			//if(both_side_cov == false)
@@ -1664,7 +2747,7 @@ void genotype_stream_pass(string name, int pass_num){
 				A_trs(i,j) = trkij;
 				A_trs(j,i) = trkij;
 			}
-		}     
+		} // loop over bins     
 
 
 		X_l << A_trs,b_trk,b_trk.transpose(),NC;
@@ -1678,9 +2761,10 @@ void genotype_stream_pass(string name, int pass_num){
 
 		herit = X_l.colPivHouseholderQr().solve(Y_r);
 
-		if (verbose == true ) { 
+		if (verbose >= 2 ) { 
+			cout << "Whole-genome normal equations" << endl;
 			cout << "Xl" << endl << X_l << endl;
-			cout << "Yl" << endl << Y_r << endl;
+			cout << "Yr" << endl << Y_r << endl;
 		}
 		for(int i = 0 ; i<(T_Nbin + 1);i++)
 			point_est(i,0) = herit(i,0);
@@ -1693,6 +2777,24 @@ void genotype_stream_pass(string name, int pass_num){
 				point_est_adj_gxe(i,0) = point_est(i,0) * NC;
 			else
 				point_est_adj_gxe(i,0) = point_est(i,0) * b_trk(i,0);
+	} // pass 2
+
+
+	if (opt1){ 
+		if (pass_num==1)  {
+			if (!use_summary_genotypes) 
+				xsum_ofs.close();
+			if (use_ysum) 
+				ysum_ofs.close();
+		} else {
+			xsum_ifs.close();
+			if (!keep_xsum)
+				std::remove (xsum_path.c_str());
+			if (use_ysum)  {
+				ysum_ifs.close();
+				std::remove (ysum_path.c_str());
+			}
+		}
 	}
 }
 
@@ -1772,17 +2874,28 @@ void regress_covariates (){
 
 // Read .bim, .pheno, .env, .fam, .annot, .cov file.
 void read_auxillary_files () { 
+
 	// Read bim file to count number of SNPs
 	string geno_name = command_line_opts.GENOTYPE_FILE_PATH;
 	std::stringstream f1;
 	f1 << geno_name << ".bim";
-	Nsnp = read_bim (f1.str());
+
+	if (jack_scheme == 1|| jack_scheme == 2){ 
+		Nsnp = get_number_of_snps (f1.str());
+		step_size = Nsnp / Njack;
+		step_size_rem = Nsnp%Njack;
+		read_bim (f1.str());
+	} else {
+		Nsnp = read_bim (f1.str());
+	}
+
+	setup_read_blocks();
 
 	// Read phenotype and save the number of indvs
 	string filename = command_line_opts.PHENOTYPE_FILE_PATH;
 	Nindv = count_pheno (filename);
 	read_pheno2 (Nindv, filename);
-	cout << "Number of individuals : "<< Nindv << endl;
+	cout << "Number of individuals = "<< Nindv << endl;
 	y_sum = pheno.sum();
 
 
@@ -1821,23 +2934,49 @@ void read_auxillary_files () {
 
 	// Read covariate file
 	std::string covfile = command_line_opts.COVARIATE_FILE_PATH;
-	std::string covname="";
-	if(covfile!=""){
+	std::string covname = "";
+	if(covfile != "" ){
 		use_cov = true;
-		Ncov = read_cov(Nindv, covfile);
-	} else if (covfile==""){
-		cout << "No Covariate File Specified" << endl;
+		Ncov = read_cov (Nindv, covfile);
+	} else if (covfile == ""){
+		cout << "No covariate file specified" << endl;
 
 		if (cov_add_intercept == true) {
 			covariate.resize(Nindv,1);
 			for(int i = 0 ; i < Nindv ; i++)
 				covariate(i,0) = 1;
-				Ncov = 1;
+			Ncov = 1;
+			use_cov = true;
+			cout << "Intercept included" << endl;
 		} else {
 			both_side_cov = false;
 			use_cov = false;
+			cout << "No intercept included" << endl;
 		}
 	}
+
+
+	xsumfilepath = command_line_opts.XSUM_FILE_PATH;
+	if(xsumfilepath != "" ){
+		use_summary_genotypes = true;	
+		string xsum_path = xsumfilepath + ".xsum";
+		string wgxsum_path = xsumfilepath + ".wgxsum";
+		xsum_ifs.open(xsum_path.c_str(), std::ios_base::in);
+		if (!xsum_ifs.is_open()) {	
+			cerr << "Error reading file "<< xsum_path <<endl;
+			exit(1);
+		}
+		xsum_ifs.close();
+
+		wgxsum_ifs.open(wgxsum_path.c_str(), std::ios_base::in);
+		if (!wgxsum_ifs.is_open()) {	
+			cerr << "Error reading file "<< wgxsum_path <<endl;
+			exit(1);
+		}
+		wgxsum_ifs.close();
+
+	}	
+
 }
 
 
@@ -1857,21 +2996,21 @@ void print_results () {
 	cout << "*****" << endl;
 	outfile << "*****" << endl;
 	for (int i = 0 ; i < T_Nbin ; i++){
-		cout << "Number of features in bin " << i<<" : " << len[i]<<endl;
-		outfile << "Number of features in bin " << i<<" : " << len[i]<<endl;
+		cout << "Number of SNPs in bin " << i<<" = " << len[i]<<endl;
+		outfile << "Number of SNPs in bin " << i<<" = " << len[i]<<endl;
 	}
 	cout << "*****" << endl;
 	outfile << "*****" << endl;
-	cout << "Number of G variance components : " << Nbin << endl;
-	cout << "Number of GxE variance components : " << nongen_Nbin << endl;
-	outfile << "Number of G variance components : " << Nbin << endl;
-	outfile << "Number of GxE variance components : " << nongen_Nbin << endl;
+	cout << "Number of G variance components = " << Nbin << endl;
+	cout << "Number of GxE variance components = " << nongen_Nbin << endl;
+	outfile << "Number of G variance components = " << Nbin << endl;
+	outfile << "Number of GxE variance components = " << nongen_Nbin << endl;
 	if (hetero_noise == true) {
-		cout << "Number of NxE variance components : " << Nenv << endl;
-		outfile << "Number of NxE variance components : " << Nenv << endl;
+		cout << "Number of NxE variance components = " << Nenv << endl;
+		outfile << "Number of NxE variance components = " << Nenv << endl;
 	} else {
-		cout << "Number of NxE variance components : 0" << endl;
-		outfile << "Number of NxE variance components : 0" << endl;
+		cout << "Number of NxE variance components = 0" << endl;
+		outfile << "Number of NxE variance components = 0" << endl;
 	}
 
 	cout << "*****" << endl;
@@ -2084,7 +3223,6 @@ void print_results () {
 	cout << "*****" << endl;
 	outfile << "*****" << endl;
 
-
 	///compute parameters for overlapping annotations based  on s-ldsc definition :
 
 	MatrixXdr her_per_snp;
@@ -2226,7 +3364,7 @@ void print_input_parameters(){
 	
 	outfile << "##################################" << endl;
 	outfile << "#                                #" << endl;
-	outfile << "#          GENIE (v1.0.0)        #" << endl;
+	outfile << "#          GENIE (v1.1.0)        #" << endl;
 	outfile << "#                                #" << endl;
 	outfile << "##################################" << endl;
 	outfile << endl;
@@ -2257,7 +3395,7 @@ void print_input_parameters(){
 		outfile << "\t - s (seed) " << std::to_string(command_line_opts.seed) << endl;
 	if (command_line_opts.exannot == true)
 		outfile << "\t - eXannt (paritioned GxE)" << endl;
-	if (verbose) {
+	if (verbose >= 1) {
 		outfile << "Other options: " << endl;
 		outfile << "\t - norm_proj_pheno (normalize pheno after projection on covariates) " << std::to_string(command_line_opts.normalize_proj_pheno) << endl;
 		outfile << "\t - cov_add_intercept (intercept term added to covariates) " << std::to_string(command_line_opts.cov_add_intercept) << endl;
@@ -2268,20 +3406,18 @@ void print_input_parameters(){
 
 	outfile << endl;
 	outfile << endl;
+	if ( verbose >= 3 ) {
+		cout << "use_double = " << use_double << endl;
+	}
 }
 
+void init_params () {
 
-int main(int argc, char const *argv[]){
-
-	parse_args (argc,argv);
 	verbose = command_line_opts.verbose;
-	trace = command_line_opts.print_trace;
+	debug = command_line_opts.debugmode ||  verbose>= 3 ;
 
-	////////////////////////////////////////////
-	///////////////////////////////////////////
-	//int B = command_line_opts.batchNum;
+	trace = command_line_opts.print_trace;
 	k_orig = command_line_opts.num_of_evec ;
-	debug = command_line_opts.debugmode ;
 	check_accuracy = command_line_opts.getaccuracy;
 	var_normalize = false;
 	k = k_orig + command_line_opts.l;
@@ -2290,16 +3426,34 @@ int main(int argc, char const *argv[]){
 	srand((unsigned int) time(0));
 	Nz = command_line_opts.num_of_evec;
 	k = Nz;
+
+	jack_scheme = command_line_opts.jack_scheme;
 	Njack = command_line_opts.jack_number;
-	int seed = command_line_opts.seed;
+	jack_size = command_line_opts.jack_size;
+	jack_size *= 1e6; 
+
+	opt1 = command_line_opts.opt1;
+	opt2 = command_line_opts.opt2;
+	mem_Nsnp = command_line_opts.mem_Nsnp;
+	use_mailman = command_line_opts.fast_mode;
+
+	seed = command_line_opts.seed;
 	if (command_line_opts.exannot == true)
 		Annot_x_E = true;
 	nthreads = command_line_opts.nthreads;
-	////
-	//////////////////////////// Read multi genotypes
-	string line;
-	int num_files = 0;
+	
 	cov_add_intercept = command_line_opts.cov_add_intercept;
+	use_ysum = command_line_opts.use_ysum;
+	keep_xsum = command_line_opts.keep_xsum;
+}
+
+int main(int argc, char const *argv[]){
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    long starttime = now.tv_sec * UMILLION + now.tv_usec;
+
+	parse_args (argc,argv);
+	init_params ();
 
 	read_auxillary_files ();
 	regress_covariates ();	
@@ -2312,7 +3466,6 @@ int main(int argc, char const *argv[]){
 	//define random vector z's
 	all_zb= MatrixXdr::Random(Nindv,Nz);
 
-	std::mt19937 seedr;
 	if (seed == -1) {
 		std::random_device rd;
 		seedr.seed(rd());
@@ -2321,6 +3474,7 @@ int main(int argc, char const *argv[]){
 	}
 
 	std::normal_distribution<> dist(0,1);
+
 	auto z_vec = std::bind(dist, seedr);
 
 	for (int i = 0 ; i < Nz ; i++)
@@ -2332,7 +3486,7 @@ int main(int argc, char const *argv[]){
 			all_zb(j,i) = all_zb(j,i) * mask(j,0);
 
 	if(both_side_cov == true){
-		all_Uzb.resize(Nindv,Nz);
+		all_Uzb.resize(Nindv , Nz);
 		for (int j = 0 ; j < Nz ; j++){
 			MatrixXdr w1 = covariate.transpose() * all_zb.col(j);
 			MatrixXdr w2 = Q * w1;
@@ -2352,23 +3506,25 @@ int main(int argc, char const *argv[]){
 			len.push_back(Nsnp);
 	}
 
+	// XXz : Nindv X (Nbins * Nz * 2): 
+	// First half of columns has the computation from the current jackknife block.
+	// Last half of columns has the computation from the whole genome.
 	if(hetero_noise == true) {
-		XXz = MatrixXdr::Zero(Nindv,(Nbin + nongen_Nbin + Nenv) * Nz * 2);
-
-		if(both_side_cov == true){
-			UXXz = MatrixXdr::Zero(Nindv,(Nbin + nongen_Nbin + Nenv) * Nz * 2);
-			XXUz = MatrixXdr::Zero(Nindv,(Nbin + nongen_Nbin + Nenv) * Nz * 2);
-		}
-		yXXy = MatrixXdr::Zero(Nbin + nongen_Nbin + Nenv,2);
+		T_Nbin = Nbin + nongen_Nbin + Nenv;
 	} else {
-		XXz = MatrixXdr::Zero(Nindv,(Nbin + nongen_Nbin) * Nz * 2);
-
-		if(both_side_cov == true){
-			UXXz = MatrixXdr::Zero(Nindv,(Nbin + nongen_Nbin) * Nz * 2);
-			XXUz = MatrixXdr::Zero(Nindv,(Nbin + nongen_Nbin) * Nz * 2);
-		}
-		yXXy = MatrixXdr::Zero(Nbin + nongen_Nbin,2);
+		T_Nbin = Nbin + nongen_Nbin;
 	}
+
+	XXz = MatrixXdr::Zero(Nindv, T_Nbin * Nz * 2);
+
+	if(both_side_cov == true){
+		UXXz = MatrixXdr::Zero(Nindv, T_Nbin * Nz * 2);
+		XXUz = MatrixXdr::Zero(Nindv, T_Nbin * Nz * 2);
+	}
+	yXXy = MatrixXdr::Zero(T_Nbin,2);
+
+	if (!use_ysum)
+		jack_yXXy = MatrixXdr::Zero(T_Nbin, Njack);
 
 	if(use_mailman == true) 
 		allgen_mail.resize(Nbin);
@@ -2401,10 +3557,19 @@ int main(int argc, char const *argv[]){
 	}
 
 	// This is where most of the computation happens
-	genotype_stream_pass(name,1);
-	genotype_stream_pass(name,2);
-
+	if (opt2){
+		genotype_stream_pass_mem_efficient (name);
+	} else {
+		genotype_stream_pass (name,1);
+	}
+	genotype_stream_pass (name,2);
 	print_results ();
-	////////////////////////////////////////////////////////
+
+    gettimeofday(&now, NULL);
+    long endtime = now.tv_sec * UMILLION + now.tv_usec;
+    double elapsed = endtime - starttime;
+    elapsed/=1.e6;
+    cout << "GENIE ran successfully. Time elapsed = " << elapsed << " seconds " << endl;
+	
 	return 0;
 }

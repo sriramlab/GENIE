@@ -77,6 +77,10 @@ MatMult::MatMult(genotype &xg,
 }
 
 void MatMult::multiply_y_pre_fast_thread(int begin, int end, MatrixXdr &op, int Ncol_op, double *yint_m, double **y_m, double *partialsums, MatrixXdr &res) {
+	if (debug) {
+		cout << "begin = " << begin << endl;
+		cout << "end = " << end << endl;
+	}
 	for (int seg_iter = begin; seg_iter < end; seg_iter++) {
 		mailman::fastmultiply(g.segment_size_hori, g.Nindv, Ncol_op, g.p[seg_iter], op, yint_m, partialsums, y_m);
 		int p_base = seg_iter * g.segment_size_hori;
@@ -85,6 +89,8 @@ void MatMult::multiply_y_pre_fast_thread(int begin, int end, MatrixXdr &op, int 
 				res(p_iter, k_iter) = y_m[p_iter - p_base][k_iter];
 			}
 		}
+		if (debug)
+			cout << seg_iter << "\t" << res.sum () << endl;
 	}
 }
 
@@ -104,7 +110,7 @@ void MatMult::multiply_y_pre_fast(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bo
 		sum_op[k_iter] = op.col(k_iter).sum();
 	}
 
-	#if DEBUG == 1
+//	#if DEBUG == 1
 		if (debug) {
 			// print_time();
 			std::cout << "Starting mailman on premultiply" << std::endl;
@@ -113,11 +119,12 @@ void MatMult::multiply_y_pre_fast(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bo
 			std::cout << "Matrix size = " << g.segment_size_hori << "\t" << g.Nindv << std::endl;
 			std::cout << "op = " <<  op.rows() << "\t" << op.cols() << std::endl;
 		}
-	#endif
+//	#endif
 
 	// TODO: Memory Effecient SSE FastMultipy
 
 	nthreads = (nthreads > g.Nsegments_hori) ? g.Nsegments_hori: nthreads;
+	nthreads = (nthreads < 1)? 1:nthreads;
 
 	std::thread th[nthreads];
 	int perthread = g.Nsegments_hori / nthreads;

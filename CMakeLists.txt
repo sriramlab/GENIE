@@ -71,12 +71,15 @@ set(genie_lib_header
         include/printable.h
         include/std.h
         include/storage.h
+		include/functions.h
+		include/vectorfn.h
 )
 
 set(genie_lib_source
         src/genotype.cpp
         src/matmult.cpp
         src/storage.cpp
+		src/functions.cpp
 )
 
 add_library(genie_lib STATIC ${genie_lib_header} ${genie_lib_source})

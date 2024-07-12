@@ -1,0 +1,24 @@
+##################################
+#                                #
+#          GENIE (v1.0.0)        #
+#                                #
+##################################
+
+Estimating G heritability
+###########Parameters#############
+#annotation	inputs/single.annot
+#cov_add_intercept	0
+#environment	inputs/test.env
+#genotype	test
+#jack_scheme	1
+#memopt1	0
+#model	G
+#nthreads	1
+#num_jack	10
+#num_vec	20
+#output	test.out
+#phenotype	inputs/test.pheno
+#seed	2
+#trace	1
+#verbose	3
+#################################

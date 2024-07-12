@@ -1,0 +1,155 @@
+##################################
+#                                #
+#          GENIE (v1.0.0)        #
+#                                #
+##################################
+
+Estimating G heritability
+###########Parameters#############
+#annotation	inputs/single.annot
+#covariate	inputs/test.cov
+#environment	inputs/test.env
+#genotype	inputs/test
+#jack_scheme	1
+#memopt1	0
+#model	G
+#nthreads	1
+#num_jack	10
+#num_vec	20
+#output	test.out
+#phenotype	inputs/test.pheno
+#seed	1
+#trace	1
+#verbose	1
+#################################
+Number of SNPs in bim file = 10000
+Number of SNPs in bim file = 10000
+Number of jackknife blocks = 10
+Number of SNPs per jackknife block = 1000
+Number of individuals = 5000
+Number of annotations in annotation file = 1
+Number of SNPs in annotation 0 = 10000
+Number of SNPs selected according to annotation file = 10000
+Reading in 5 covariates ...
+
+Reading genotypes ...
+Pass 1: Reading jackknife block 0
+************Pass 1: Reading jackknife block 0 ************
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 1: Reading jackknife block 1
+************Pass 1: Reading jackknife block 1 ************
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 1: Reading jackknife block 2
+************Pass 1: Reading jackknife block 2 ************
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 1: Reading jackknife block 3
+************Pass 1: Reading jackknife block 3 ************
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 1: Reading jackknife block 4
+************Pass 1: Reading jackknife block 4 ************
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 1: Reading jackknife block 5
+************Pass 1: Reading jackknife block 5 ************
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 1: Reading jackknife block 6
+************Pass 1: Reading jackknife block 6 ************
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 1: Reading jackknife block 7
+************Pass 1: Reading jackknife block 7 ************
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 1: Reading jackknife block 8
+************Pass 1: Reading jackknife block 8 ************
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 1: Reading jackknife block 9
+************Pass 1: Reading jackknife block 9 ************
+Number of SNPs in each bin in jackknife block 9
+1000 
+Finished reading and computing over all blocks
+
+
+Size of bins :
+bin 0 : 10000
+Number of individuals without missing phenotype and enviroment: 5000
+
+
+Pass 2: Reading jackknife block 0
+************Pass 2: Reading jackknife block 0 ************
+Number of SNPs in each bin in jackknife block 0
+1000 
+Pass 2: Reading jackknife block 1
+************Pass 2: Reading jackknife block 1 ************
+Number of SNPs in each bin in jackknife block 1
+1000 
+Pass 2: Reading jackknife block 2
+************Pass 2: Reading jackknife block 2 ************
+Number of SNPs in each bin in jackknife block 2
+1000 
+Pass 2: Reading jackknife block 3
+************Pass 2: Reading jackknife block 3 ************
+Number of SNPs in each bin in jackknife block 3
+1000 
+Pass 2: Reading jackknife block 4
+************Pass 2: Reading jackknife block 4 ************
+Number of SNPs in each bin in jackknife block 4
+1000 
+Pass 2: Reading jackknife block 5
+************Pass 2: Reading jackknife block 5 ************
+Number of SNPs in each bin in jackknife block 5
+1000 
+Pass 2: Reading jackknife block 6
+************Pass 2: Reading jackknife block 6 ************
+Number of SNPs in each bin in jackknife block 6
+1000 
+Pass 2: Reading jackknife block 7
+************Pass 2: Reading jackknife block 7 ************
+Number of SNPs in each bin in jackknife block 7
+1000 
+Pass 2: Reading jackknife block 8
+************Pass 2: Reading jackknife block 8 ************
+Number of SNPs in each bin in jackknife block 8
+1000 
+Pass 2: Reading jackknife block 9
+************Pass 2: Reading jackknife block 9 ************
+Number of SNPs in each bin in jackknife block 9
+1000 
+Finished reading and computing over all blocks
+
+
+*****
+Number of SNPs in bin 0 = 10000
+*****
+Number of G variance components = 1
+Number of GxE variance components = 0
+Number of NxE variance components = 0
+*****
+
+OUTPUT: 
+Variance components: 
+Sigma^2_g[0] : 0.169024  SE : 0.0295582
+Sigma^2_e : 0.83055  SE : 0.0295557
+*****
+Heritabilities: 
+h2_g[0] : 0.169129 SE : 0.0295672
+Total h2 : 0.169129 SE: 0.0295672
+Total h2_g : 0.169129 SE: 0.0295672
+*****
+Enrichments:
+G enrichment
+Enrichment g[0] : 1 SE : 0
+*****
+*****
+Heritabilities and enrichments computed based on overlapping setting
+Heritabilities: 
+h2_g[0] : 0.169128 SE : 0.0295732
+Enrichments (overlapping def): 
+Enrichment g[0] : 0.999995 SE : 0.000168628
+GENIE ran successfully. Time elapsed = 3.36656 seconds 

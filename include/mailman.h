@@ -15,8 +15,13 @@
 
 
 namespace mailman {
+	#ifdef USE_DOUBLE
+		typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixXdr;
+	#else
+		typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixXdr;
+	#endif
 
-	void fastmultiply_normal(int m, int n , int k, std::vector<int> &p, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &x, double *yint, double *c, double **y){
+	void fastmultiply_normal(int m, int n , int k, std::vector<int> &p,  MatrixXdr &x, double *yint, double *c, double **y){
 		for (int i = 0 ; i < n; i++)  {
 			int l = p[i]  ;
 			for (int j = 0 ; j < k ; j ++)
@@ -46,7 +51,7 @@ namespace mailman {
 			yint[l] = 0;
 	}
 
-	void fastmultiply_pre_normal(int m, int n , int k, int start, std::vector<int> &p, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &x, double *yint, double *c, double **y){
+	void fastmultiply_pre_normal(int m, int n , int k, int start, std::vector<int> &p, MatrixXdr &x, double *yint, double *c, double **y){
 		int size1 = pow(3.,m);
 		memset (yint, 0, size1* sizeof(double));
 
@@ -76,7 +81,7 @@ namespace mailman {
 
     #if defined(SSE_SUPPORT) && SSE_SUPPORT == 1
 		// k must be a multiple of 10
-	void fastmultiply_sse (int m, int n , int k, std::vector<int> &p, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &x, double *yint, double *c, double **y){
+	void fastmultiply_sse (int m, int n , int k, std::vector<int> &p, MatrixXdr &x, double *yint, double *c, double **y){
 		__m128d x0, x2, x4, x6, x8;
 		__m128d y0, y2, y4, y6, y8;
 		__m128d z0, z2, z4, z6, z8;
@@ -210,7 +215,7 @@ std::cout << "k="<< k << std::endl;
 		for (int l = 0; l < k ; l++)
 			yint[l] = 0;
 	}
-	void fastmultiply_pre_sse (int m, int n , int k, int start, std::vector<int> &p, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &x, double *yint, double *c, double **y){
+	void fastmultiply_pre_sse (int m, int n , int k, int start, std::vector<int> &p, MatrixXdr &x, double *yint, double *c, double **y){
 		
 		int size1 = pow(3.,m);
 		memset (yint, 0, size1* sizeof(double));

@@ -20,16 +20,16 @@ struct options{
 	std::string COVARIATE_FILE_PATH; 
 	std::string COVARIATE_NAME; 
 	std::string ENV_FILE_PATH;
-	 std::string Annot_PATH;
+	std::string Annot_PATH;
+	std::string XSUM_FILE_PATH;
 	
 
 	std::string simul_par_PATH;
-	  std::string maf_ld_PATH;
+ 	std::string maf_ld_PATH;
 
 
 	//int batchNum; 
 	int num_of_evec ;
-	int jack_number;
 
 	bool getaccuracy ;
 	bool debugmode;
@@ -49,7 +49,26 @@ struct options{
 	bool normalize_proj_pheno;
 	bool cov_add_intercept;
 	int nthreads;
-	bool verbose;
+	int verbose;
+	bool opt1;
+	bool opt2;
+	int mem_Nsnp;
+	int mem_alloc;
+	bool use_ysum;
+	bool keep_xsum;
+	
+
+	// How to do jackknife
+	// 0: no jackknife
+	// 1: constant number of SNPs
+	// 2: same as 0 (adjusting for chromosome boundaries)
+	// 3: constant physical length (adjusting for chromosome boundaries)
+	int jack_scheme;
+	int jack_number;
+
+	// Length of jackknife block in MB
+	int jack_size;
+
 	//CHANGE(11/12)
 	// bool perm_E_in_GxE;
     //CHANGE(03/04)
@@ -114,6 +133,7 @@ public:
                         return returnVal;
                     }
                 }
+				cout << val << endl;
                 exitWithError("CFG: Not a valid bool received!\n");
             }
 			return returnVal;
@@ -282,13 +302,20 @@ void parse_args(int argc, char const *argv[]){
 	//CHANGE(10/20)
 	command_line_opts.hetero_noise = true;
 	command_line_opts.gen_by_env = true;
-	command_line_opts.jack_number = 100;
+
+	command_line_opts.jack_scheme = 1;
+	command_line_opts.jack_number = 1000;
+	command_line_opts.jack_size = 10;
+
+	command_line_opts.use_ysum = false;
+	command_line_opts.keep_xsum = true;
+
 	command_line_opts.model = "G+GxE+NxE";
 	command_line_opts.seed = -1;
 	command_line_opts.normalize_proj_pheno = true;
 	command_line_opts.cov_add_intercept = true;
 	command_line_opts.nthreads = 1;
-	command_line_opts.verbose = false;
+	command_line_opts.verbose = 0;
 	//CHANGE(11/12)
 	// command_line_opts.perm_E_in_GxE=false;
     // CHANGE(03/04)
@@ -310,18 +337,23 @@ void parse_args(int argc, char const *argv[]){
 		ConfigFile cfg(cfg_filename);
 		cfg.printVersion();
 		got_genotype_file = cfg.keyExists("genotype");
+	    command_line_opts.jack_scheme = cfg.getValueOfKey<int>("jack_scheme", 1);
 	    command_line_opts.jack_number = cfg.getValueOfKey<int>("num_jack", 10);
-		//command_line_opts.batchNum = cfg.getValueOfKey<int> ("batchNum",10); 
+	    command_line_opts.jack_size = cfg.getValueOfKey<int>("jack_size", 10);
+
+		command_line_opts.use_ysum = false;
+		command_line_opts.keep_xsum = true;
+
 		command_line_opts.num_of_evec = cfg.getValueOfKey<int>("num_vec",2);
 		command_line_opts.getaccuracy = cfg.getValueOfKey<bool>("accuracy",false);
 		//command_line_opts.getaccuracy = cfg.keyExists("accuracy"); // config file parsing doesn't allow boolean flags... needs to be fixed
-		//command_line_opts.debugmode = cfg.getValueOfKey<bool>("debug",false);
 		command_line_opts.debugmode = cfg.getValueOfKey<bool>("debug",false);
 		command_line_opts.l = cfg.getValueOfKey<int>("l",0);
 		command_line_opts.OUTPUT_FILE_PATH = cfg.getValueOfKey<string>("output",string(""));
 		command_line_opts.GENOTYPE_FILE_PATH = cfg.getValueOfKey<string>("genotype",string(""));
 		command_line_opts.PHENOTYPE_FILE_PATH= cfg.getValueOfKey<string>("phenotype", string("")); 
 		command_line_opts.COVARIATE_FILE_PATH= cfg.getValueOfKey<string>("covariate", string(""));
+		command_line_opts.XSUM_FILE_PATH= cfg.getValueOfKey<string>("summary_genotype", string(""));
         command_line_opts.ENV_FILE_PATH = cfg.getValueOfKey<string>("environment", string(""));
         command_line_opts.Annot_PATH = cfg.getValueOfKey<string>("annotation", string(""));
         command_line_opts.nthreads = cfg.getValueOfKey<int>("nthreads", 1); 
@@ -332,9 +364,18 @@ void parse_args(int argc, char const *argv[]){
 		command_line_opts.missing = cfg.getValueOfKey<bool>("missing",false);	
 		command_line_opts.text_version = cfg.getValueOfKey<bool>("text_version",false);						
         command_line_opts.print_trace = cfg.getValueOfKey<bool>("trace", false);
-        command_line_opts.verbose = cfg.getValueOfKey<bool>("verbose", false);
+        command_line_opts.verbose = cfg.getValueOfKey<int>("verbose", 0);
+
+		command_line_opts.opt1 = cfg.getValueOfKey<bool>("opt1", true);
+        command_line_opts.opt2 = cfg.getValueOfKey<bool>("opt2", true); 
+        command_line_opts.mem_Nsnp = cfg.getValueOfKey<int>("mem_Nsnp", 10); 
+        command_line_opts.mem_alloc = cfg.getValueOfKey<int>("mem_alloc", -1); 
+
+        command_line_opts.use_ysum = cfg.getValueOfKey<bool>("use_phenosum", false);
+        command_line_opts.keep_xsum = cfg.getValueOfKey<bool>("output_genosum", true);
+
+		command_line_opts.cov_add_intercept = cfg.getValueOfKey<bool>("cov_add_intercept", true);
         //command_line_opts.print_trace = cfg.keyExists("print_trace");
-        //command_line_opts.verbose = cfg.keyExists("verbose");
         command_line_opts.model = cfg.getValueOfKey<string>("model", string(""));
         if (cfg.keyExists("model")){
             const char* model_arg = command_line_opts.model.c_str();
@@ -342,17 +383,17 @@ void parse_args(int argc, char const *argv[]){
                 command_line_opts.hetero_noise = false;
                 command_line_opts.gen_by_env = false;
                 command_line_opts.normalize_proj_pheno = false;
-                cout << "Estimation of G heritability" << endl;
+                cout << "Estimating G heritability" << endl;
             } else if (strcmp(model_arg, "G+GxE")==0) {
                 command_line_opts.hetero_noise = false;
                 command_line_opts.gen_by_env = true;
-                cout << "Estimation of G and GxE heritability (no heterogeneous noise)" << endl;
+                cout << "Estimating G and GxE heritability (no heterogeneous noise)" << endl;
             } else if (strcmp(model_arg, "G+GxE+NxE")==0) {
                 command_line_opts.hetero_noise = true;
                 command_line_opts.gen_by_env = true;
-                cout << "Estimation of G and GxE heritability (with heterogeneous noise)" << endl;
+                cout << "Estimating and GxE heritability (with heterogeneous noise)" << endl;
             } else {
-                cout << "model can only be G, G+GxE, or G+GxE+NxE. Using default G+GxE+NxE model" << endl;
+                cout << "Choice of models must be one of G, G+GxE, or G+GxE+NxE. Using default G+GxE+NxE model" << endl;
                 command_line_opts.hetero_noise = true;
                 command_line_opts.gen_by_env = true;
                 cout << "Estimation of G and GxE heritability (with heterogeneous noise)" << endl;
@@ -414,6 +455,10 @@ void parse_args(int argc, char const *argv[]){
 					cfg.insertKey ("covariate", argv[i+1]);
 					i++; 
 				}
+				else if(strcmp(argv[i],"-sg")==0){
+					command_line_opts.XSUM_FILE_PATH = string(argv[i+1]);
+					i++; 
+				}
 				else if(strcmp(argv[i],"-cn")==0){
 					command_line_opts.COVARIATE_NAME = string(argv[i+1]);
 					cfg.insertKey ("covariate name", argv[i+1]);
@@ -437,7 +482,7 @@ void parse_args(int argc, char const *argv[]){
 				}
 				else if(strcmp(argv[i],"-jn")==0){
 					command_line_opts.jack_number= atoi(argv[i+1]);
-					cfg.insertKey ("num_jackknife_blocks", argv[i+1]);
+					cfg.insertKey ("num_jack", argv[i+1]);
 					i++;
 				}
 				else if(strcmp(argv[i],"-h2")==0){
@@ -495,7 +540,7 @@ void parse_args(int argc, char const *argv[]){
 					i++;
                    // CHANGE(03/04): makes more sense to have flags as a boolean true. TODO: also, why aren't we using getopt_long?
 				} else if ((strcmp(argv[i], "-v")==0) || (strcmp(argv[i], "--verbose")==0)) {
-					command_line_opts.verbose = true;
+					command_line_opts.verbose = 1;
 				} else if ((strcmp(argv[i], "-tr")==0) || (strcmp(argv[i], "--trace")==0)){
                     command_line_opts.print_trace = true;
                 }
@@ -528,8 +573,9 @@ void parse_args(int argc, char const *argv[]){
 				}
 			}
 			else if(strcmp(argv[i],"-v")==0) {
-				command_line_opts.debugmode = true;
-				cfg.insertKey ("debug", "1");
+//				command_line_opts.debugmode = true;
+//				cfg.insertKey ("debug", "1");
+				command_line_opts.verbose = 1;
 			}
 			else if(strcmp(argv[i],"-a")==0)
 				command_line_opts.getaccuracy = true;
