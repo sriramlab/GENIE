@@ -64,7 +64,7 @@ jobs:
           covar=${EXAMPLE_DIR}/test.cov
           annot=${EXAMPLE_DIR}/single.annot
           env=${EXAMPLE_DIR}/test.env
-          ./GENIE -g $gen -p $phen -c $covar -e $env -m G+GxE+NxE -k 10 -jn 10 -o ${TEST_OUTPUT_DIR}/test.1.out -annot $annot -t 6
+          ./GENIE -g $gen -p $phen -c $covar -e $env -m G+GxE+NxE -k 10 -jn 10 -o ${TEST_OUTPUT_DIR}/test.1.out -a $annot -t 6
           echo -e "\n\n###\n\n"
           cat ${TEST_OUTPUT_DIR}/test.1.out
         working-directory: ${{ env.BUILD_DIR }}
@@ -76,7 +76,7 @@ jobs:
           covar=${EXAMPLE_DIR}/test.cov
           annot=${EXAMPLE_DIR}/single.annot
           env=${EXAMPLE_DIR}/test.env
-          ./GENIE_multi_pheno -g $gen -p $phen -c $covar -e $env -m G+GxE+NxE -k 10 -jn 10 -o ${TEST_OUTPUT_DIR}/test.2.out -annot $annot -t 6
+          ./GENIE_multi_pheno -g $gen -p $phen -c $covar -e $env -m G+GxE+NxE -k 10 -jn 10 -o ${TEST_OUTPUT_DIR}/test.2.out -a $annot -t 6
           echo -e "\n\n###\n\n"
           cat ${TEST_OUTPUT_DIR}/test.2.out
         working-directory: ${{ env.BUILD_DIR }}
