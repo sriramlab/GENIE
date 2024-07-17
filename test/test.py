@@ -14,11 +14,11 @@ def test_genie():
 
     run_genie(
         ['-g', gen, '-p', phen, '-c', covar, '-e', env, '-m', 'G+GxE+NxE', '-k', '10', '-jn', '10', '-o',
-         EXAMPLE_DIR / 'test.py.list.1.out', '-annot', annot, '-t', '6']
+         EXAMPLE_DIR / 'test.py.list.1.out', '-a', annot, '-t', '6']
     )
 
     run_genie(
-        f'-g {gen} -p {phen} -c {covar} -e {env} -m G+GxE+NxE -k 10 -jn 10 -o {EXAMPLE_DIR / "test.py.str.1.out"} -annot {annot} -t 6'
+        f'-g {gen} -p {phen} -c {covar} -e {env} -m G+GxE+NxE -k 10 -jn 10 -o {EXAMPLE_DIR / "test.py.str.1.out"} -a {annot} -t 6'
     )
 
 
@@ -31,11 +31,11 @@ def test_genie_multi_pheno():
 
     run_genie_multi_pheno(
         ['-g', gen, '-p', phen, '-c', covar, '-e', env, '-m', 'G+GxE+NxE', '-k', '10', '-jn', '10', '-o',
-         EXAMPLE_DIR / 'test.py.list.2.out', '-annot', annot, '-t', '6']
+         EXAMPLE_DIR / 'test.py.list.2.out', '-a', annot, '-t', '6']
     )
 
     run_genie_multi_pheno(
-        f'-g {gen} -p {phen} -c {covar} -e {env} -m G+GxE+NxE -k 10 -jn 10 -o {EXAMPLE_DIR / "test.py.str.2.out"} -annot {annot} -t 6'
+        f'-g {gen} -p {phen} -c {covar} -e {env} -m G+GxE+NxE -k 10 -jn 10 -o {EXAMPLE_DIR / "test.py.str.2.out"} -a {annot} -t 6'
     )
 
 
