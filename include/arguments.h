@@ -389,7 +389,9 @@ void parse_args(int argc, char const *argv[]){
 		command_line_opts.l = cfg.getValueOfKey<int>("l",0);
 		command_line_opts.OUTPUT_FILE_PATH = cfg.getValueOfKey<string>("output",string(""));
 		command_line_opts.GENOTYPE_FILE_PATH = cfg.getValueOfKey<string>("genotype",string(""));
-		command_line_opts.PHENOTYPE_FILE_PATH= cfg.getValueOfKey<string>("phenotype", string("")); 
+		command_line_opts.PHENOTYPE_FILE_PATH= cfg.getValueOfKey<string>("phenotype", string(""));
+		if (command_line_opts.PHENOTYPE_FILE_PATH != "")
+			got_phenotype_file = true;
 		command_line_opts.COVARIATE_FILE_PATH= cfg.getValueOfKey<string>("covariate", string(""));
 		command_line_opts.XSUM_FILE_PATH= cfg.getValueOfKey<string>("summary_genotype", string(""));
         command_line_opts.ENV_FILE_PATH = cfg.getValueOfKey<string>("environment", string(""));
