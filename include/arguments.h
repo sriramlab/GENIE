@@ -73,6 +73,7 @@ struct options{
 	// bool perm_E_in_GxE;
     //CHANGE(03/04)
     bool print_trace;
+	bool use_dummy_pheno; // in case no phenotype is provided; use dummy pheno
 };
 
 /*template<typename T, typename U>
@@ -96,15 +97,52 @@ void exitWithError(const std::string &error) {
 	exit(1);
 }
 
+void noTrace(options& opt){  // trace summaries are only supported for G only model
+	if (opt.print_trace = true){
+		cerr << "Trace summary is only supported for G only model! Unsetting trace summary option..." << endl;
+		opt.print_trace = false;
+	}	
+}
+
+// CHANGE (07/16): IMO we should be using getopt_long, but for the moment we can use this shortcut for argument processing
+int isarg(const char* arg, const char* shortarg, const char* longarg){
+	return ((strcmp(shortarg, arg) == 0) || (strcmp(longarg, arg)==0));
+}
 
 std::string usage ( ) {
 	std::ostringstream ostr;
 
-	ostr <<"Usage: GENIE/GENIE_mem " << "[input flags]" << endl;
+	ostr <<"Usage: GENIE/GENIE_mem " << "[options]" << endl;
+	ostr << "\nOptions:\n"
+		 << "  -h, --help 					Show this message and exit\n"
+		 << "  -g, --genotype				The path of PLINK BED genotype file\n"
+		 << "  -p, --phenotype				The path of phenotype file\n"
+		 << "  -c, --covariate				The path of covariate file\n"
+		 << "  -a, --annot					The path of input annotation for partitioned heritability\n"
+		 << "  -o, --output					Output file path (prefix)\n"
+		 << "  -e, --environment				The path of environment file\n"
+		 << "  -m, --model					Specification of the model. Currently there are 3 options:\n"
+		 << "						1. additive genetic (G) effects only (arg: G)\n"
+		 << "							The model reduces to RHE-mc (Pazokitoroudi et al. Nat Commun (2020). https://doi.org/10.1038/s41467-020-17576-9).\n"
+		 << "						2. additive genetic (G) and gene-environment (GxE) effects (arg: G+GxE)\n"
+		 << "							The model treats noise/environment effects as homogeneous.\n"
+		 << "						3. additive genetic (G), gene-environment (GxE) and heterogeneous noise (NxE) effects (arg: G+GxE+NxE)\n"
+		 << "							The model treats noise/environment effects as heterogeneous.\n"
+		 << "  -k, --num-vec					The number of random vectors (10 is recommended).\n"
+		 << "  -jn, --num-jack				The number of jackknife blocks (100 is recommended).\n"
+		 << "  -t, --nthreads				The number of threads for multithreading\n"
+		 << "  -tr, --trace					Flag for printing trace summary files (.tr) and metadata (.MN), compatible with SUM-RHE.\n"
+		 << "						If this flag is set, a phenotype file is no longer required (a dummy phenotype without covariates will be used). Currently supports G-model only.\n"
+		 << "  -v, --verbose					Verbose mode; Output extra information (Normal equation, number of samples, etc.).\n"
+		 << "  -eXa, --eXannot				By default, GENIE fits a single GxE variance component. To partition the GxE component w.r.t the annotation file, add '-eXannot' flag.\n"
+		 << "  -np, --norm-proj-pheno			By default, the phenotype vector is standardized after regressing covariates. Turn this off by setting '--norm-proj-pheno 0'.\n"
+		 << "  -i, --cov-add-intercept			By default, a vector of ones is appended to the covariates (the intercept term). Turn this off by setting '--cov-add-intercept 0'.\n"
+		 << endl;
+/*
 	ostr <<"\t-g [genotype] -annot [annotation] -p [phenotype] -c [covariates] -o [output]" << endl;
 	ostr  << "\t[-e [environment] -m [G|G+GxE|G+GxE+NxE] -k [# random vectors] -jn [# jackknife subsamples]	-t [# threads]]" << endl;
 	ostr <<  "\t[-s [random seed] -eXannot -norm_proj_pheno [0|1] -cov_add_intercept [0|1] -v [0|1]]"<<endl;
-
+*/
 	return ostr.str ();
 }
 
@@ -320,16 +358,16 @@ void parse_args(int argc, char const *argv[]){
 	// command_line_opts.perm_E_in_GxE=false;
     // CHANGE(03/04)
     command_line_opts.print_trace = false;
+	command_line_opts.use_dummy_pheno = false;
 
-	if(argc<2){
-		// cout<<"Correct Usage is "<<argv[0]<<" -p <parameter file>"<<endl;
-		
+	command_line_opts.opt1 = true;
+	command_line_opts.opt2 = true;
+	command_line_opts.mem_Nsnp = 10; 
+	command_line_opts.mem_alloc = -1; 
+
+
+	if(argc<2 || (argc == 2 && (isarg(argv[1], "-h", "--help")))){
 		exitWithError (usage ());
-//		cout<<"Correct Usage is "<<argv[0] << ":" << endl;
-//		cout <<"\t-g [genotype] -annot [annotation] -p [phenotype] -c [covariates] -o [output]" << endl;
-//		cout  << "\t[-e [environment] -m [G|G+GxE|G+GxE+NxE] -k [# random vectors] -jn [# jackknife subsamples]	-t [# threads]]" << endl;
-//		cout <<  "\t[-s [random seed] -eXannot -norm_proj_pheno [0|1] -cov_add_intercept [0|1] -v [0|1]]"<<endl;
-//		exit(-1);
 	}
     // using a config file instead of cmd-line args. TODO: have all the current options as config version. remove deprecated/redundant options
 	if(strcmp(argv[1],"--config")==0){
@@ -375,7 +413,6 @@ void parse_args(int argc, char const *argv[]){
         command_line_opts.keep_xsum = cfg.getValueOfKey<bool>("output_genosum", true);
 
 		command_line_opts.cov_add_intercept = cfg.getValueOfKey<bool>("cov_add_intercept", true);
-        //command_line_opts.print_trace = cfg.keyExists("print_trace");
         command_line_opts.model = cfg.getValueOfKey<string>("model", string(""));
         if (cfg.keyExists("model")){
             const char* model_arg = command_line_opts.model.c_str();
@@ -383,20 +420,25 @@ void parse_args(int argc, char const *argv[]){
                 command_line_opts.hetero_noise = false;
                 command_line_opts.gen_by_env = false;
                 command_line_opts.normalize_proj_pheno = false;
-                cout << "Estimating G heritability" << endl;
+                cout << "Estimating G heritability" << endl;	
             } else if (strcmp(model_arg, "G+GxE")==0) {
                 command_line_opts.hetero_noise = false;
                 command_line_opts.gen_by_env = true;
                 cout << "Estimating G and GxE heritability (no heterogeneous noise)" << endl;
+				noTrace(command_line_opts);
+			
             } else if (strcmp(model_arg, "G+GxE+NxE")==0) {
                 command_line_opts.hetero_noise = true;
                 command_line_opts.gen_by_env = true;
                 cout << "Estimating and GxE heritability (with heterogeneous noise)" << endl;
+				noTrace(command_line_opts);			
+			
             } else {
                 cout << "Choice of models must be one of G, G+GxE, or G+GxE+NxE. Using default G+GxE+NxE model" << endl;
                 command_line_opts.hetero_noise = true;
                 command_line_opts.gen_by_env = true;
                 cout << "Estimation of G and GxE heritability (with heterogeneous noise)" << endl;
+				noTrace(command_line_opts);
             }
 	    }
 		cfg.printParameters ();
@@ -411,26 +453,27 @@ void parse_args(int argc, char const *argv[]){
 		cfg.insertKey ("debug", "0");
 		cfg.insertKey ("seed",  Convert::T_to_string (command_line_opts.seed));
 
-		for (int i = 1; i < argc; i++) { 
+		for (int i = 1; i < argc; i++) {
 			if (i + 1 != argc){
-				if(strcmp(argv[i],"-g")==0){
+				if(isarg(argv[i], "-g", "--genotype")){
 					command_line_opts.GENOTYPE_FILE_PATH = string(argv[i+1]);
 					cfg.insertKey ("genotype", argv[i+1]);
 					got_genotype_file = true;
 					i++;
 				}
-				else if(strcmp(argv[i],"-o")==0){
+				else if(isarg(argv[i], "-o", "--output")){
 					command_line_opts.OUTPUT_FILE_PATH = string(argv[i+1]);
 					cfg.insertKey ("output", argv[i+1]);
 					got_output_file = true;
 					i++;
 				}
-				else if(strcmp(argv[i],"-annot")==0){
+				else if(isarg(argv[i], "-a", "--annot")){
 					command_line_opts.Annot_PATH= string(argv[i+1]);
 					cfg.insertKey ("annotation", argv[i+1]);
             	    got_annot_file = true;
 					i++;
 				}
+				// looks like these are arguments for simulator, not GENIE (unless we want to incorporate the simulator code as well)
 				else if(strcmp(argv[i],"-simul_par")==0){
 					command_line_opts.simul_par_PATH= string(argv[i+1]);
 					cfg.insertKey ("simul_par", argv[i+1]);
@@ -440,17 +483,17 @@ void parse_args(int argc, char const *argv[]){
 					command_line_opts.maf_ld_PATH= string(argv[i+1]);
 					i++;
 				}
-				else if(strcmp(argv[i], "-p")==0){
+				else if(isarg(argv[i], "-p", "--phenotype")){
 					command_line_opts.PHENOTYPE_FILE_PATH =string(argv[i+1]); 
 					cfg.insertKey ("phenotype", argv[i+1]);
                 	got_phenotype_file = true;
 					i++; 
 				}
-				else if (strcmp(argv[i], "-e")==0){
+				else if (isarg(argv[i], "-e", "--environment")){
 					command_line_opts.ENV_FILE_PATH=string(argv[i+1]);
 					i++;
 				}
-				else if(strcmp(argv[i],"-c")==0){
+				else if(isarg(argv[i], "-c", "--covariate")){
 					command_line_opts.COVARIATE_FILE_PATH = string(argv[i+1]);
 					cfg.insertKey ("covariate", argv[i+1]);
 					i++; 
@@ -459,38 +502,39 @@ void parse_args(int argc, char const *argv[]){
 					command_line_opts.XSUM_FILE_PATH = string(argv[i+1]);
 					i++; 
 				}
-				else if(strcmp(argv[i],"-cn")==0){
+				else if(isarg(argv[i], "-cn", "--covariate-name")){
 					command_line_opts.COVARIATE_NAME = string(argv[i+1]);
 					cfg.insertKey ("covariate name", argv[i+1]);
 					i++;
 				}
-				else if(strcmp(argv[i],"-k")==0){
+				else if(isarg(argv[i], "-k", "--num-vec")){
 					command_line_opts.num_of_evec = atoi(argv[i+1]);
 					cfg.insertKey ("num_vec", argv[i+1]);
 					i++;
 				}
-                //CHANGE(03/04): batchNum is deprecated
-                /*
-				else if(strcmp(argv[i],"-b")==0){
-					command_line_opts.batchNum = atoi(argv[i+1]); 
-					i++; 
-				}
-                */
 				else if(strcmp(argv[i],"-l")==0){
 					command_line_opts.l = atoi(argv[i+1]);
 					i++;
 				}
-				else if(strcmp(argv[i],"-jn")==0){
+				else if(isarg(argv[i], "-jn", "--num-jack")){
 					command_line_opts.jack_number= atoi(argv[i+1]);
 					cfg.insertKey ("num_jack", argv[i+1]);
 					i++;
 				}
+				else if(isarg(argv[i], "-js", "--jack-scheme")){
+					command_line_opts.jack_number= atoi(argv[i+1]);
+					cfg.insertKey ("jack_scheme", argv[i+1]);
+					i++;
+				}
+				//CHANGE(07/16): what is this option for??
+				/*
 				else if(strcmp(argv[i],"-h2")==0){
 					command_line_opts.beta= atof(argv[i+1]);
 					i++;
 				}
+				*/
 				//CHANGE(2/27)
-				else if(strcmp(argv[i],"-m")==0) {
+				else if(isarg(argv[i], "-m", "--model")) {
 					if (strcmp(argv[i+1], "G")==0) {
 						command_line_opts.model = "G";
 						command_line_opts.hetero_noise = false;
@@ -502,10 +546,12 @@ void parse_args(int argc, char const *argv[]){
 						command_line_opts.hetero_noise = false;
 						command_line_opts.gen_by_env = true;
 						cout << "Estimation of G and GxE heritability (no heterogeneous noise)" << endl;
+						noTrace(command_line_opts);
 				} else if (strcmp(argv[i+1], "G+GxE+NxE")==0) {
 						command_line_opts.hetero_noise = true;
 						command_line_opts.gen_by_env = true;
 						cout << "Estimation of G and GxE heritability (with heterogeneous noise)" << endl;
+						noTrace(command_line_opts);
 				} else {
 						cout << "model can only be G, G+GxE, or G+GxE+NxE. Using default G+GxE+NxE model" << endl;
 						command_line_opts.hetero_noise = true;
@@ -513,11 +559,11 @@ void parse_args(int argc, char const *argv[]){
 						cout << "Estimation of G and GxE heritability (with heterogeneous noise)" << endl;
 					}
 					i++;
-				} else if (strcmp(argv[i], "-s")==0) {
+				} else if (isarg(argv[i], "-s", "--seed")) {
 					command_line_opts.seed = atoi(argv[i+1]);
 					cfg.insertKey ("seed", argv[i+1]);
 					i++;
-				} else if (strcmp(argv[i], "-norm_proj_pheno")==0) {
+				} else if (isarg(argv[i], "-np", "--norm-proj-pheno")) {
 					int flag = atoi(argv[i+1]);
 					if (flag == 0) {
 						command_line_opts.normalize_proj_pheno = false;
@@ -526,7 +572,7 @@ void parse_args(int argc, char const *argv[]){
 						command_line_opts.normalize_proj_pheno = true;
 					}
 					i++;
-				} else if (strcmp(argv[i], "-cov_add_intercept")==0) {
+				} else if (isarg(argv[i], "-i", "--cov-add-intercept")) {
 					int flag = atoi(argv[i+1]);
 					if (flag == 0) {
 						command_line_opts.cov_add_intercept = false;
@@ -535,14 +581,15 @@ void parse_args(int argc, char const *argv[]){
 						command_line_opts.cov_add_intercept = true;
 					}
 					i++;
-				} else if (strcmp(argv[i], "-t")==0) {
+				} else if (isarg(argv[i], "-t", "--nthreads")) {
 					command_line_opts.nthreads = atoi(argv[i+1]);
 					i++;
                    // CHANGE(03/04): makes more sense to have flags as a boolean true. TODO: also, why aren't we using getopt_long?
-				} else if ((strcmp(argv[i], "-v")==0) || (strcmp(argv[i], "--verbose")==0)) {
+				} else if (isarg(argv[i], "-v", "--verbose")) {
 					command_line_opts.verbose = 1;
-				} else if ((strcmp(argv[i], "-tr")==0) || (strcmp(argv[i], "--trace")==0)){
+				} else if (isarg(argv[i], "-tr", "--trace")){
                     command_line_opts.print_trace = true;
+					cout << "Printing trace summaries" << endl;
                 }
 							//CHANGE(11/12)
 							// else if (strcmp(argv[i], "-perm_E_in_GxE")==0) {
@@ -551,53 +598,63 @@ void parse_args(int argc, char const *argv[]){
 							// }
 							// else if(strcmp(argv[i],"-v")==0)
 							// 	command_line_opts.debugmode = true;
-				else if(strcmp(argv[i],"-mem")==0)
+				else if(isarg(argv[i], "-mem", "--memory-efficient"))
 					command_line_opts.memory_efficient = true;
-				else if(strcmp(argv[i],"-miss")==0)
+				else if(isarg(argv[i], "-miss", "--missing"))
 					command_line_opts.missing = true;
-				else if(strcmp(argv[i],"-nfm")==0)
+				else if(isarg(argv[i], "-nfm", "--no-fast-mode"))
 					command_line_opts.fast_mode = false;
-				else if(strcmp(argv[i],"-eXannot")==0)		
-					command_line_opts.exannot = true;	
+				else if(isarg(argv[i],"-eXa", "--eXannot"))
+					command_line_opts.exannot = true;
 				else{
-					cout<<"Not Enough or Invalid arguments"<<endl;
-									// cout<<"Correct Usage is "<<argv[0]<<" -g <genotype file> -k <num_of_vec> -b <num_of_zb/10>  -v (for debugmode) -a (for getting accuracy)"<<endl;
+					cout<<"Not Enough or Invalid arguments: '"<< argv[i] << "'" << endl;
 					exitWithError (usage());
-/*
-					cout<<"Correct Usage is "<<argv[0] << ":" << endl;
-					cout <<"\t-g [genotype] -annot [annotation] -p [phenotype] -c [covariates] -o [output]" << endl;
-					cout  << "\t[-e [environment] -m [G|G+GxE|G+GxE+NxE] -k [# random vectors] -jn [# jackknife subsamples]	-t [# threads]]" << endl;
-					cout <<  "\t[-s [random seed] -eXannot -norm_proj_pheno [0|1] -cov_add_intercept [0|1] -v [0|1]]"<<endl;
-					exit(-1);
-*/
 				}
 			}
-			else if(strcmp(argv[i],"-v")==0) {
-//				command_line_opts.debugmode = true;
-//				cfg.insertKey ("debug", "1");
+			else if(isarg(argv[i], "-v", "--verbose"))
 				command_line_opts.verbose = 1;
-			}
-			else if(strcmp(argv[i],"-a")==0)
+			else if (isarg(argv[i], "-tr", "--trace")){
+				command_line_opts.print_trace = true;
+				cout << "Printing trace summaries" << endl;
+            }
+			else if(isarg(argv[i], "-acc", "--accuracy"))
 				command_line_opts.getaccuracy = true;
-					//	else if(strcmp(argv[i],"-vn")==0)
-					//			command_line_opts.var_normalize = true;
-			else if(strcmp(argv[i],"-mem")==0)
+			else if(isarg(argv[i], "-mem", "--memory-efficient"))
 				command_line_opts.memory_efficient = true;
-			else if(strcmp(argv[i],"-nfm")==0)
+			else if(isarg(argv[i], "-nfm", "--no-fast-mode"))
 				command_line_opts.fast_mode = false;
-			else if(strcmp(argv[i],"-miss")==0)
+			else if(isarg(argv[i], "-miss", "--missing"))
 				command_line_opts.missing = true;
-			else if(strcmp(argv[i],"-txt")==0)
+			else if(isarg(argv[i], "-txt", "--text-version"))
 				command_line_opts.text_version = true;
 		}
 		cfg.printParameters ();
 	}
 	
 	if(got_genotype_file==false){
-		cout<<"Genotype file missing"<<endl;
-		exitWithError (usage ());
-//		cout<<"Correct Usage is "<<argv[0]<<" -g <genotype file> -k <num_of_vec> -m <max_iterations> -v (for debugmode) -a (for getting accuracy)"<<endl;
+		cerr<<"Genotype file is missing"<<endl;
+		exitWithError(usage());
 		exit(-1);
+	}
+	if ((command_line_opts.print_trace) && (command_line_opts.model != "G")){
+		cerr << "Trace summary is only supported for G only model. Disabling --trace option." << endl;
+		command_line_opts.print_trace = false;
+	}
+	if (got_phenotype_file==false){
+		if (command_line_opts.print_trace){
+			cout << "Estimating trace summary without phenotype input (will be using dummy phenotype)" << endl;
+			command_line_opts.use_dummy_pheno = true;
+			if (command_line_opts.COVARIATE_FILE_PATH != ""){
+				cout << "Trace summary estimation with dummy phenotype does not support covariates at the moment." << endl;
+				exitWithError(usage());
+				exit(-1);
+			}
+		}
+		else{
+			cerr << "Phenotype file is missing" << endl;
+			exitWithError(usage());
+			exit(-1);
+		}
 	}
 
 }

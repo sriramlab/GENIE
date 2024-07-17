@@ -2611,10 +2611,13 @@ void genotype_stream_pass (string name, int pass_num){
 			}
 
 			if (trace){
-				trace_file << X_l.block(0, 0, Nbin, Nbin);
-				for (int j = 0; j< Nbin; j++) // TODO: is this the right way to count SNPs in the jn block for partitioned heritability
-					trace_file << "," <<  Nsnp_annot - jack_bin[jack_index][j];
-				trace_file << endl;
+				for (int i=0; i< Nbin; i++){
+						for (int j=0; j < Nbin; j++){
+								trace_file << (X_l(i, j) - Nindv_mask) * (len[i] - jack_bin[jack_index][i])*(len[j] - jack_bin[jack_index][j])/pow(Nindv_mask, 2)
+								<< ",";
+						}
+						trace_file << len[i] - jack_bin[jack_index][i] << endl;
+				}
 			}
 
 		} //end if pass_num = 2
@@ -2753,10 +2756,12 @@ void genotype_stream_pass (string name, int pass_num){
 		X_l << A_trs,b_trk,b_trk.transpose(),NC;
 		Y_r << c_yky,yy;
 		if (trace){
-			trace_file << X_l.block(0, 0, Nbin, Nbin);
-			for (int j = 0; j< Nbin; j++)
-				trace_file << "," << len[j];
-			trace_file << endl;
+			for (int i=0; i< Nbin; i++){
+					for (int j=0; j < Nbin; j++){
+							trace_file << (X_l(i, j) - Nindv_mask) * len[i]*len[j]/pow(Nindv_mask,2) << ",";
+					}
+					trace_file << len[i] << endl;
+			}
 		}
 
 		herit = X_l.colPivHouseholderQr().solve(Y_r);
@@ -2889,7 +2894,9 @@ void read_auxillary_files () {
 		Nsnp = read_bim (f1.str());
 	}
 
+	cout << "setting read_blocks" << endl;
 	setup_read_blocks();
+	cout << "finished setting read_blocks" << endl;
 
 	// Read phenotype and save the number of indvs
 	string filename = command_line_opts.PHENOTYPE_FILE_PATH;
@@ -3349,12 +3356,17 @@ void print_results () {
 
 void print_trace () { 
 	string prefix = command_line_opts.OUTPUT_FILE_PATH;
-	string trpath = prefix + ".trace";
-	string mnpath = prefix + ".MN";
+	string trpath=prefix + ".tr";
+	string mnpath=prefix + ".MN";
 	trace_file.open(trpath.c_str(), std::ios_base::out);
-	trace_file << "TRACE,NSNPS_JACKKNIFE" << endl;
+	stringstream ss;
+	for (int i=0; i<Nbin; i++){
+		ss << "LD_SUM_" << i << ",";
+	}
+	ss << "NSNPS_JACKKNIFE";
+	trace_file << ss.str() << endl;
 	meta_file.open(mnpath.c_str(), std::ios_base::out);
-	meta_file << "NSAMPLE,NSNP,NBLK,NBIN" << endl << Nindv << "," << Nsnp << "," << Njack << "," << Nbin;
+	meta_file << "NSAMPLE,NSNPS,NBLKS,NBINS,K" << endl << Nindv << "," << Nsnp << "," << Njack << "," << Nbin << "," << Nz;
 	meta_file.close();
 }
 
@@ -3402,7 +3414,7 @@ void print_input_parameters(){
 		outfile << "\t - v (verbose) " << std::to_string(command_line_opts.verbose) << endl;
 	}
 	if (trace)
-		outfile << "\t - tr (trace summaries) " << endl;
+		outfile << "\t - tr (trace summaries for G only; if pheno is not specified, dummy phenotype is used) " << endl;
 
 	outfile << endl;
 	outfile << endl;
@@ -3456,6 +3468,7 @@ int main(int argc, char const *argv[]){
 	init_params ();
 
 	read_auxillary_files ();
+	cout << "hello" << endl;
 	regress_covariates ();	
 
 	if (gen_by_env == true) {    
