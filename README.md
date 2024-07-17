@@ -45,33 +45,29 @@ When using a config file, the full keys (e.g., genotype="") must be used instead
 ## Parameters
 
 ```
-genotype (-g): The path of PLINK BED genotype file
-phenotype (-p): The path of phenotype file
-covariate (-c): The path of covariate file
-environment (-e): The path of environment file
-annotation (-annot): The path of genotype annotation file.
-num_vec (-k): The number of random vectors (10 is recommended). 
-num_block (-jn): The number of jackknife blocks (100 is recommended). 
-    The higher the number of jackknife blocks, the higher the memory usage.
-output (-o): The path of the output file prefix
-model (-m): Specification of the model. Currently there are 3 options:
-    1. additive genetic (G) effects only (arg: G)
-       The model reduces to RHE-mc (Pazokitoroudi et al. Nat Commun (2020). https://doi.org/10.1038/s41467-020-17576-9).
-    2. additive genetic (G) and gene-environment (GxE) effects (arg: G+GxE)
-       The model treats noise/environment effects as homogeneous.
-    3. additive genetic (G), gene-environment (GxE) and heterogeneous noise (NxE) effects (arg: G+GxE+NxE)
-       The model treats noise/environment effects as heterogeneous.
-num_threads (-t): The number of threads.
-seed (-s): The random seed.
-verbose (-v): Output extra information (Normal equation, number of samples, etc.).
-trace (-tr): Save the stochastic trace estimates as trace summary statistics (.trace) with metadata (.MN)
-
-By default, GENIE fits a single GxE variance component.
-To partition the GxE component w.r.t the annotation file, add "-eXannot" flag.
-
-The phenotype vector is standardized after regressing covariates.
-To turn this off, add "-norm_proj_pheno 0". In addition, a vector of ones is appended to
-the covariates (the intercept term). To remove this intercept term, add "-cov_add_intercept 0".
+  -h, --help                                    Show this message and exit
+  -g, --genotype                                The path of PLINK BED genotype file
+  -p, --phenotype                               The path of phenotype file
+  -c, --covariate                               The path of covariate file
+  -a, --annot                                   The path of input annotation for partitioned heritability
+  -o, --output                                  Output file path (prefix)
+  -e, --environment                             The path of environment file
+  -m, --model                                   Specification of the model. Currently there are 3 options:
+                                                1. additive genetic (G) effects only (arg: G)
+                                                        The model reduces to RHE-mc (Pazokitoroudi et al. Nat Commun (2020). https://doi.org/10.1038/s41467-020-17576-9).
+                                                2. additive genetic (G) and gene-environment (GxE) effects (arg: G+GxE)
+                                                        The model treats noise/environment effects as homogeneous.
+                                                3. additive genetic (G), gene-environment (GxE) and heterogeneous noise (NxE) effects (arg: G+GxE+NxE)
+                                                        The model treats noise/environment effects as heterogeneous.
+  -k, --num-vec                                 The number of random vectors (10 is recommended).
+  -jn, --num-jack                               The number of jackknife blocks (100 is recommended).
+  -t, --nthreads                                The number of threads for multithreading
+  -tr, --trace                                  Flag for printing trace summary files (.tr) and metadata (.MN), compatible with SUM-RHE.
+                                                If this flag is set, a phenotype file is no longer required (a dummy phenotype without covariates will be used). Currently supports G-model only.
+  -v, --verbose                                 Verbose mode; Output extra information (Normal equation, number of samples, etc.).
+  -eXa, --eXannot                               By default, GENIE fits a single GxE variance component. To partition the GxE component w.r.t the annotation file, add '-eXannot' flag.
+  -np, --norm-proj-pheno                        By default, the phenotype vector is standardized after regressing covariates. Turn this off by setting '--norm-proj-pheno 0'.
+  -i, --cov-add-intercept                       By default, a vector of ones is appended to the covariates (the intercept term). Turn this off by setting '--cov-add-intercept 0'.
 
 ```
 ## File formats
