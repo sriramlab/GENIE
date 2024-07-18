@@ -240,6 +240,7 @@ bool gen_by_env;
 bool cov_add_intercept;
 int verbose;
 bool trace;
+bool use_dummy = false;
 int nthreads;
 MatMult mm;
 std::ofstream outfile;
@@ -2898,10 +2899,30 @@ void read_auxillary_files () {
 	setup_read_blocks();
 	cout << "finished setting read_blocks" << endl;
 
+	// trace summary only
+	use_dummy = command_line_opts.use_dummy_pheno;
+	// Read .fam file
+	std::stringstream f0;
+	f0 << geno_name << ".fam";
+	string name_fam = f0.str();
+	int fam_lines = count_fam(name_fam);
+	
 	// Read phenotype and save the number of indvs
 	string filename = command_line_opts.PHENOTYPE_FILE_PATH;
-	Nindv = count_pheno (filename);
-	read_pheno2 (Nindv, filename);
+
+	if (use_dummy){
+		Nindv = fam_lines;
+	}	
+	else{
+		Nindv = count_pheno (filename);
+		read_pheno2 (Nindv, filename);
+	}
+
+	if (fam_lines != Nindv) {
+		exitWithError ("Number of individuals in fam file and pheno file does not match ");
+		exit (1);
+	}
+
 	cout << "Number of individuals = "<< Nindv << endl;
 	y_sum = pheno.sum();
 
@@ -2928,16 +2949,6 @@ void read_auxillary_files () {
 		read_annot(filename);
 	}
 
-	// Read .fam file
-	std::stringstream f0;
-	f0 << geno_name << ".fam";
-	string name_fam = f0.str();
-	int fam_lines = count_fam(name_fam);
-
-	if (fam_lines != Nindv) {
-		exitWithError ("Number of individuals in fam file and pheno file does not match ");
-		exit (1);
-	}
 
 	// Read covariate file
 	std::string covfile = command_line_opts.COVARIATE_FILE_PATH;
@@ -2948,7 +2959,7 @@ void read_auxillary_files () {
 	} else if (covfile == ""){
 		cout << "No covariate file specified" << endl;
 
-		if (cov_add_intercept == true) {
+		if ((cov_add_intercept == true) && (!use_dummy)) {
 			covariate.resize(Nindv,1);
 			for(int i = 0 ; i < Nindv ; i++)
 				covariate(i,0) = 1;
@@ -3022,6 +3033,13 @@ void print_results () {
 
 	cout << "*****" << endl;
 	outfile << "*****" << endl;
+
+	if (use_dummy){
+		cout << "!!! A dummy phenotype is used for this GENIE run. The heritability estimates are NOT meaningful (please use the trace summaries only) !!!" << endl;
+		cout << "*****" << endl;
+		outfile << "!!! A dummy phenotype is used for this GENIE run. The heritability estimates are NOT meaningful (please use the trace summaries only) !!!" << endl;
+		outfile << "*****" << endl;
+	}
 
 
 	cout << endl << "OUTPUT: " << endl << "Variance components: " << endl;
@@ -3386,7 +3404,7 @@ void print_input_parameters(){
 	if (command_line_opts.GENOTYPE_FILE_PATH != "")
 		outfile << "\t - g (genotype) " << command_line_opts.GENOTYPE_FILE_PATH << endl;
 	if (command_line_opts.Annot_PATH != "")
-		outfile << "\t - annot (annotation) " << command_line_opts.Annot_PATH << endl;
+		outfile << "\t - a (annotation) " << command_line_opts.Annot_PATH << endl;
 	if (command_line_opts.PHENOTYPE_FILE_PATH != "")
 		outfile << "\t - p (phenotype) " << command_line_opts.PHENOTYPE_FILE_PATH << endl;
 	if (command_line_opts.COVARIATE_FILE_PATH != "")
@@ -3406,11 +3424,11 @@ void print_input_parameters(){
 	if (command_line_opts.seed != -1)
 		outfile << "\t - s (seed) " << std::to_string(command_line_opts.seed) << endl;
 	if (command_line_opts.exannot == true)
-		outfile << "\t - eXannt (paritioned GxE)" << endl;
+		outfile << "\t - eXa (paritioned GxE)" << endl;
 	if (verbose >= 1) {
 		outfile << "Other options: " << endl;
-		outfile << "\t - norm_proj_pheno (normalize pheno after projection on covariates) " << std::to_string(command_line_opts.normalize_proj_pheno) << endl;
-		outfile << "\t - cov_add_intercept (intercept term added to covariates) " << std::to_string(command_line_opts.cov_add_intercept) << endl;
+		outfile << "\t -- norm_proj_pheno (normalize pheno after projection on covariates) " << std::to_string(command_line_opts.normalize_proj_pheno) << endl;
+		outfile << "\t -- cov_add_intercept (intercept term added to covariates) " << std::to_string(command_line_opts.cov_add_intercept) << endl;
 		outfile << "\t - v (verbose) " << std::to_string(command_line_opts.verbose) << endl;
 	}
 	if (trace)
@@ -3459,6 +3477,19 @@ void init_params () {
 	keep_xsum = command_line_opts.keep_xsum;
 }
 
+template <typename Func>
+void dummy_pheno(int Nind, Func& func){
+	// fill in dummy phenotype
+	cout << "Filling in dummy" << endl;
+	mask.resize(Nindv, 1);
+	pheno.resize(Nind, 1);
+	for (int i=0; i < Nind; i++){
+			pheno(i,0) = func();
+			mask(i,0) = 1;
+
+	}
+}
+
 int main(int argc, char const *argv[]){
     struct timeval now;
     gettimeofday(&now, NULL);
@@ -3469,13 +3500,11 @@ int main(int argc, char const *argv[]){
 
 	read_auxillary_files ();
 	cout << "hello" << endl;
-	regress_covariates ();	
 
 	if (gen_by_env == true) {    
 		///mask out indv with missingness from Enviro
 		Enviro = Enviro.array().colwise() * mask.col(0).array();
 	}
-
 	//define random vector z's
 	all_zb= MatrixXdr::Random(Nindv,Nz);
 
@@ -3493,6 +3522,11 @@ int main(int argc, char const *argv[]){
 	for (int i = 0 ; i < Nz ; i++)
 		for(int j = 0 ; j < Nindv ; j++)
 			all_zb(j,i) = z_vec();
+	
+	// fill in dummy (for trace summaries)
+	if (use_dummy)
+		dummy_pheno(Nindv, z_vec);
+	regress_covariates ();	
 
 	for (int i = 0 ; i < Nz ; i++)
 		for(int j = 0 ; j < Nindv ; j++)

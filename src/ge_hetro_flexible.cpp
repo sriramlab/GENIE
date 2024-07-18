@@ -1214,6 +1214,15 @@ MatrixXdr jack_se(MatrixXdr jack){
         return SEjack;
 }
 
+template <typename Func>
+void dummy_pheno(int Nind, Func& func){
+        // fill in dummy phenotype
+        cout << "Filling in dummy" << endl;
+	pheno.resize(Nind, 1);
+        for (int i=0; i < Nind; i++){
+                pheno(i,0) = func();
+        }
+}
 
 
 int main(int argc, char const *argv[]){
@@ -1260,9 +1269,23 @@ int main(int argc, char const *argv[]){
         f1 << geno_name << ".bim";
         read_bim (f1.str());
 
+        bool use_dummy = command_line_opts.use_dummy_pheno;
+
+        std::stringstream f0;
+        f0 << geno_name << ".fam";
+        string name_fam=f0.str();
+        int fam_lines=count_fam(name_fam);
+
+        if (use_dummy)
+                Nindv = fam_lines;
+        else{
         ///reading phnotype and save the number of indvs
-        filename=command_line_opts.PHENOTYPE_FILE_PATH;
-        count_pheno(filename);
+                filename=command_line_opts.PHENOTYPE_FILE_PATH;
+                count_pheno(filename);
+        }
+
+        if (fam_lines!=Nindv)
+                exitWithError("# individuals in fam file and pheno file does not match ");
 
         /////read enviroment
         mask.resize(Nindv, 1);
@@ -1291,19 +1314,14 @@ int main(int argc, char const *argv[]){
         }
 
 
-        std::stringstream f0;
-        f0 << geno_name << ".fam";
-        string name_fam=f0.str();
-        int fam_lines=count_fam(name_fam);
 
-        if (fam_lines!=Nindv)
-                exitWithError("# individuals in fam file and pheno file does not match ");
+        if (!use_dummy){
+                filename=command_line_opts.PHENOTYPE_FILE_PATH;
+                read_pheno2(Nindv,filename);
+        }
+        cout<<"Number of individuals : "<<Nindv<<endl;
 
-        filename=command_line_opts.PHENOTYPE_FILE_PATH;
-        read_pheno2(Nindv,filename);
-        cout<<"Number of individuals :"<<Nindv<<endl;
-
-
+        ///// USE COVARIATES: ONLY IF USING REAL PHENOTYPE
         std::string covfile=command_line_opts.COVARIATE_FILE_PATH;
         use_cov=true;
         if(covfile!=""){
@@ -1312,7 +1330,7 @@ int main(int argc, char const *argv[]){
         }
         else if(covfile==""){
                 cout<<"No Covariate File Specified"<<endl;
-                if (cov_add_intercept == true) {
+                if ((cov_add_intercept == true) && (!use_dummy)){
                         covariate.resize(Nindv,1);
                         for(int i=0;i<Nindv;i++)
                                 covariate(i,0)=1;
@@ -1367,15 +1385,19 @@ int main(int argc, char const *argv[]){
                         }
                 }
         } else {
-                y_sum=pheno.sum();
-                y_mean = y_sum/mask.sum();
-                for(int i=0; i<Nindv; i++){
-                        if(mask(i,0)!=0)
-                                pheno(i,0) =pheno(i,0) - y_mean; //center phenotype
+                if (!use_dummy){
+                        y_sum=pheno.sum();
+                        y_mean = y_sum/mask.sum();
+                        for(int i=0; i<Nindv; i++){
+                                if(mask(i,0)!=0)
+                                        pheno(i,0) =pheno(i,0) - y_mean; //center phenotype
+                        }
+                        y_sum=pheno.sum();
                 }
-                y_sum=pheno.sum();
 
         }
+
+        cout << "finished standardizing" << endl;
 
         //CHANGE (2/27)
         if (gen_by_env == true) {
@@ -1414,6 +1436,11 @@ int main(int argc, char const *argv[]){
                         all_Uzb.col(j)=w3;
                 }
 
+        }
+
+        if (use_dummy){
+                cout << "Using dummy phenotype" << endl;
+                dummy_pheno(Nindv, z_vec);
         }
 
 
@@ -1861,7 +1888,7 @@ int main(int argc, char const *argv[]){
         if (command_line_opts.GENOTYPE_FILE_PATH != "")
                 outfile << "\t-g (genotype) " << command_line_opts.GENOTYPE_FILE_PATH << endl;
         if (command_line_opts.Annot_PATH != "")
-                outfile << "\t-annot (annotation) " << command_line_opts.Annot_PATH << endl;
+                outfile << "\t-a (annotation) " << command_line_opts.Annot_PATH << endl;
         if (command_line_opts.PHENOTYPE_FILE_PATH != "")
                 outfile << "\t-p (phenotype) " << command_line_opts.PHENOTYPE_FILE_PATH << endl;
         if (command_line_opts.COVARIATE_FILE_PATH != "")
@@ -1881,15 +1908,15 @@ int main(int argc, char const *argv[]){
         if (command_line_opts.seed != -1)
                 outfile << "\t-s (seed) " << std::to_string(command_line_opts.seed) << endl;
         if (command_line_opts.exannot == true)
-                outfile << "\t-eXannt (paritioned GxE)" << endl;
+                outfile << "\t-eXa (paritioned GxE)" << endl;
         if (verbose) {
                 outfile << "Other options: " << endl;
-                outfile << "\t-norm_proj_pheno (normalize pheno after projection on covariates) " << std::to_string(command_line_opts.normalize_proj_pheno) << endl;
-                outfile << "\t-cov_add_intercept (intercept term added to covariates) " << std::to_string(command_line_opts.cov_add_intercept) << endl;
+                outfile << "\t--norm_proj_pheno (normalize pheno after projection on covariates) " << std::to_string(command_line_opts.normalize_proj_pheno) << endl;
+                outfile << "\t--cov_add_intercept (intercept term added to covariates) " << std::to_string(command_line_opts.cov_add_intercept) << endl;
                 outfile << "\t-v (verbose) " << std::to_string(command_line_opts.verbose) << endl;
         }
         if (trace)
-                outfile << "\t-tr (trace summaries for G only;; if pheno is not specified, dummy phenotype is used) " << endl;
+                outfile << "\t-tr (trace summaries for G only; if pheno is not specified, dummy phenotype is used) " << endl;
         
         outfile << endl;
         outfile << endl;
@@ -2103,6 +2130,13 @@ int main(int argc, char const *argv[]){
 
         cout<<"*****"<<endl;
         outfile<<"*****"<<endl;
+
+        if (use_dummy){
+                cout << "!!! A dummy phenotype is used for this GENIE run. The heritability estimates are NOT meaningful (please use the trace summaries only) !!!" << endl;
+                cout << "*****" << endl;
+                outfile << "!!! A dummy phenotype is used for this GENIE run. The heritability estimates are NOT meaningful (please use the trace summaries only) !!!" << endl;
+                outfile << "*****" << endl;
+        }
 
 
         cout<<endl<<"OUTPUT: "<<endl<<"Variance components: "<<endl;
