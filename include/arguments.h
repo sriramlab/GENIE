@@ -98,7 +98,7 @@ void exitWithError(const std::string &error) {
 }
 
 void noTrace(options& opt){  // trace summaries are only supported for G only model
-	if (opt.print_trace = true){
+	if (opt.print_trace == true){
 		cerr << "Trace summary is only supported for G only model! Unsetting trace summary option..." << endl;
 		opt.print_trace = false;
 	}	
