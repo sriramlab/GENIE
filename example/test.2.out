@@ -37,18 +37,18 @@ OUTPUT:
 
 Phenotype 0: 
 Variance components: 
-Sigma^2_g[0] : 0.127387  SE : 0.0236952
-Sigma^2_gxe[0] : 0.241197  SE : 0.123506
-Sigma^2_nxe[0] : 0.155659  SE : 0.12351
-Sigma^2_e : 0.716052  SE : 0.0238489
+Sigma^2_g[0] : 0.136325  SE : 0.0235534
+Sigma^2_gxe[0] : 0.256457  SE : 0.135661
+Sigma^2_nxe[0] : 0.158467  SE : 0.135105
+Sigma^2_e : 0.701567  SE : 0.0237881
 *****
 Heritabilities: 
-h2_g[0] : 0.127211 SE : 0.0236612
-h2_gxe[0] : 0.0957798 SE : 0.0490203
-h2_nxe[0] : 0.0618165 SE : 0.0490491
-Total h2 : 0.284807 SE: 0.0238203
-Total h2_g : 0.127211 SE: 0.0236612
-Total h2_gxe : 0.0957798 SE: 0.0490203
+h2_g[0] : 0.136196 SE : 0.0235355
+h2_gxe[0] : 0.100709 SE : 0.0531341
+h2_nxe[0] : 0.0623701 SE : 0.0531751
+Total h2 : 0.299275 SE: 0.0237595
+Total h2_g : 0.136196 SE: 0.0235355
+Total h2_gxe : 0.100709 SE: 0.0531341
 *****
 Enrichments:
 G enrichment
@@ -57,24 +57,24 @@ Enrichment g[0] : 1 SE : 0
 *****
 Heritabilities and enrichments computed based on overlapping setting
 Heritabilities: 
-h2_g[0] : 0.127211 SE : 0.0236612
+h2_g[0] : 0.136197 SE : 0.0235272
 Enrichments (overlapping def): 
-Enrichment g[0] : 1 SE : 4.03046e-13
+Enrichment g[0] : 1 SE : 0.000212387
 
 Phenotype 1: 
 Variance components: 
-Sigma^2_g[0] : 0.127387  SE : 0.0236952
-Sigma^2_gxe[0] : 0.241197  SE : 0.123506
-Sigma^2_nxe[0] : 0.155659  SE : 0.12351
-Sigma^2_e : 0.716052  SE : 0.0238489
+Sigma^2_g[0] : 0.136325  SE : 0.0235534
+Sigma^2_gxe[0] : 0.256457  SE : 0.135661
+Sigma^2_nxe[0] : 0.158466  SE : 0.135105
+Sigma^2_e : 0.701567  SE : 0.0237881
 *****
 Heritabilities: 
-h2_g[0] : 0.127211 SE : 0.0236612
-h2_gxe[0] : 0.0957798 SE : 0.0490203
-h2_nxe[0] : 0.0618165 SE : 0.0490491
-Total h2 : 0.284807 SE: 0.0238203
-Total h2_g : 0.127211 SE: 0.0236612
-Total h2_gxe : 0.0957798 SE: 0.0490203
+h2_g[0] : 0.136196 SE : 0.0235355
+h2_gxe[0] : 0.100709 SE : 0.0531341
+h2_nxe[0] : 0.0623699 SE : 0.0531751
+Total h2 : 0.299275 SE: 0.0237594
+Total h2_g : 0.136196 SE: 0.0235355
+Total h2_gxe : 0.100709 SE: 0.0531341
 *****
 Enrichments:
 G enrichment
@@ -83,6 +83,6 @@ Enrichment g[0] : 1 SE : 0
 *****
 Heritabilities and enrichments computed based on overlapping setting
 Heritabilities: 
-h2_g[0] : 0.127211 SE : 0.0236612
+h2_g[0] : 0.136197 SE : 0.0235272
 Enrichments (overlapping def): 
-Enrichment g[0] : 1 SE : 3.98454e-13
+Enrichment g[0] : 1.00001 SE : 0.000212251
