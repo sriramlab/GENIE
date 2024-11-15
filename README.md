@@ -111,6 +111,9 @@ chmod +x test.sh
 ./test.sh
 ```
 
+## Simulator
+To simulate phenotypes with GxE effects, see https://github.com/sriramlab/Simulator.
+
 ## Citation
 ```
 1. Ali Pazokitoroudi, Zhengtong Liu, Andrew Dahl, Noah Zaitlen, Saharon Rosset, Sriram Sankararaman.
