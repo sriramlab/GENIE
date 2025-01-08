@@ -125,5 +125,8 @@ To simulate phenotypes with GxE effects, see https://github.com/sriramlab/Simula
 
 ## Version
 ```
-v1.1.0
+v1.1.1
 ```
+
+## Zenodo
+https://zenodo.org/records/14618542
