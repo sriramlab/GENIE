@@ -25,7 +25,7 @@ An executable file named GENIE will be in the build folder after the installatio
  ```
  ./GENIE <command_line arguments>
 ```
-If there are many annotations, then we recommend to run the following : 
+If there are many annotations, then we recommend to run the following: 
 ```
  ./GENIE_mem <command_line arguments>
 ```
@@ -34,9 +34,14 @@ GENIE_mem is slower than GENIE, but it uses less memory than GENIE.
 GENIE_multi_pheno allows for the input of multi-trait phenotype file:
 ```
 ./GENIE_multi_pheno <command_line arguments>
+
+GENIE_trace1 GENIE_trace2 can be run in sequence, so that GENIE_trace1 produced the trace estimates,
+and GENIE_trace2 run GENIE with trace inputs (specified by '-tr_input')
+./GENIE_trace1 <command_line arguments>
+./GENIE_trace2 <command_line arguments>
 ```
 
-Alternatively, you may run either ```GENIE```, ```GENIE_mem```, or ```GENIE_multi_pheno``` with a newline-separated config file:
+Alternatively, you may run either ```GENIE```, ```GENIE_mem```, ```GENIE_multi_pheno```, or ```GENIE_trace1```+```GENIE_trace2``` with a newline-separated config file:
 ```
 ./GENIE --config <config file>
 ```
@@ -62,8 +67,8 @@ When using a config file, the full keys (e.g., genotype="") must be used instead
   -k, --num-vec                                 The number of random vectors (10 is recommended).
   -jn, --num-jack                               The number of jackknife blocks (100 is recommended).
   -t, --nthreads                                The number of threads for multithreading
-  -tr, --trace                                  Flag for printing trace summary files (.tr) and metadata (.MN), compatible with SUM-RHE.
-                                                If this flag is set, a phenotype file is no longer required (a dummy phenotype without covariates will be used). Currently supports G-model only.
+  -tr, --trace                                  Flag for printing trace summary files (.trace).
+  -tr_input                                     Read in the trace estimates.
   -v, --verbose                                 Verbose mode; Output extra information (Normal equation, number of samples, etc.).
   -eXa, --eXannot                               By default, GENIE fits a single GxE variance component. To partition the GxE component w.r.t the annotation file, add '-eXannot' flag.
   -np, --norm-proj-pheno                        By default, the phenotype vector is standardized after regressing covariates. Turn this off by setting '--norm-proj-pheno 0'.

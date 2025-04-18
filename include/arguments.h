@@ -74,6 +74,7 @@ struct options{
     //CHANGE(03/04)
     bool print_trace;
 	bool use_dummy_pheno; // in case no phenotype is provided; use dummy pheno
+	std::string TRACE_FILE_PATH;
 };
 
 /*template<typename T, typename U>
@@ -396,6 +397,7 @@ void parse_args(int argc, char const *argv[]){
 		command_line_opts.XSUM_FILE_PATH= cfg.getValueOfKey<string>("summary_genotype", string(""));
         command_line_opts.ENV_FILE_PATH = cfg.getValueOfKey<string>("environment", string(""));
         command_line_opts.Annot_PATH = cfg.getValueOfKey<string>("annotation", string(""));
+		command_line_opts.TRACE_FILE_PATH= cfg.getValueOfKey<string>("trace_input", string("")); 
         command_line_opts.nthreads = cfg.getValueOfKey<int>("nthreads", 1); 
 		command_line_opts.COVARIATE_NAME=cfg.getValueOfKey<string>("covariateName", string(""));  
 		command_line_opts.seed = cfg.getValueOfKey<int>("seed", -1);
@@ -427,20 +429,20 @@ void parse_args(int argc, char const *argv[]){
                 command_line_opts.hetero_noise = false;
                 command_line_opts.gen_by_env = true;
                 cout << "Estimating G and GxE heritability (no heterogeneous noise)" << endl;
-				noTrace(command_line_opts);
+				// noTrace(command_line_opts);
 			
             } else if (strcmp(model_arg, "G+GxE+NxE")==0) {
                 command_line_opts.hetero_noise = true;
                 command_line_opts.gen_by_env = true;
                 cout << "Estimating and GxE heritability (with heterogeneous noise)" << endl;
-				noTrace(command_line_opts);			
+				// noTrace(command_line_opts);			
 			
             } else {
                 cout << "Choice of models must be one of G, G+GxE, or G+GxE+NxE. Using default G+GxE+NxE model" << endl;
                 command_line_opts.hetero_noise = true;
                 command_line_opts.gen_by_env = true;
                 cout << "Estimation of G and GxE heritability (with heterogeneous noise)" << endl;
-				noTrace(command_line_opts);
+				// noTrace(command_line_opts);
             }
 	    }
 		cfg.printParameters ();
@@ -548,12 +550,12 @@ void parse_args(int argc, char const *argv[]){
 						command_line_opts.hetero_noise = false;
 						command_line_opts.gen_by_env = true;
 						cout << "Estimation of G and GxE heritability (no heterogeneous noise)" << endl;
-						noTrace(command_line_opts);
+						// noTrace(command_line_opts);
 				} else if (strcmp(argv[i+1], "G+GxE+NxE")==0) {
 						command_line_opts.hetero_noise = true;
 						command_line_opts.gen_by_env = true;
 						cout << "Estimation of G and GxE heritability (with heterogeneous noise)" << endl;
-						noTrace(command_line_opts);
+						// noTrace(command_line_opts);
 				} else {
 						cout << "model can only be G, G+GxE, or G+GxE+NxE. Using default G+GxE+NxE model" << endl;
 						command_line_opts.hetero_noise = true;
@@ -593,6 +595,11 @@ void parse_args(int argc, char const *argv[]){
                     command_line_opts.print_trace = true;
 					cout << "Printing trace summaries" << endl;
                 }
+				else if (strcmp(argv[i], "-tr_input")==0) {
+					command_line_opts.TRACE_FILE_PATH = string(argv[i+1]);
+					cfg.insertKey ("trace_input", argv[i+1]);
+					i++;
+				}
 							//CHANGE(11/12)
 							// else if (strcmp(argv[i], "-perm_E_in_GxE")==0) {
 							// 	command_line_opts.perm_E_in_GxE=true;
@@ -638,10 +645,10 @@ void parse_args(int argc, char const *argv[]){
 		exitWithError(usage());
 		exit(-1);
 	}
-	if ((command_line_opts.print_trace) && (command_line_opts.model != "G")){
-		cerr << "Trace summary is only supported for G only model. Disabling --trace option." << endl;
-		command_line_opts.print_trace = false;
-	}
+	// if ((command_line_opts.print_trace) && (command_line_opts.model != "G")){
+	// 	cerr << "Trace summary is only supported for G only model. Disabling --trace option." << endl;
+	// 	command_line_opts.print_trace = false;
+	// }
 	if (got_phenotype_file==false){
 		if (command_line_opts.print_trace){
 			cout << "Estimating trace summary without phenotype input (will be using dummy phenotype)" << endl;
