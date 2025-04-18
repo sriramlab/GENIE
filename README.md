@@ -34,7 +34,9 @@ GENIE_mem is slower than GENIE, but it uses less memory than GENIE.
 GENIE_multi_pheno allows for the input of multi-trait phenotype file:
 ```
 ./GENIE_multi_pheno <command_line arguments>
+```
 
+```
 GENIE_trace1 GENIE_trace2 can be run in sequence, so that GENIE_trace1 produced the trace estimates,
 and GENIE_trace2 run GENIE with trace inputs (specified by '-tr_input')
 ./GENIE_trace1 <command_line arguments>
