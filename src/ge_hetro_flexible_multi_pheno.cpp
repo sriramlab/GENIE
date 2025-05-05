@@ -2069,7 +2069,11 @@ int main(int argc, char const *argv[]){
                                         cout<<"RHS of Normal Eq"<<endl<<Y_r<<endl;
                                         double relative_error = (X_l*herit - Y_r).norm() / Y_r.norm(); // norm() is L2 norm
                                         cout << "The relative error is: " << relative_error << endl;
-
+                                        double abs_error = (X_l*herit - Y_r).norm(); 
+                                        cout << "The absolute error is: " << abs_error << endl;
+                                        double objective = yy*yy - 2*(herit*Y_r).sum() + (herit.transpose()*(X_l*herit)).sum();
+                                        objective = objective/(yy*yy);
+                                        cout << "The objective (loss) is: " << objective << endl;
 										#ifdef USE_DOUBLE
 											JacobiSVD<MatrixXd> svd(X_l);
 										#else
@@ -2083,6 +2087,8 @@ int main(int argc, char const *argv[]){
                                         outfile<<"RHS of Normal Eq"<<endl<<Y_r<<endl;
                                         outfile<<"Normal Equations info:"<<endl;
                                         outfile<<"The relative error is: " << relative_error << endl;
+                                        outfile<< "The absolute error is: " << abs_error << endl;
+                                        outfile << "The objective (loss) is: " << objective << endl;
                                         outfile<<"Max sing.val: "<<svd.singularValues()(0)<<endl;
                                         outfile<<"Min sing.val: "<<svd.singularValues()(svd.singularValues().size()-1)<<endl;
                                         outfile<<"Condition number: "<<cond<<endl;
