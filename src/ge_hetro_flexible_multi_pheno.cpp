@@ -460,26 +460,26 @@ void read_pheno2(int Nind, std::string filename){
 	}
 }
 
-MatrixXdr compute_yXXy(int num_snp,MatrixXdr vec){
+MatrixXdr compute_yXXy(int num_snp,MatrixXdr vec, int cur_pheno_count){
 
 	MatrixXdr pheno_sum=vec.colwise().sum();
-        MatrixXdr res(num_snp, phenocount);
+        MatrixXdr res(num_snp, cur_pheno_count);
 
 	
 	// if(use_mailman==true)
 	// 	multiply_y_pre_fast(vec,1,res,false);
 	// else
 	// 	 res=gen*vec;
-        mm.multiply_y_pre(vec, phenocount, res, false);
+        mm.multiply_y_pre(vec, cur_pheno_count, res, false);
 
         for(int j=0; j<num_snp; j++)
-                for(int k=0; k<phenocount;k++)
+                for(int k=0; k<cur_pheno_count;k++)
                         res(j,k) = res(j,k)*stds(j,0);
 
-        MatrixXdr resid(num_snp, phenocount);
+        MatrixXdr resid(num_snp, cur_pheno_count);
         resid = means.cwiseProduct(stds);
         resid = resid * pheno_sum;
-        MatrixXdr Xy(num_snp, phenocount);
+        MatrixXdr Xy(num_snp, cur_pheno_count);
         Xy = res-resid;
     
         Xy=Xy.array()*Xy.array();
@@ -488,24 +488,24 @@ MatrixXdr compute_yXXy(int num_snp,MatrixXdr vec){
 
 }
 
-MatrixXdr compute_yVXXVy(int num_snp){
-        MatrixXdr new_pheno_sum = new_pheno.colwise().sum();
-        MatrixXdr res(num_snp, phenocount);
+MatrixXdr compute_yVXXVy(int num_snp, MatrixXdr vec, int cur_pheno_count){
+        MatrixXdr new_pheno_sum = vec.colwise().sum();
+        MatrixXdr res(num_snp, cur_pheno_count);
         
         // if(use_mailman==true)
         //         multiply_y_pre_fast(new_pheno,1,res,false);
         // else
         //          res=gen*new_pheno;
-        mm.multiply_y_pre(new_pheno, phenocount,res,false);
+        mm.multiply_y_pre(vec, cur_pheno_count,res,false);
 
         for(int j=0; j<num_snp; j++)
-                for(int k=0; k<phenocount;k++)
+                for(int k=0; k<cur_pheno_count;k++)
                         res(j,k) = res(j,k)*stds(j,0);
 
-        MatrixXdr resid(num_snp, phenocount);
+        MatrixXdr resid(num_snp, cur_pheno_count);
         resid = means.cwiseProduct(stds);
         resid = resid *new_pheno_sum;
-        MatrixXdr Xy(num_snp, phenocount);
+        MatrixXdr Xy(num_snp, cur_pheno_count);
         Xy = res-resid;
 
 	Xy=Xy.array()*Xy.array();
@@ -1631,10 +1631,32 @@ int main(int argc, char const *argv[]){
                                                                 scaled_pheno.col(i) = pheno.col(i).array()*Enviro.col(env_index).array();
                                                 }
 
-                                                                
-                                                temp=compute_yXXy(num_snp,scaled_pheno);
-                                                yXXy.block(gxe_bin_index*phenocount,jack_index,phenocount,1) +=temp.transpose();
-                                                yXXy.block(gxe_bin_index*phenocount,Njack,phenocount,1) +=temp.transpose();
+                                                if (phenocount > Nz) {
+                                                        int num_pheno_block = phenocount / Nz;
+                                                        int num_pheno_remain = phenocount % Nz;
+
+                                                        if (num_pheno_remain > 0) num_pheno_block += 1;
+                                                        // cout << "Processing phenotypes in " << num_pheno_block << " blocks..." << endl;
+
+                                                        int tstart = 0;
+                                                        int cur_num_pheno;
+                                                        for (int k = 0; k < num_pheno_block; k++) {
+                                                                if ((k == num_pheno_block - 1) && (num_pheno_remain > 0))
+                                                                        cur_num_pheno = num_pheno_remain;
+                                                                else
+                                                                        cur_num_pheno = Nz;
+                                                                MatrixXdr cur_scaled_pheno = scaled_pheno.block(0, tstart, scaled_pheno.rows(), cur_num_pheno);
+                                                                temp = compute_yXXy(num_snp, cur_scaled_pheno, cur_num_pheno);
+                                                                yXXy.block(gxe_bin_index*phenocount+tstart,jack_index,cur_num_pheno,1) += temp.transpose();
+                                                                yXXy.block(gxe_bin_index*phenocount+tstart,Njack,cur_num_pheno,1) +=temp.transpose();
+                                                                tstart += cur_num_pheno;
+                                                        }
+
+                                                } else {
+                                                        temp=compute_yXXy(num_snp,scaled_pheno, phenocount);
+                                                        yXXy.block(gxe_bin_index*phenocount,jack_index,phenocount,1) +=temp.transpose();
+                                                        yXXy.block(gxe_bin_index*phenocount,Njack,phenocount,1) +=temp.transpose();
+                                                }
 
 
                                         }
@@ -1670,17 +1692,75 @@ int main(int argc, char const *argv[]){
                                 //compute yXXy
                                 MatrixXdr temp_yxxy;
                                 if(both_side_cov==false){
-                                        temp_yxxy=compute_yXXy(num_snp, pheno);	
-                                        if(num_snp!=len[bin_index])
-                                                yXXy.block(bin_index*phenocount,jack_index,phenocount,1)=temp_yxxy.transpose();
+                                        if (phenocount > Nz) {
+                                                int num_pheno_block = phenocount / Nz;
+                                                int num_pheno_remain = phenocount % Nz;
+
+                                                if (num_pheno_remain > 0) num_pheno_block += 1;
+                                                // if (jack_index == 0)
+                                                //         cout << "Processing phenotypes in " << num_pheno_block << " blocks..." << endl;
+
+                                                int tstart = 0;
+                                                int cur_num_pheno;
+                                                for (int k = 0; k < num_pheno_block; k++) {
+                                                        if ((k == num_pheno_block - 1) && (num_pheno_remain > 0))
+                                                                cur_num_pheno = num_pheno_remain;
+                                                        else
+                                                                cur_num_pheno = Nz;
+                                                        MatrixXdr cur_pheno = pheno.block(0, tstart, pheno.rows(), cur_num_pheno);
+                                                        temp_yxxy = compute_yXXy(num_snp, cur_pheno, cur_num_pheno);
+                                                        if(num_snp!=len[bin_index]) {
+                                                                yXXy.block(bin_index*phenocount+tstart,jack_index,cur_num_pheno,1) += temp_yxxy.transpose();
+                                                        }
+                                                        yXXy.block(bin_index*phenocount+tstart,Njack,cur_num_pheno,1)+=temp_yxxy.transpose();
+                                                        tstart += cur_num_pheno;
+                                                }
+
+
+                                        } else {
+                                                temp_yxxy=compute_yXXy(num_snp, pheno, phenocount);	
+                                                if(num_snp!=len[bin_index])
+                                                        yXXy.block(bin_index*phenocount,jack_index,phenocount,1)=temp_yxxy.transpose();
+                                                yXXy.block(bin_index*phenocount,Njack,phenocount,1)+=temp_yxxy.transpose();
+                                        }
+                                        
+
                                 }
                                 else{
-                                        temp_yxxy=compute_yVXXVy(num_snp);
-                                        if(num_snp!=len[bin_index])
-                                                yXXy.block(bin_index*phenocount,jack_index,phenocount,1)=temp_yxxy.transpose();
+                                        if (phenocount > Nz) {
+                                                int num_pheno_block = phenocount / Nz;
+                                                int num_pheno_remain = phenocount % Nz;
+
+                                                if (num_pheno_remain > 0) num_pheno_block += 1;
+                                                // if (jack_index == 0)
+                                                //         cout << "Processing phenotypes in " << num_pheno_block << " blocks..." << endl;
+
+                                                int tstart = 0;
+                                                int cur_num_pheno;
+                                                for (int k = 0; k < num_pheno_block; k++) {
+                                                        if ((k == num_pheno_block - 1) && (num_pheno_remain > 0))
+                                                                cur_num_pheno = num_pheno_remain;
+                                                        else
+                                                                cur_num_pheno = Nz;
+                                                        MatrixXdr cur_pheno = new_pheno.block(0, tstart, new_pheno.rows(), cur_num_pheno);
+                                                        temp_yxxy = compute_yVXXVy(num_snp, cur_pheno, cur_num_pheno);
+                                                        if(num_snp!=len[bin_index]) {
+                                                                yXXy.block(bin_index*phenocount+tstart,jack_index,cur_num_pheno,1) += temp_yxxy.transpose();
+                                                        }
+                                                        yXXy.block(bin_index*phenocount+tstart,Njack,cur_num_pheno,1)+=temp_yxxy.transpose();
+                                                        tstart += cur_num_pheno;
+                                                }
+
+                                        } else {
+                                                temp_yxxy=compute_yVXXVy(num_snp, new_pheno, phenocount);
+                                                if(num_snp!=len[bin_index])
+                                                        yXXy.block(bin_index*phenocount,jack_index,phenocount,1)=temp_yxxy.transpose();
+                                                yXXy.block(bin_index*phenocount,Njack,phenocount,1)+=temp_yxxy.transpose();
+                                        }
+
                                 }
 
-                                yXXy.block(bin_index*phenocount,Njack,phenocount,1)+=temp_yxxy.transpose();
+
 
                                 //compute Xz
                                 
@@ -2071,8 +2151,8 @@ int main(int argc, char const *argv[]){
                                         cout << "The relative error is: " << relative_error << endl;
                                         double abs_error = (X_l*herit - Y_r).norm(); 
                                         cout << "The absolute error is: " << abs_error << endl;
-                                        double objective = yy*yy - 2*(herit*Y_r).sum() + (herit.transpose()*(X_l*herit)).sum();
-                                        objective = objective/(yy*yy);
+                                        double objective = (yy*yy) - 2*(herit.transpose()*Y_r).sum() + (herit.transpose()*(X_l*herit)).sum();
+                                        // objective = 1 - (objective/(yy*yy));
                                         cout << "The objective (loss) is: " << objective << endl;
 										#ifdef USE_DOUBLE
 											JacobiSVD<MatrixXd> svd(X_l);
