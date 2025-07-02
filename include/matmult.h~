@@ -74,7 +74,7 @@ class MatMult {
 	void multiply_y_pre_fast(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bool subtract_means);
 
 	/*
-	 * Compute X = D Y 
+	 * E-step: Compute X = D Y 
 	 * Y : p X n genotype matrix
 	 * D : k X p matrix: (C^T C)^{-1} C^{T}
 	 * X : k X n matrix

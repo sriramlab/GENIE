@@ -2,7 +2,6 @@
 
 #define VECTORFN_H
 
-#include <iostream>
 namespace vectorfn {
 
 template <class T>

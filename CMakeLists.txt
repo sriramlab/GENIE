@@ -62,8 +62,10 @@ int main() {
 " HAVE_CLOCK_GETTIME)
 
 set(genie_lib_header
+        include/auxillary.h
         include/arguments.h
         include/genotype.h
+        include/genomult.h
         include/helper.h
         include/io.h
         include/mailman.h
@@ -73,10 +75,13 @@ set(genie_lib_header
         include/storage.h
 		include/functions.h
 		include/vectorfn.h
+		include/statsfn.h
 )
 
 set(genie_lib_source
+		src/auxillary.cpp
         src/genotype.cpp
+        src/genomult.cpp
         src/matmult.cpp
         src/storage.cpp
 		src/functions.cpp
@@ -90,20 +95,14 @@ IF (NOT HAVE_CLOCK_GETTIME)
 ENDIF ()
 
 add_executable(GENIE_mem src/ge_mem_flexible.cpp)
-add_executable(GENIE src/ge_hetro_flexible.cpp)
-add_executable(GENIE_multi_pheno src/ge_hetro_flexible_multi_pheno.cpp)
-add_executable(GENIE_trace1 src/ge_hetro_flexible_multi_pheno_trace_step1.cpp)
-add_executable(GENIE_trace2 src/ge_hetro_flexible_multi_pheno_trace_step2.cpp)
+add_executable(GENIE src/ge_flexible.cpp)
 
 # Link executables against required dependencies
-target_link_libraries(GENIE PRIVATE genie_lib)
 target_link_libraries(GENIE_mem PRIVATE genie_lib)
-target_link_libraries(GENIE_multi_pheno PRIVATE genie_lib)
-target_link_libraries(GENIE_trace1 PRIVATE genie_lib)
-target_link_libraries(GENIE_trace2 PRIVATE genie_lib)
+target_link_libraries(GENIE PRIVATE genie_lib)
 
 # Handle user preference for SSE support (default: OFF)
 option(BUILD_PYTHON_MODULE "Whether the python module is being built from the scikit-build-core context" OFF)
 if (BUILD_PYTHON_MODULE)
-    install(TARGETS GENIE GENIE_mem GENIE_multi_pheno GENIE_trace1 GENIE_trace2 DESTINATION rhe)
+    install(TARGETS GENIE_mem GENIE DESTINATION rhe)
 endif ()

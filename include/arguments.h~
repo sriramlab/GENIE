@@ -293,7 +293,7 @@ public:
 	void printVersion () {
 		io::println ("##################################",0);
 		io::println ("#                                #",0);
-		io::println ("#          GENIE (v1.1.0)        #",0);
+		io::println ("#          GENIE (v1.0.0)        #",0);
 		io::println ("#                                #",0);
 		io::println ("##################################",0);
 		io::println ("",0);
@@ -398,7 +398,7 @@ void parse_args(int argc, char const *argv[]){
         command_line_opts.print_trace = cfg.getValueOfKey<bool>("trace", false);
         command_line_opts.verbose = cfg.getValueOfKey<int>("verbose", 0);
 
-		command_line_opts.memeff  = cfg.getValueOfKey<bool>("memeff", false);
+		command_line_opts.memeff  = cfg.getValueOfKey<bool>("memeff", true);
 		command_line_opts.opt1 = cfg.getValueOfKey<bool>("opt1", true);
         command_line_opts.opt2 = cfg.getValueOfKey<bool>("opt2", true); 
         command_line_opts.mem_Nsnp = cfg.getValueOfKey<int>("mem_Nsnp", 10); 

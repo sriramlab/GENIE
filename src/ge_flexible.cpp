@@ -44,6 +44,9 @@ int use_double = 0;
 typedef Matrix<float, Dynamic, Dynamic, RowMajor> MatrixXdr;
 #endif
 
+// If memeff = true, uses the memory efficient version
+bool memeff = false;
+
 // If opt1 = true, writes to a file after pass 1 
 // Reads from file in pass 2
 bool opt1 = true;
@@ -182,6 +185,9 @@ int Nbin = 1;
 
 // Number of non-genetic bins
 int nongen_Nbin = 0;
+
+// Number of genetic bins
+int gen_Nbin = 0;
 
 // Total number of bins (related to the number of annotations)
 // Number of VCs = T_Nbin  + 1 (sigma_e)
@@ -446,7 +452,7 @@ void genotype_stream_pass_mem_efficient (string name){
 	MatrixXdr w2;
 	MatrixXdr w3;
 
-	MatrixXdr  A_trs(T_Nbin,T_Nbin);
+	MatrixXdr A_trs(T_Nbin,T_Nbin);
 	MatrixXdr b_trk(T_Nbin,1);
 	MatrixXdr c_yky(T_Nbin,1);
 
@@ -946,10 +952,10 @@ void genotype_stream_pass_mem_efficient (string name){
 
 void genotype_stream_pass (string name, int pass_num){
 	if (verbose >= 3) {
-			cout << "both_side_cov = " << both_side_cov << endl;
-			cout << "cov_add_intercept = " << cov_add_intercept << endl;
-			cout << "T_Nbin = " << T_Nbin << " Nbin = " << Nbin << " nongen_Nbin = " << nongen_Nbin << endl;
-			cout << "Nz = " << Nz << endl;
+		cout << "both_side_cov = " << both_side_cov << endl;
+		cout << "cov_add_intercept = " << cov_add_intercept << endl;
+		cout << "T_Nbin = " << T_Nbin << " Nbin = " << Nbin << " nongen_Nbin = " << nongen_Nbin << endl;
+		cout << "Nz = " << Nz << endl;
 	}	
 	if (opt1){ 
 		string prefix = command_line_opts.OUTPUT_FILE_PATH;
@@ -993,7 +999,7 @@ void genotype_stream_pass (string name, int pass_num){
 	MatrixXdr w2;
 	MatrixXdr w3;
 
-	MatrixXdr  A_trs(T_Nbin,T_Nbin);
+	MatrixXdr A_trs(T_Nbin,T_Nbin);
 	MatrixXdr b_trk(T_Nbin,1);
 	MatrixXdr c_yky(T_Nbin,1);
 
@@ -1334,10 +1340,10 @@ void genotype_stream_pass (string name, int pass_num){
 			// In the second pass, compute the jackknife statistic for the current block
 			// These jackknife statistics are used to compute the jackknife variance components before moving onto the next jackknife block
 			if(pass_num == 1){
-				yXXy(bin_index,1) += temp_yXXy;
+				yXXy(bin_index, 1) += temp_yXXy;
 			}
 			else 
-				yXXy(bin_index,0)= yXXy(bin_index , 1)-temp_yXXy;
+				yXXy(bin_index, 0)= yXXy(bin_index , 1) - temp_yXXy;
 
 
 			if (verbose >= 2) {
@@ -1716,6 +1722,568 @@ void genotype_stream_pass (string name, int pass_num){
 	}
 }
 
+
+/* This is the key code in ge_hetero_flexible.cpp*/
+void genotype_stream_single_pass (string name) {
+	if (verbose >= 3) {
+		cout << "both_side_cov = " << both_side_cov << endl;
+		cout << "cov_add_intercept = " << cov_add_intercept << endl;
+		cout << "T_Nbin = " << T_Nbin << " Nbin = " << Nbin << " nongen_Nbin = " << nongen_Nbin << endl;
+		cout << "Nz = " << Nz << endl;
+	}
+
+	ifstream ifs (name.c_str(), ios::in|ios::binary);
+	if (!ifs.is_open()){
+		cerr << "Error reading file "<< name <<endl;
+		exit(1);
+	}
+
+	read_header = true;
+	global_snp_index=-1;
+
+	MatrixXdr output;
+	MatrixXdr output_env;
+
+	MatrixXdr vec1;
+	MatrixXdr w1;
+	MatrixXdr w2;
+	MatrixXdr w3;
+
+	for (int jack_index = 0; jack_index < Njack; jack_index ++){
+		int read_Nsnp = jack_block_size[jack_index];	
+		cout << "Reading jackknife block " << jack_index << endl;
+		if (verbose >= 1)  {
+			cout << "************Reading jackknife block " << jack_index << " ************" <<endl;
+			if (verbose >= 2)
+				cout << "read_Nsnp = " << read_Nsnp << endl;
+		}
+
+
+		//		int read_Nsnp = (jack_index<(Njack-1)) ? (step_size) : (step_size+step_size_rem);
+		if(use_mailman == true){
+			for (int i = 0; i < Nbin; i++){
+				allgen_mail[i].segment_size_hori = floor(log(Nindv)/log(3)) - 2 ;
+				allgen_mail[i].Nsegments_hori = ceil(jack_bin[jack_index][i]*1.0/(allgen_mail[i].segment_size_hori*1.0));
+				allgen_mail[i].p.resize(allgen_mail[i].Nsegments_hori,std::vector<int>(Nindv));
+				allgen_mail[i].not_O_i.resize(jack_bin[jack_index][i]);
+				allgen_mail[i].not_O_j.resize(Nindv);
+				allgen_mail[i].index = 0;
+				allgen_mail[i].Nsnp = jack_bin[jack_index][i];
+				allgen_mail[i].Nindv = Nindv;
+
+				allgen_mail[i].columnsum.resize(jack_bin[jack_index][i],1);
+				for (int index_temp = 0; index_temp < jack_bin[jack_index][i]; index_temp++)
+					allgen_mail[i].columnsum[index_temp] = 0;
+			}
+		}
+		else{
+			for (int bin_index = 0;bin_index < Nbin; bin_index++){
+				allgen[bin_index].gen.resize(jack_bin[jack_index][bin_index],Nindv);
+				allgen[bin_index].index = 0;
+			}
+		}
+
+		if(use_1col_annot == true)
+			read_bed_1colannot (ifs, missing, read_Nsnp);
+		else
+			read_bed2 (ifs, missing, read_Nsnp);
+		read_header = false;
+
+		for (int bin_index = 0; bin_index < Nbin; bin_index++){
+			int num_snp;
+			if (use_mailman == true)
+				num_snp = allgen_mail[bin_index].index;
+			else
+				num_snp = allgen[bin_index].index;
+
+			if(num_snp != 0){
+				stds.resize(num_snp, 1);
+				means.resize(num_snp, 1);
+
+				if(use_mailman == true){
+					for (int i = 0; i < num_snp; i++)
+						means(i,0) = (double)allgen_mail[bin_index].columnsum[i]/Nindv;
+				}			
+				else	  
+					means = allgen[bin_index].gen.rowwise().mean();
+
+
+				for (int i = 0; i < num_snp; i++)
+					stds(i,0) = 1/sqrt((means(i,0)*(1-(0.5*means(i,0)))));
+
+				if (use_mailman == true){
+					g = allgen_mail[bin_index];
+					g.segment_size_hori = floor(log(Nindv)/log(3)) - 2 ;
+					g.Nsegments_hori = ceil(jack_bin[jack_index][bin_index]*1.0/(g.segment_size_hori*1.0));
+					g.p.resize(g.Nsegments_hori,std::vector<int>(Nindv));
+					g.not_O_i.resize(jack_bin[jack_index][bin_index]);
+					g.not_O_j.resize(Nindv);
+					initial_var();
+
+				}else{
+					gen = allgen[bin_index].gen;
+
+				} 
+				mm = MatMult(g, gen, debug, var_normalize, memory_efficient, missing, use_mailman, nthreads, Nz);
+				// cout << "here1" << endl;
+				output = compute_XXz(num_snp,all_zb);
+				// cout << "here2" << endl;
+
+				///gxe computations
+				MatrixXdr scaled_pheno;
+				if (gen_by_env == true) {
+					for (int env_index = 0; env_index < Nenv; env_index++){
+						MatrixXdr env_all_zb = all_zb.array().colwise()*Enviro.col(env_index).array();                                   
+						output_env = compute_XXz (num_snp, env_all_zb);                                   
+						output_env = output_env.array().colwise()*Enviro.col(env_index).array();
+
+						int gxe_bin_index;
+						if(Annot_x_E == true)  
+							gxe_bin_index = Nbin+(env_index*Nbin)+bin_index;
+						else
+							gxe_bin_index = Nbin+env_index;			
+
+						for (int z_index = 0; z_index < Nz; z_index++){
+							XXz.col(((gxe_bin_index)*(Njack+1)*Nz)+(jack_index*Nz)+z_index) += output_env.col(z_index);	
+							XXz.col(((gxe_bin_index)*(Njack+1)*Nz)+(Njack*Nz)+z_index) += output_env.col(z_index);
+
+							if(both_side_cov == true) {
+								vec1 = output_env.col(z_index);
+								w1 = covariate.transpose() * vec1;
+								w2 = Q * w1;
+								w3 = covariate * w2;
+								//if(num_snp!=len[bin_index])
+								UXXz.col(((gxe_bin_index)*(Njack+1)*Nz)+(jack_index*Nz)+z_index) += w3;
+								UXXz.col(((gxe_bin_index)*(Njack+1)*Nz)+(Njack*Nz)+z_index) += w3;
+							}
+
+						}
+
+
+						if (both_side_cov==true){
+							MatrixXdr env_all_Uzb = all_Uzb.array().colwise()*Enviro.col(env_index).array();
+							output_env = compute_XXz(num_snp,env_all_Uzb);
+							output_env = output_env.array().colwise()*Enviro.col(env_index).array();
+
+							for (int z_index = 0; z_index < Nz; z_index++){
+								XXUz.col(((gxe_bin_index)*(Njack+1)*Nz)+(jack_index*Nz)+z_index) += output_env.col(z_index);
+								XXUz.col(((gxe_bin_index)*(Njack+1)*Nz)+(Njack*Nz)+z_index) += output_env.col(z_index);   /// save whole sample
+							}
+						}
+						if(both_side_cov==true)
+							scaled_pheno = new_pheno.array()*Enviro.col(env_index).array();
+						else
+							scaled_pheno = pheno.array()*Enviro.col(env_index).array();
+
+						double temp = compute_yXXy(num_snp,scaled_pheno);
+						yXXy(gxe_bin_index,jack_index) += temp;
+						yXXy(gxe_bin_index,Njack) += temp;
+					}
+				}
+				////end gxe computation
+
+				for (int z_index = 0; z_index < Nz; z_index++){
+					if(num_snp != len[bin_index])
+						XXz.col((bin_index*(Njack+1)*Nz)+(jack_index*Nz)+z_index) = output.col(z_index);
+					XXz.col((bin_index*(Njack+1)*Nz)+(Njack*Nz)+z_index) += output.col(z_index);   /// save whole sample
+
+					if(both_side_cov == true) {
+						vec1 = output.col(z_index);
+						w1 = covariate.transpose()*vec1;
+						w2 = Q * w1;
+						w3 = covariate * w2;
+						if(num_snp != len[bin_index])
+							UXXz.col((bin_index*(Njack+1)*Nz)+(jack_index*Nz)+z_index) = w3;
+						UXXz.col((bin_index*(Njack+1)*Nz)+(Njack*Nz)+z_index) += w3;
+					}
+
+				}
+
+				if (both_side_cov == true){
+					output=compute_XXUz(num_snp); 
+					for (int z_index = 0; z_index < Nz; z_index++){
+						if(num_snp != len[bin_index])
+							XXUz.col((bin_index*(Njack+1)*Nz)+(jack_index*Nz)+z_index) = output.col(z_index);
+						XXUz.col((bin_index*(Njack+1)*Nz)+(Njack*Nz)+z_index) += output.col(z_index);   /// save whole sample
+					}
+				}
+
+				//compute yXXy
+
+				if(both_side_cov == false)
+					yXXy(bin_index, jack_index) = compute_yXXy(num_snp,pheno);
+				else
+					yXXy(bin_index, jack_index) = compute_yVXXVy(num_snp);
+
+				yXXy(bin_index, Njack) += yXXy(bin_index,jack_index);
+
+				if(num_snp == len[bin_index])
+					yXXy(bin_index, jack_index) = 0;
+
+
+
+				if (verbose >= 2) {
+					cout << jack_index << " " << bin_index << "\tXXz(" << XXz.rows() <<"," << XXz.cols() << ") "<< XXz.sum() << endl;
+					cout << jack_index << " " << bin_index << "\tyXXy(" << yXXy.rows() <<"," << yXXy.cols() << ") "<< yXXy.sum() << endl;
+					if (yXXy.rows () > 1)
+						cout << jack_index <<" " << bin_index << "\tyXXy " << yXXy(0,1) <<"," << yXXy(1,1) << endl;
+				}
+
+				//compute Xz
+
+				if (verbose >= 2) {
+					cout << num_snp << " SNPs in bin "<< bin_index<< " of jackknife block  " << jack_index << endl;   
+					cout << "Reading and computing bin " << bin_index << "  of jackknife block " << jack_index << " completed" << endl;
+				}
+				mm.clean_up();
+				if(use_mailman==true){
+					delete[] sum_op;
+					delete[] partialsums;
+					delete[] yint_e;
+					delete[] yint_m;
+					for (int i  = 0 ; i < hsegsize; i++)
+						delete[] y_m [i];
+					delete[] y_m;
+
+					for (int i  = 0 ; i < g.Nindv; i++)
+						delete[] y_e[i];
+					delete[] y_e;
+
+					std::vector< std::vector<int> >().swap(g.p);
+					std::vector< std::vector<int> >().swap(g.not_O_j);
+					std::vector< std::vector<int> >().swap(g.not_O_i);
+					std::vector< std::vector<int> >().swap(allgen_mail[bin_index].p);
+					std::vector< std::vector<int> >().swap(allgen_mail[bin_index].not_O_j);
+					std::vector< std::vector<int> >().swap(allgen_mail[bin_index].not_O_i);
+					g.columnsum.clear();
+					g.columnsum2.clear();
+					g.columnmeans.clear();
+					g.columnmeans2.clear();
+					allgen_mail[bin_index].columnsum.clear();
+					allgen_mail[bin_index].columnsum2.clear();
+					allgen_mail[bin_index].columnmeans.clear();
+					allgen_mail[bin_index].columnmeans2.clear();
+				}
+			}
+		} // loop over bins
+	}//end loop over jackknife blocks
+	cout << "Finished reading and computing over all blocks" << endl;
+	cout << endl;
+	cout << endl;
+
+
+	if (hetero_noise == true) {
+		MatrixXdr hetro_all_Uzb;
+		for (int env_index=0;env_index<Nenv;env_index++){
+			/// add hetero env noise
+			MatrixXdr hetro_all_zb=all_zb.array().colwise()*Enviro.col(env_index).array();
+			hetro_all_zb=hetro_all_zb.array().colwise()*Enviro.col(env_index).array();
+
+			if(both_side_cov==true){
+				hetro_all_Uzb=all_Uzb.array().colwise()*Enviro.col(env_index).array();
+				hetro_all_Uzb=hetro_all_Uzb.array().colwise()*Enviro.col(env_index).array();
+			}
+
+			int hetro_index;
+			if(Annot_x_E==true)
+				hetro_index=Nbin+(Nenv*Nbin)+env_index;
+			else
+				hetro_index=Nbin+Nenv+env_index;
+			for (int z_index=0;z_index<Nz;z_index++){
+				XXz.col(((hetro_index)*(Njack+1)*Nz)+(Njack*Nz)+z_index)=hetro_all_zb.col(z_index);		 
+				if(both_side_cov==true){
+					vec1=hetro_all_zb.col(z_index);
+					w1=covariate.transpose()*vec1;
+					w2=Q*w1;
+					w3=covariate*w2;
+					UXXz.col(((hetro_index)*(Njack+1)*Nz)+(Njack*Nz)+z_index)=w3;
+					XXUz.col(((hetro_index)*(Njack+1)*Nz)+(Njack*Nz)+z_index)=hetro_all_Uzb.col(z_index);
+				}
+
+			}
+
+			MatrixXdr scaled_pheno;
+			if(both_side_cov==true)
+				scaled_pheno=new_pheno.array()*Enviro.col(env_index).array();
+			else
+				scaled_pheno= pheno.array()*Enviro.col(env_index).array();
+
+			yXXy(hetro_index,Njack)=(scaled_pheno.array()*scaled_pheno.array()).sum();
+			len.push_back(1);
+		} 
+	}
+
+	cout<<"Size of bins :"<<endl;
+	//CHANGE(10/20)
+	if (hetero_noise == true) {
+		for(int i=0;i<Nbin+nongen_Nbin+Nenv;i++)
+			cout<<"bin "<<i<<" : "<<len[i]<<endl;
+	} else {
+		for(int i=0;i<Nbin+nongen_Nbin;i++)
+			cout<<"bin "<<i<<" : "<<len[i]<<endl;
+	}
+
+	cout<<"Number of individuals without missing phenotype and enviroment: "<<mask.sum()<<endl;
+	cout << endl;
+	cout << endl;
+	cout << endl;
+	gen_Nbin=Nbin;
+
+	//CHANGE(10/20)
+	if (hetero_noise == true)
+		Nbin = Nbin + nongen_Nbin + Nenv;
+	else
+		Nbin = Nbin + nongen_Nbin;
+
+	for(int bin_index = 0; bin_index < Nbin; bin_index++){
+		for(int jack_index = 0; jack_index < Njack; jack_index++){
+			for (int z_index = 0; z_index < Nz; z_index++){
+				MatrixXdr v1 = XXz.col((bin_index*(Njack+1)*Nz)+(Njack*Nz)+z_index);
+				MatrixXdr v2 = XXz.col((bin_index*(Njack+1)*Nz)+(jack_index*Nz)+z_index);
+				XXz.col((bin_index*(Njack+1)*Nz)+(jack_index*Nz)+z_index) = v1-v2;
+				if(both_side_cov == true){
+					v1 = XXUz.col((bin_index*(Njack+1)*Nz)+(Njack*Nz)+z_index);
+					v2 = XXUz.col((bin_index*(Njack+1)*Nz)+(jack_index*Nz)+z_index);
+					XXUz.col((bin_index*(Njack+1)*Nz)+(jack_index*Nz)+z_index) = v1-v2;
+
+					v1 = UXXz.col((bin_index*(Njack+1)*Nz)+(Njack*Nz)+z_index);
+					v2 = UXXz.col((bin_index*(Njack+1)*Nz)+(jack_index*Nz)+z_index);
+					UXXz.col((bin_index*(Njack+1)*Nz)+(jack_index*Nz)+z_index) = v1-v2;
+				}    
+			}
+			yXXy(bin_index,jack_index) = yXXy(bin_index,Njack)-yXXy(bin_index,jack_index);
+		}
+	}
+	//// all XXy and yXXy and contributions of every jackknife subsamples  were computed till this line.
+
+	/// normal equations LHS
+	MatrixXdr  A_trs(Nbin,Nbin);
+	MatrixXdr b_trk(Nbin,1);
+	MatrixXdr c_yky(Nbin,1);
+
+	MatrixXdr X_l(Nbin+1,Nbin+1);
+	MatrixXdr Y_r(Nbin+1,1);
+
+	int jack_index=Njack;
+	MatrixXdr B1;
+	MatrixXdr B2;
+	MatrixXdr C1;
+	MatrixXdr C2;
+	double trkij;
+	double yy = (pheno.array() * pheno.array()).sum();
+
+	if(both_side_cov == true)
+		yy = (new_pheno.array()*new_pheno.array()).sum();
+
+	int Nindv_mask = mask.sum();
+	if(both_side_cov == true)
+		NC = Nindv_mask - Ncov;
+	else
+		NC = Nindv_mask;
+
+
+	/*
+	MatrixXdr jack;
+	MatrixXdr point_est;
+	MatrixXdr enrich_jack;
+	MatrixXdr enrich_point_est;
+
+	//// adjust for GxE
+	MatrixXdr point_est_adj_gxe;
+	MatrixXdr jack_adj_gxe;
+*/
+
+	point_est_adj_gxe=MatrixXdr::Zero(Nbin+3,1);
+	jack_adj_gxe=MatrixXdr::Zero(Nbin+3,Njack);
+
+
+	jack.resize(Nbin+1,Njack);
+	point_est.resize(Nbin+1,1);
+
+	enrich_jack.resize(Nbin,Njack);
+	enrich_point_est.resize(Nbin,1);
+
+	MatrixXdr h1;
+	MatrixXdr h2;
+	MatrixXdr h3;
+
+	double trkij_res1;
+	double trkij_res2;
+	double trkij_res3;
+	double tk_res;
+
+
+
+	for (jack_index=0;jack_index<=Njack;jack_index++){
+		for(int k=0;k<Nbin;k++)
+			if( jack_index<Njack && len[k]==jack_bin[jack_index][k])
+				jack_bin[jack_index][k]=0;
+
+		for (int i=0;i<Nbin;i++){
+			b_trk(i,0)=Nindv_mask;
+			// CHANGE (2/17)
+			int sum_num_nongen_bin = 0;
+			if (hetero_noise == true) 
+				sum_num_nongen_bin = nongen_Nbin + Nenv;
+			else 
+				sum_num_nongen_bin = nongen_Nbin;
+
+			if(i>=(Nbin-sum_num_nongen_bin) ){
+
+				B1=XXz.block(0,(i*(Njack+1)*Nz)+(jack_index*Nz),Nindv,Nz);
+				B1 =all_zb.array()*B1.array();
+
+				if(jack_index==Njack)
+					b_trk(i,0)=B1.sum()/len[i]/Nz;
+				else
+					b_trk(i,0)=B1.sum()/(len[i]-jack_bin[jack_index][i])/Nz;
+
+			}
+
+			if(jack_index==Njack)
+				c_yky(i,0)=yXXy(i,jack_index)/len[i];
+			else
+				c_yky(i,0)=yXXy(i,jack_index)/(len[i]-jack_bin[jack_index][i]);
+
+
+			if(both_side_cov==true){
+				B1=XXz.block(0,(i*(Njack+1)*Nz)+(jack_index*Nz),Nindv,Nz);
+				C1=B1.array()*all_Uzb.array();
+				C2=C1.colwise().sum();	
+				tk_res=C2.sum();  
+
+				if(jack_index==Njack)
+					tk_res=tk_res/len[i]/Nz;
+				else
+					tk_res=tk_res/(len[i]-jack_bin[jack_index][i])/Nz;
+
+				b_trk(i,0)=b_trk(i,0)-tk_res;
+			}
+
+			for (int j=i;j<Nbin;j++){
+				B1=XXz.block(0,(i*(Njack+1)*Nz)+(jack_index*Nz),Nindv,Nz);
+				B2=XXz.block(0,(j*(Njack+1)*Nz)+(jack_index*Nz),Nindv,Nz);
+				C1=B1.array()*B2.array();
+				C2=C1.colwise().sum();
+				trkij=C2.sum();
+
+
+				if(both_side_cov==true){
+
+					h1=covariate.transpose()*B1;
+					h2=Q*h1;
+					h3=covariate*h2;
+					C1=h3.array()*B2.array();
+					C2=C1.colwise().sum();
+					trkij_res1=C2.sum();
+
+					B1=XXUz.block(0,(i*(Njack+1)*Nz)+(jack_index*Nz),Nindv,Nz);
+					B2=UXXz.block(0,(j*(Njack+1)*Nz)+(jack_index*Nz),Nindv,Nz);
+					C1=B1.array()*B2.array();
+					C2=C1.colwise().sum();
+					trkij_res3=C2.sum();
+
+
+					trkij+=trkij_res3-trkij_res1-trkij_res1 ;
+				}
+
+				if(jack_index==Njack)
+					trkij=trkij/len[i]/len[j]/Nz;
+				else
+					trkij=trkij/(len[i]-jack_bin[jack_index][i])/(len[j]-jack_bin[jack_index][j])/Nz;
+				A_trs(i,j)=trkij;
+				A_trs(j,i)=trkij;
+
+			}
+		}
+
+
+		X_l<<A_trs,b_trk,b_trk.transpose(),NC;
+		Y_r<<c_yky,yy;
+
+		if (trace){
+			if (jack_index < Njack){
+				for (int i=0; i< Nbin; i++){
+					for (int j=0; j < Nbin; j++){
+						trace_file << (X_l(i, j) - Nindv_mask) * (len[i] - jack_bin[jack_index][i])*(len[j] - jack_bin[jack_index][j])/pow(Nindv_mask, 2)
+							<< ",";
+					}
+					trace_file << len[i] - jack_bin[jack_index][i] << endl;
+				}
+			}
+			else{
+				for (int i=0; i< Nbin; i++){
+					for (int j=0; j < Nbin; j++){
+						trace_file << (X_l(i, j) - Nindv_mask) * len[i]*len[j]/pow(Nindv_mask,2) << ",";
+					}
+					trace_file << len[i] << endl;
+				}
+
+			}
+		}
+
+		MatrixXdr herit = X_l.fullPivHouseholderQr().solve(Y_r);
+
+
+		if(jack_index == Njack){
+			outfile << "Number of individuals after filtering: " << Nindv_mask << endl;
+			outfile << "Number of covariates: " << Ncov << endl;
+			outfile << "Number of environments: " << Nenv << endl;
+			if (verbose == true) {
+				cout<<"LHS of Normal Eq"<<endl<<X_l<<endl;
+				cout<<"RHS of Normal Eq"<<endl<<Y_r<<endl;
+				double relative_error = (X_l*herit - Y_r).norm() / Y_r.norm(); // norm() is L2 norm
+				cout << "The relative error is: " << relative_error << endl;
+#ifdef USE_DOUBLE
+				JacobiSVD<MatrixXd> svd(X_l);
+#else
+				JacobiSVD<MatrixXf> svd(X_l);
+#endif
+
+				double cond = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
+				cout<<"condition number:  "<< cond<<endl;
+
+				outfile<<"LHS of Normal Eq"<<endl<<X_l<<endl;
+				outfile<<"RHS of Normal Eq"<<endl<<Y_r<<endl;
+				outfile<<"Normal Equations info:"<<endl;
+				outfile<<"The relative error is: " << relative_error << endl;
+				outfile<<"Max sing.val: "<<svd.singularValues()(0)<<endl;
+				outfile<<"Min sing.val: "<<svd.singularValues()(svd.singularValues().size()-1)<<endl;
+				outfile<<"Condition number: "<<cond<<endl;
+				cout << endl;
+				cout << endl;
+				outfile << endl;
+				outfile << endl;
+			}
+			for(int i = 0; i < (Nbin + 1); i++)
+				point_est(i,0) = herit(i,0);
+
+			//adj gxe
+
+			for(int i=0;i<(Nbin+1);i++){
+				if(i==Nbin)
+					point_est_adj_gxe(i,0)=point_est(i,0)*NC;
+				else
+					point_est_adj_gxe(i,0)=point_est(i,0)*b_trk(i,0);
+			} 
+		}else{
+			for(int i=0;i<(Nbin+1);i++)
+				jack(i,jack_index)=herit(i,0);
+
+			//adj gxe
+			for(int i=0;i<(Nbin+1);i++){
+				if(i==Nbin)
+					jack_adj_gxe(i,jack_index)=jack(i,jack_index)*NC;
+				else
+					jack_adj_gxe(i,jack_index)=jack(i,jack_index)*b_trk(i,0);
+			}
+		}
+	}//end of loop over jack
+
+}
+
+
+
 // Regress covariates from phenotypes
 //  
 void regress_covariates () {
@@ -1909,11 +2477,11 @@ void read_auxillary_files () {
 void print_results () {
 	int T_Nbin;
 	if (gen_by_env == false) {
-		T_Nbin = Nbin;
+		T_Nbin = gen_Nbin;
 	} else if (hetero_noise == true) {
-		T_Nbin = Nbin + nongen_Nbin + Nenv;
+		T_Nbin = gen_Nbin + nongen_Nbin + Nenv;
 	} else {
-		T_Nbin = Nbin + nongen_Nbin;
+		T_Nbin = gen_Nbin + nongen_Nbin;
 	}
 
 	MatrixXdr point_se;
@@ -1927,9 +2495,9 @@ void print_results () {
 	}
 	cout << "*****" << endl;
 	outfile << "*****" << endl;
-	cout << "Number of G variance components = " << Nbin << endl;
+	cout << "Number of G variance components = " << gen_Nbin << endl;
 	cout << "Number of GxE variance components = " << nongen_Nbin << endl;
-	outfile << "Number of G variance components = " << Nbin << endl;
+	outfile << "Number of G variance components = " << gen_Nbin << endl;
 	outfile << "Number of GxE variance components = " << nongen_Nbin << endl;
 	if (hetero_noise == true) {
 		cout << "Number of NxE variance components = " << Nenv << endl;
@@ -1952,18 +2520,21 @@ void print_results () {
 
 	cout << endl << "OUTPUT: " << endl << "Variance components: " << endl;
 	outfile << "OUTPUT: " << endl << "Variance components: " << endl;
+	if (verbose >= 3) { 
+		cout << "gen_Nbin = " << gen_Nbin << "\tT_Nbin = " << T_Nbin << endl;
+	}		
 	for (int j = 0 ; j < T_Nbin ; j++){
-		if(j < Nbin){
+		if(j < gen_Nbin){
 			cout << "Sigma^2_g[" << j<<"] : " << point_est(j,0) << "  SE : " << point_se(j,0) << endl;
 			outfile << "Sigma^2_g[" << j<<"] : " << point_est(j,0) << "  SE : " << point_se(j,0) << endl;
 		}
-		else if (j <(Nbin + nongen_Nbin)){
-			int k = j - Nbin;
+		else if (j <(gen_Nbin + nongen_Nbin)){
+			int k = j - gen_Nbin;
 			cout << "Sigma^2_gxe[" << k<<"] : " << point_est(j,0) << "  SE : " << point_se(j,0) << endl;
 			outfile << "Sigma^2_gxe[" << k<<"] : " << point_est(j,0) << "  SE : " << point_se(j,0) << endl;
 		}
 		else if (j<(T_Nbin)){
-			int k = j - Nbin - nongen_Nbin;
+			int k = j - gen_Nbin - nongen_Nbin;
 			cout << "Sigma^2_nxe[" << k<<"] : " << point_est(j,0) << "  SE : " << point_se(j,0) << endl;
 			outfile << "Sigma^2_nxe[" << k<<"] : " << point_est(j,0) << "  SE : " << point_se(j,0) << endl;
 		}
@@ -2000,15 +2571,15 @@ void print_results () {
 	point_est_adj_gxe(T_Nbin,0) = temp_sig;
 	temp_sig = 0;
 	if(Annot_x_E == true){
-		for(int k = Nbin ; k<(2 * Nbin);k++)
+		for(int k = gen_Nbin ; k<(2 * gen_Nbin);k++)
 			temp_sig += point_est_adj_gxe(k,0);
 		point_est_adj_gxe(T_Nbin + 1,0) = temp_sig;// total GxE
 	}else{
-			point_est_adj_gxe(T_Nbin + 1,0) = point_est_adj_gxe(Nbin,0);
+			point_est_adj_gxe(T_Nbin + 1,0) = point_est_adj_gxe(gen_Nbin,0);
 
 	}
 	temp_sig = 0;
-	for(int k = 0 ; k < Nbin ; k++)
+	for(int k = 0 ; k < gen_Nbin ; k++)
 		temp_sig += point_est_adj_gxe(k,0);
 	point_est_adj_gxe(T_Nbin + 2,0) = temp_sig;//total G
 
@@ -2023,14 +2594,14 @@ void print_results () {
 		jack_adj_gxe(T_Nbin,i) = temp_sig;
 		temp2_sig = 0;
 		if(Annot_x_E == true){
-			for(int k = Nbin ; k<(2 * Nbin);k++)
+			for(int k = gen_Nbin ; k<(2 * gen_Nbin);k++)
 				temp2_sig += jack_adj_gxe(k,i);
 			jack_adj_gxe(T_Nbin + 1,i) = temp2_sig;
 		}else{
-			jack_adj_gxe(T_Nbin + 1,i) = jack_adj_gxe(Nbin,i);
+			jack_adj_gxe(T_Nbin + 1,i) = jack_adj_gxe(gen_Nbin,i);
 		}
 		temp2_sig = 0;
-		for(int k = 0 ; k < Nbin ; k++)
+		for(int k = 0 ; k < gen_Nbin ; k++)
 			temp2_sig += jack_adj_gxe(k,i);
 		jack_adj_gxe(T_Nbin + 2,i) = temp2_sig;
 	}
@@ -2041,17 +2612,17 @@ void print_results () {
 	cout << "Heritabilities: " << endl;
 	outfile << "Heritabilities: " << endl;
 	for (int j = 0 ; j < T_Nbin ; j++){
-		if(j < Nbin){
+		if(j < gen_Nbin){
 			cout << "h2_g[" << j<<"] : " << point_est_adj_gxe(j,0) << " SE : " << SEjack_adj_gxe(j,0) << endl;
 			outfile << "h2_g[" << j<<"] : " << point_est_adj_gxe(j,0) << " SE : " << SEjack_adj_gxe(j,0) << endl;
 		}
-		else if (j<(Nbin + nongen_Nbin)){
-			int k = j - Nbin;
+		else if (j<(gen_Nbin + nongen_Nbin)){
+			int k = j - gen_Nbin;
 			cout << "h2_gxe[" << k<<"] : " << point_est_adj_gxe(j,0) << " SE : " << SEjack_adj_gxe(j,0) << endl;
 			outfile << "h2_gxe[" << k<<"] : " << point_est_adj_gxe(j,0) << " SE : " << SEjack_adj_gxe(j,0) << endl;
 		}
 		else if (j<(T_Nbin)){
-			int k = j - Nbin - nongen_Nbin;
+			int k = j - gen_Nbin - nongen_Nbin;
 			cout << "h2_nxe[" << k<<"] : " << point_est_adj_gxe(j,0) << " SE : " << SEjack_adj_gxe(j,0) << endl;
 			outfile << "h2_nxe[" << k<<"] : " << point_est_adj_gxe(j,0) << " SE : " << SEjack_adj_gxe(j,0) << endl;
 		}
@@ -2069,35 +2640,35 @@ void print_results () {
 
 	MatrixXdr enrich_g;
 	MatrixXdr jack_enrich_g;
-	jack_enrich_g.resize(Nbin,Njack);
-	enrich_g.resize(Nbin,1);
+	jack_enrich_g.resize(gen_Nbin,Njack);
+	enrich_g.resize(gen_Nbin,1);
 	double total_g_h2 = 0;
 	int total_snp = 0;
-	for(int i = 0 ; i < Nbin ; i++){
+	for(int i = 0 ; i < gen_Nbin ; i++){
 		total_g_h2 += point_est_adj_gxe(i,0);
 		total_snp += len[i];
 	}
 	double numi;
 	double denom = (double)total_g_h2 / total_snp;
-	for(int i = 0 ; i < Nbin ; i++){
+	for(int i = 0 ; i < gen_Nbin ; i++){
 		numi = point_est_adj_gxe(i,0) / len[i];
 		enrich_g(i,0) = numi / denom;
 	}
 	for(int j = 0 ; j < Njack ; j++){
 		total_g_h2 = 0;
 		total_snp = 0;
-		for (int k = 0 ; k < Nbin ; k++){
+		for (int k = 0 ; k < gen_Nbin ; k++){
 			total_snp += len[k]-jack_bin[j][k];
 			total_g_h2 += jack_adj_gxe(k,j);
 		}
 		denom = (double)total_g_h2 / total_snp;
-		for(int k = 0 ; k < Nbin ; k++){
+		for(int k = 0 ; k < gen_Nbin ; k++){
 			numi = (double)jack_adj_gxe(k,j) / (len[k]-jack_bin[j][k]);
 			jack_enrich_g(k,j) = (double)numi / denom;
 			}
 	}
 	MatrixXdr enrich_g_se;
-	enrich_g_se = MatrixXdr::Zero(Nbin,1);
+	enrich_g_se = MatrixXdr::Zero(gen_Nbin,1);
 	enrich_g_se = statsfn::jack_se(jack_enrich_g);
 
 
@@ -2105,7 +2676,7 @@ void print_results () {
 	outfile << "Enrichments:" << endl;
 	cout << "G enrichment" << endl;
 	outfile << "G enrichment" << endl;
-	for(int i = 0 ; i < Nbin ; i++){
+	for(int i = 0 ; i < gen_Nbin ; i++){
 		cout << "Enrichment g[" << i<<"] : " << enrich_g(i,0) << " SE : " << enrich_g_se(i,0) << endl;
 		outfile << "Enrichment g[" << i<<"] : " << enrich_g(i,0) << " SE : " << enrich_g_se(i,0) << endl;
 	}
@@ -2114,40 +2685,40 @@ void print_results () {
 		if (gen_by_env == true) {
 			MatrixXdr enrich_gxe;
 			MatrixXdr jack_enrich_gxe;
-			jack_enrich_gxe.resize(Nbin,Njack);
-			enrich_gxe.resize(Nbin,1);
+			jack_enrich_gxe.resize(gen_Nbin,Njack);
+			enrich_gxe.resize(gen_Nbin,1);
 			double total_gxe_h2 = 0;
 			int total_snp = 0;
-			for(int i = 0 ; i < Nbin ; i++){
-				total_gxe_h2 += point_est_adj_gxe(Nbin + i,0);
-				total_snp += len[Nbin + i];
+			for(int i = 0 ; i < gen_Nbin ; i++){
+				total_gxe_h2 += point_est_adj_gxe(gen_Nbin + i,0);
+				total_snp += len[gen_Nbin + i];
 			}
 			double numi;
 			double denom = (double)total_gxe_h2 / total_snp;
-			for(int i = 0 ; i < Nbin ; i++){
-				numi = point_est_adj_gxe(Nbin + i,0) / len[Nbin + i];
+			for(int i = 0 ; i < gen_Nbin ; i++){
+				numi = point_est_adj_gxe(gen_Nbin + i,0) / len[gen_Nbin + i];
 				enrich_gxe(i,0) = numi / denom;
 			}
 			for(int j = 0 ; j < Njack ; j++){
 				total_gxe_h2 = 0;
 				total_snp = 0;
-				for (int k = 0 ; k < Nbin ; k++){
-					total_snp += len[Nbin + k]-jack_bin[j][Nbin + k];
-					total_gxe_h2 += jack_adj_gxe(Nbin + k,j);
+				for (int k = 0 ; k < gen_Nbin ; k++){
+					total_snp += len[gen_Nbin + k]-jack_bin[j][gen_Nbin + k];
+					total_gxe_h2 += jack_adj_gxe(gen_Nbin + k,j);
 				}
 				denom = (double)total_gxe_h2 / total_snp;
-				for(int k = 0 ; k < Nbin ; k++){
-					numi = jack_adj_gxe(Nbin + k,j) / (len[Nbin + k]-jack_bin[j][Nbin + k]);
+				for(int k = 0 ; k < gen_Nbin ; k++){
+					numi = jack_adj_gxe(gen_Nbin + k,j) / (len[gen_Nbin + k]-jack_bin[j][gen_Nbin + k]);
 					jack_enrich_gxe(k,j) = numi / denom;
 				}
 			}
 			MatrixXdr enrich_gxe_se;
-			enrich_gxe_se = MatrixXdr::Zero(Nbin,1);
+			enrich_gxe_se = MatrixXdr::Zero(gen_Nbin,1);
 			enrich_gxe_se = statsfn::jack_se(jack_enrich_gxe);
 
 			cout << "GxE enrichment" << endl;
 			outfile << "GxE enrichment" << endl;
-			for(int i = 0 ; i < Nbin ; i++){
+			for(int i = 0 ; i < gen_Nbin ; i++){
 				cout << "Enrichment gxe[" << i<<"] : " << enrich_gxe(i,0) << " SE : " << enrich_gxe_se(i,0) << endl;
 				outfile << "Enrichment gxe[" << i<<"] : " << enrich_gxe(i,0) << " SE : " << enrich_gxe_se(i,0) << endl;
 			}
@@ -2156,7 +2727,7 @@ void print_results () {
 	cout << "*****" << endl;
 	outfile << "*****" << endl;
 
-	///compute parameters for overlapping annotations based  on s-ldsc definition :
+	///compute parameters for overlapping annotations based on s-ldsc definition :
 
 	MatrixXdr her_per_snp;
 	MatrixXdr her_cat_ldsc;
@@ -2180,28 +2751,28 @@ void print_results () {
 
 
 		for(int i = 0 ; i < Nsnp ; i++){
-			for(int j = 0 ; j < Nbin ; j++){
+			for(int j = 0 ; j < gen_Nbin ; j++){
 				if(annot_bool[i][j]==1)
 					her_per_snp(i,0)+=her_per_snp_inbin(j,0);
-				if((annot_bool[i][Nbin + j]==1) && (Annot_x_E == true))
-					her_per_snp(i,1)+=her_per_snp_inbin(Nbin + j,0);
+				if((annot_bool[i][gen_Nbin + j]==1) && (Annot_x_E == true))
+					her_per_snp(i,1)+=her_per_snp_inbin(gen_Nbin + j,0);
 			}        
 			if(k == Njack){
-				for(int j = 0 ; j < Nbin ; j++){
+				for(int j = 0 ; j < gen_Nbin ; j++){
 					if(annot_bool[i][j]==1)
 						point_her_cat_ldsc(j,0)+=her_per_snp(i,0);
-					if((annot_bool[i][Nbin + j]==1) && (Annot_x_E == true))
-						point_her_cat_ldsc(Nbin + j,0)+=her_per_snp(i,1);
+					if((annot_bool[i][gen_Nbin + j]==1) && (Annot_x_E == true))
+						point_her_cat_ldsc(gen_Nbin + j,0)+=her_per_snp(i,1);
 				}                
 			}else{
 				int temp = i / step_size;
 				if(temp>=Njack)
 					temp = Njack - 1;
-				for(int j = 0 ; j < Nbin ; j++){
+				for(int j = 0 ; j < gen_Nbin ; j++){
 					if(annot_bool[i][j]==1 && temp != k)
 						her_cat_ldsc(j,k)+=her_per_snp(i,0);
-					if((annot_bool[i][Nbin + j]==1) && (temp != k) && (Annot_x_E == true))
-						her_cat_ldsc(Nbin + j,k)+=her_per_snp(i,1);
+					if((annot_bool[i][gen_Nbin + j]==1) && (temp != k) && (Annot_x_E == true))
+						her_cat_ldsc(gen_Nbin + j,k)+=her_per_snp(i,1);
 				}                   
 			}     
 		}
@@ -2216,13 +2787,13 @@ void print_results () {
 
 	cout << "Heritabilities: " << endl;
 	outfile << "Heritabilities: " << endl;
-	for (int j = 0 ; j < Nbin ; j++){
+	for (int j = 0 ; j < gen_Nbin ; j++){
 		cout << "h2_g[" << j<<"] : " << point_her_cat_ldsc(j,0) << " SE : " << se_her_cat_ldsc(j,0) << endl;
 		outfile << "h2_g[" << j<<"] : " << point_her_cat_ldsc(j,0) << " SE : " << se_her_cat_ldsc(j,0) << endl;
 	}
 	if ((gen_by_env == true) && (Annot_x_E == true)) {
-		for (int j = 0 ; j < Nbin ; j++){
-			int k = j + Nbin;
+		for (int j = 0 ; j < gen_Nbin ; j++){
+			int k = j + gen_Nbin;
 			cout << "h2_gxe[" << j<<"] : " << point_her_cat_ldsc(k,0) << " SE : " << se_her_cat_ldsc(k,0) << endl;
 			outfile << "h2_gxe[" << j<<"] : " << point_her_cat_ldsc(k,0) << " SE : " << se_her_cat_ldsc(k,0) << endl;
 
@@ -2230,35 +2801,35 @@ void print_results () {
 	}
 
 	int all_snp = 0;
-	for(int i = 0 ; i < Nbin ; i++){
+	for(int i = 0 ; i < gen_Nbin ; i++){
 		all_snp += len[i];
 	}
 	double snp_por;
-	for (int i = 0 ; i < Nbin ; i++){
+	for (int i = 0 ; i < gen_Nbin ; i++){
 		point_her_cat_ldsc(i,0) = (double)point_her_cat_ldsc(i,0) / point_est_adj_gxe(T_Nbin + 2,0);  //additive
 		if((gen_by_env == true) && (Annot_x_E == true))
-			point_her_cat_ldsc(i + Nbin,0) = (double)point_her_cat_ldsc(i + Nbin,0) / point_est_adj_gxe(T_Nbin + 1,0);  //GxE
+			point_her_cat_ldsc(i + gen_Nbin,0) = (double)point_her_cat_ldsc(i + gen_Nbin,0) / point_est_adj_gxe(T_Nbin + 1,0);  //GxE
 
 		snp_por = (double)len[i]/all_snp;
 		point_her_cat_ldsc(i,0) = (double)point_her_cat_ldsc(i,0) / snp_por;
 		if((gen_by_env == true) && (Annot_x_E == true))
-			point_her_cat_ldsc(i + Nbin,0) = (double)point_her_cat_ldsc(i + Nbin,0) / snp_por;
+			point_her_cat_ldsc(i + gen_Nbin,0) = (double)point_her_cat_ldsc(i + gen_Nbin,0) / snp_por;
 	}
 
 	double temp_size;
 	for(int i = 0 ; i < Njack ; i++){
 		temp_size = all_snp;
-		for(int k = 0 ; k < Nbin ; k++)
+		for(int k = 0 ; k < gen_Nbin ; k++)
 			temp_size = temp_size - jack_bin[i][k];
-		for(int j = 0 ; j < Nbin ; j++){
+		for(int j = 0 ; j < gen_Nbin ; j++){
 			her_cat_ldsc(j,i) = (double)her_cat_ldsc(j,i) / jack_adj_gxe(T_Nbin + 2,i);
 			if((gen_by_env == true) && (Annot_x_E == true))
-				her_cat_ldsc(j + Nbin,i) = (double)her_cat_ldsc(j + Nbin,i) / jack_adj_gxe(T_Nbin + 1,i);
+				her_cat_ldsc(j + gen_Nbin,i) = (double)her_cat_ldsc(j + gen_Nbin,i) / jack_adj_gxe(T_Nbin + 1,i);
 
 			snp_por = (double)(len[j]-jack_bin[i][j]) / temp_size;
 			her_cat_ldsc(j,i) = (double)her_cat_ldsc(j,i) / snp_por;
 			if((gen_by_env == true) && (Annot_x_E == true))
-				her_cat_ldsc(j + Nbin,i) = (double)her_cat_ldsc(j + Nbin,i) / snp_por;
+				her_cat_ldsc(j + gen_Nbin,i) = (double)her_cat_ldsc(j + gen_Nbin,i) / snp_por;
 
 		}
 	}
@@ -2267,13 +2838,13 @@ void print_results () {
 
 	cout << "Enrichments (overlapping def): " << endl;
 	outfile << "Enrichments (overlapping def): " << endl;
-	for (int j = 0 ; j < Nbin ; j++){
+	for (int j = 0 ; j < gen_Nbin ; j++){
 		cout << "Enrichment g[" << j<<"] : " << point_her_cat_ldsc(j,0) << " SE : " << se_her_cat_ldsc(j,0) << endl;
 		outfile << "Enrichment g[" << j<<"] : " << point_her_cat_ldsc(j,0) << " SE : " << se_her_cat_ldsc(j,0) << endl;
 	}
 	if ((gen_by_env == true) && (Annot_x_E == true)) {
-		for (int j = 0 ; j < Nbin ; j++){
-			int k = j + Nbin;
+		for (int j = 0 ; j < gen_Nbin ; j++){
+			int k = j + gen_Nbin;
 			cout << "Enrichment gxe[" << j<<"] : " << point_her_cat_ldsc(k,0) << " SE : " << se_her_cat_ldsc(k,0) << endl;
 			outfile << "Enrichment gxe[" << j<<"] : " << point_her_cat_ldsc(k,0) << " SE: " << se_her_cat_ldsc(k,0) << endl;
 		}
@@ -2294,6 +2865,7 @@ void print_trace () {
 	meta_file.open(mnpath.c_str(), std::ios_base::out);
 	meta_file << "NSAMPLE,NSNPS,NBLKS,NBINS,K" << endl << Nindv << "," << Nsnp << "," << Njack << "," << Nbin << "," << Nz;
 	meta_file.close();
+	trace_file.close();
 }
 
 void print_input_parameters() {
@@ -2364,6 +2936,7 @@ void init_params () {
 	jack_size = command_line_opts.jack_size;
 	jack_size *= 1e6; 
 
+	memeff = command_line_opts.memeff;
 	opt1 = command_line_opts.opt1;
 	opt2 = command_line_opts.opt2;
 	mem_Nsnp = command_line_opts.mem_Nsnp;
@@ -2453,6 +3026,7 @@ int main(int argc, char const *argv[]){
 			len.push_back(Nsnp);
 	}
 
+
 	// XXz : Nindv X (Nbins * Nz * 2): 
 	// First half of columns has the computation from the current jackknife block.
 	// Last half of columns has the computation from the whole genome.
@@ -2462,13 +3036,24 @@ int main(int argc, char const *argv[]){
 		T_Nbin = Nbin + nongen_Nbin;
 	}
 
-	XXz = MatrixXdr::Zero(Nindv, T_Nbin * Nz * 2);
+	if (memeff) { 
+		XXz = MatrixXdr::Zero(Nindv, T_Nbin * Nz * 2);
 
-	if(both_side_cov == true){
-		UXXz = MatrixXdr::Zero(Nindv, T_Nbin * Nz * 2);
-		XXUz = MatrixXdr::Zero(Nindv, T_Nbin * Nz * 2);
+		if(both_side_cov == true){
+			UXXz = MatrixXdr::Zero(Nindv, T_Nbin * Nz * 2);
+			XXUz = MatrixXdr::Zero(Nindv, T_Nbin * Nz * 2);
+		}
+		yXXy = MatrixXdr::Zero(T_Nbin,2);
+
+	} else {
+		XXz=MatrixXdr::Zero(Nindv, T_Nbin * (Njack+1) * Nz);
+
+		if(both_side_cov==true){
+			UXXz=MatrixXdr::Zero(Nindv, T_Nbin * (Njack+1) * Nz);
+			XXUz=MatrixXdr::Zero(Nindv, T_Nbin * (Njack+1) * Nz);
+		}
+		yXXy=MatrixXdr::Zero( T_Nbin, Njack + 1);
 	}
-	yXXy = MatrixXdr::Zero(T_Nbin,2);
 
 	if (!use_ysum)
 		jack_yXXy = MatrixXdr::Zero(T_Nbin, Njack);
@@ -2503,13 +3088,18 @@ int main(int argc, char const *argv[]){
 		print_trace ();
 	}
 
-	// This is where most of the computation happens
-	if (opt2){
-		genotype_stream_pass_mem_efficient (name);
+	if (memeff) {
+		// This is where most of the computation happens
+		if (opt2){
+			genotype_stream_pass_mem_efficient (name); // flexible read block size
+		} else {
+			genotype_stream_pass (name, 1);
+		}
+		genotype_stream_pass (name, 2);
 	} else {
-		genotype_stream_pass (name, 1);
+		genotype_stream_single_pass (name);
 	}
-	genotype_stream_pass (name, 2);
+
 	print_results ();
 
     gettimeofday(&now, NULL);
@@ -2518,5 +3108,6 @@ int main(int argc, char const *argv[]){
     elapsed /= 1.e6;
     cout << "GENIE ran successfully. Time elapsed = " << elapsed << " seconds " << endl;
 	
+    outfile.close();
 	return 0;
 }
