@@ -31,20 +31,7 @@ If there are many annotations, then we recommend to run the following:
 ```
 GENIE_mem is slower than GENIE, but it uses less memory than GENIE.
 
-GENIE_multi_pheno allows for the input of multi-trait phenotype file:
-```
-./GENIE_multi_pheno <command_line arguments>
-```
-
-
-GENIE_trace1 GENIE_trace2 can be run in sequence, so that GENIE_trace1 produced the trace estimates,
-and GENIE_trace2 run GENIE with trace inputs (specified by '-tr_input')
-```
-./GENIE_trace1 <command_line arguments>
-./GENIE_trace2 <command_line arguments>
-```
-
-Alternatively, you may run either ```GENIE```, ```GENIE_mem```, ```GENIE_multi_pheno```, or ```GENIE_trace1```+```GENIE_trace2``` with a newline-separated config file:
+Alternatively, you may run either ```GENIE``` or ```GENIE_mem``` with a newline-separated config file:
 ```
 ./GENIE --config <config file>
 ```
