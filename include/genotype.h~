@@ -9,11 +9,11 @@
 
 using namespace Eigen;
 using namespace std;
-#ifdef USE_DOUBLE
-	typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixXdr;
-#else
-	typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixXdr;
-#endif
+	#ifdef USE_DOUBLE
+		typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixXdr;
+	#else
+		typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixXdr;
+	#endif
 
 class genotype {
 	std::vector< std::vector <bool> > msb;

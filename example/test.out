@@ -1,41 +1,71 @@
 ##################################
 #                                #
-#          GENIE (v1.0.0)        #
+#          GENIE (v1.1.0)        #
 #                                #
 ##################################
 
 
 Active essential options: 
-	-g (genotype) test
-	-a (annotation) single.annot
-	-p (phenotype) test.pheno
-	-o (output) test.out
-	-m (model) G
-	-k (# random vectors) 10
-	-jn (# jackknife blocks) 10
-	-t (# threads) 6
-	-s (seed) 1
+	 - g (genotype) test
+	 - a (annotation) single.annot
+	 - p (phenotype) test.pheno
+	 - c (covariates) test.cov
+	 - o (output) test.out
+	 - e (environment) test.env
+	 - m (model) G+GxE+NxE
+	 - k (# random vectors) 10
+	 - jn (# jackknife blocks) 10
+	 - t (# threads) 6
+	 - s (seed) 1
+Other options: 
+	 -- norm_proj_pheno (normalize pheno after projection on covariates) 1
+	 -- cov_add_intercept (intercept term added to covariates) 1
+	 - v (verbose) 1
 
 
 Number of individuals after filtering: 5000
-Number of covariates: 1
-Number of environments: 0
+Number of covariates: 7
+Number of environments: 1
+LHS of Normal Eq
+7506.33 2345.71 1963.44 4994.01
+2345.71 2345.34 1960.81  1962.2
+1963.44 1960.81 1961.86 1963.06
+4994.01  1962.2 1963.06    4993
+RHS of Normal Eq
+5422.16
+2606.72
+ 2461.6
+   4999
+Normal Equations info:
+The relative error is: 5.95446e-08
+Max sing.val: 13255.4
+Min sing.val: 147.469
+Condition number: 89.8855
+
+
 *****
-Number of features in bin 0 : 10000
+Number of SNPs in bin 0 = 10000
+Number of SNPs in bin 1 = 10000
+Number of SNPs in bin 2 = 1
 *****
-Number of G variance components : 1
-Number of GxE variance components : 0
-Number of NxE variance components : 0
+Number of G variance components = 1
+Number of GxE variance components = 1
+Number of NxE variance components = 1
 *****
 OUTPUT: 
 Variance components: 
-Sigma^2_g[0] : 0.168014  SE : 0.0293859
-Sigma^2_e : 0.831952  SE : 0.0293918
+Sigma^2_g[0] : 0.12992  SE : 0.0256735
+Sigma^2_gxe[0] : 0.250272  SE : 0.117951
+Sigma^2_nxe[0] : 0.166822  SE : 0.117721
+Sigma^2_e : 0.707313  SE : 0.0258222
 *****
 Heritabilities: 
-h2_g[0] : 0.168048 SE : 0.0293918
-Total h2 : 0.168048 SE: 0.0293918
-Total h2_g : 0.168048 SE: 0.0293918
+h2_g[0] : 0.12979 SE : 0.0256438
+h2_gxe[0] : 0.0982365 SE : 0.0463089
+h2_nxe[0] : 0.0655094 SE : 0.0462279
+Total h2 : 0.293536 SE: 0.0257912
+Total h2_g : 0.12979 SE: 0.0256438
+Total h2_gxe : 0.0982365 SE: 0.0463088
 *****
 Enrichments:
 G enrichment
@@ -44,6 +74,6 @@ Enrichment g[0] : 1 SE : 0
 *****
 Heritabilities and enrichments computed based on overlapping setting
 Heritabilities: 
-h2_g[0] : 0.168044 SE : 0.0293864
+h2_g[0] : 0.129789 SE : 0.0256496
 Enrichments (overlapping def): 
-Enrichment g[0] : 0.999976 SE : 0.000110492
+Enrichment g[0] : 0.999993 SE : 0.000172287

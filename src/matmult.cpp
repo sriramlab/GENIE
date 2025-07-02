@@ -90,7 +90,7 @@ void MatMult::multiply_y_pre_fast_thread(int begin, int end, MatrixXdr &op, int 
 			}
 		}
 		if (debug)
-			cout << seg_iter << "\t" << res.sum () << endl;
+			cout << "here = " << seg_iter << "\t" << res.sum () << endl;
 	}
 }
 
@@ -110,16 +110,14 @@ void MatMult::multiply_y_pre_fast(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bo
 		sum_op[k_iter] = op.col(k_iter).sum();
 	}
 
-//	#if DEBUG == 1
-		if (debug) {
-			// print_time();
-			std::cout << "Starting mailman on premultiply" << std::endl;
-			std::cout << "Nops = " << Ncol_op << "\t" << g.Nsegments_hori << std::endl;
-			std::cout << "Segment size = " << g.segment_size_hori << std::endl;
-			std::cout << "Matrix size = " << g.segment_size_hori << "\t" << g.Nindv << std::endl;
-			std::cout << "op = " <<  op.rows() << "\t" << op.cols() << std::endl;
-		}
-//	#endif
+	if (debug) {
+		// print_time();
+		std::cout << "Starting mailman on premultiply" << std::endl;
+		std::cout << "Nops = " << Ncol_op << "\t" << g.Nsegments_hori << std::endl;
+		std::cout << "Segment size = " << g.segment_size_hori << std::endl;
+		std::cout << "Matrix size = " << g.segment_size_hori << "\t" << g.Nindv << std::endl;
+		std::cout << "op = " <<  op.rows() << "\t" << op.cols() << std::endl;
+	}
 
 	// TODO: Memory Effecient SSE FastMultipy
 
@@ -140,15 +138,6 @@ void MatMult::multiply_y_pre_fast(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bo
 	for (int t = 0; t < nthreads; t++) {
 		th[t].join();
 	}
-
-	// for(int seg_iter = 0; seg_iter < g.Nsegments_hori - 1; seg_iter++){
-	// mailman::fastmultiply ( g.segment_size_hori, g.Nindv, Ncol_op, g.p[seg_iter], op, yint_m, partialsums, y_m);
-	// int p_base = seg_iter * g.segment_size_hori;
-	// for(int p_iter=p_base; (p_iter < p_base + g.segment_size_hori) && (p_iter < g.Nsnp) ; p_iter++ ){
-	//   for(int k_iter = 0; k_iter < Ncol_op; k_iter++)
-	//     res(p_iter, k_iter) = y_m [p_iter - p_base][k_iter];
-	//   }
-	// }
 
 	int last_seg_size = (g.Nsnp % g.segment_size_hori != 0) ? g.Nsnp % g.segment_size_hori : g.segment_size_hori;
 	mailman::fastmultiply(last_seg_size, g.Nindv, Ncol_op, g.p[g.Nsegments_hori-1], op, yint_m[0], partialsums[0], y_m[0]);
