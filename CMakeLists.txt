@@ -94,15 +94,13 @@ IF (NOT HAVE_CLOCK_GETTIME)
     target_link_libraries(genie_lib PRIVATE rt)
 ENDIF ()
 
-add_executable(GENIE_mem src/ge_mem_flexible.cpp)
 add_executable(GENIE src/ge_flexible.cpp)
 
 # Link executables against required dependencies
-target_link_libraries(GENIE_mem PRIVATE genie_lib)
 target_link_libraries(GENIE PRIVATE genie_lib)
 
 # Handle user preference for SSE support (default: OFF)
 option(BUILD_PYTHON_MODULE "Whether the python module is being built from the scikit-build-core context" OFF)
 if (BUILD_PYTHON_MODULE)
-    install(TARGETS GENIE_mem GENIE DESTINATION rhe)
+    install(TARGETS GENIE DESTINATION rhe)
 endif ()

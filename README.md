@@ -25,17 +25,20 @@ An executable file named GENIE will be in the build folder after the installatio
  ```
  ./GENIE <command_line arguments>
 ```
-If there are many annotations, then we recommend to run the following: 
-```
- ./GENIE_mem <command_line arguments>
-```
-GENIE_mem is slower than GENIE, but it uses less memory than GENIE.
 
-Alternatively, you may run either ```GENIE``` or ```GENIE_mem``` with a newline-separated config file:
+Alternatively, you may run either ```GENIE``` with a newline-separated config file:
 ```
 ./GENIE --config <config file>
 ```
 When using a config file, the full keys (e.g., genotype="") must be used instead of shortcut flags (e.g., -g).
+
+If there are many annotations, then we recommend to run a memory-efficient version of GENIE (that is slower). This can be enabled by setting
+the flags -mem, --memeff on the command-line or memeff = 1 in the configuration file. This memory-efficient version reads in a specified block of SNPs that can be set 
+using the flags -mem_Nsnp, --mem_Nsnp (mem_Nsnp in the configuration file). The default value for mem_Nsnp = 10. 
+Alternatively, this memory efficient version can read an entire block of SNPs specified by the size of Jackknife blocks and this can be specified
+using the flags -opt2 0, --opt2 0 (opt2 = 0 in the configuration file).
+
+
 
 ## Parameters
 
