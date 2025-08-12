@@ -81,5 +81,3 @@ def test_genie_mem():
 
 if __name__ == "__main__":
     test_genie()
-    test_genie_multi_pheno()
-    test_genie_mem()

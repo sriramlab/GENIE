@@ -19,8 +19,6 @@ https://github.com/sriramlab/GENIE
 This package provides the following functions:
 
 - `rhe.run_genie`
-- `rhe.run_genie_mem`
-- `rhe.run_genie_multi_pheno`
 
 
 ### Run GENIE with a list of command line arguments
@@ -94,5 +92,5 @@ Bogdan Pasaniuc, Sriram Sankararaman. Nature Communications (2020); doi: https:/
 
 ## Version
 ```
-v1.0.0
+v1.2.0
 ```
