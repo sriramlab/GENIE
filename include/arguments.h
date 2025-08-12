@@ -102,7 +102,7 @@ int isarg(const char* arg, const char* shortarg, const char* longarg){
 std::string usage ( ) {
 	std::ostringstream ostr;
 
-	ostr <<"Usage: GENIE/GENIE_mem " << "[options]" << endl;
+	ostr <<"Usage: GENIE " << "[--config parameter file|command-line options]" << endl;
 	ostr << "\nOptions:\n"
 		 << "  -h, --help 					Show this message and exit\n"
 		 << "  -g, --genotype				The path of PLINK BED genotype file\n"
@@ -267,9 +267,14 @@ private:
 		file.close();
 	}
 public:
+    string modelstring;
+    string outputstring; 
 	ConfigFile(const std::string &fName){
 		this->fName = fName;
 		ExtractKeys();
+
+        modelstring = "";
+        outputstring  = "";
 	}
 
 	ConfigFile () {}
@@ -291,23 +296,25 @@ public:
 	}
 
 	void printVersion () {
-		io::println ("##################################",0);
-		io::println ("#                                #",0);
-		io::println ("#          GENIE (v1.2.0)        #",0);
-		io::println ("#                                #",0);
-		io::println ("##################################",0);
+		io::println ("########################################",0);
+		io::println ("#                                      #",0);
+		io::println ("#             GENIE (v1.2.0)           #",0);
+		io::println ("#                                      #",0);
+		io::println ("########################################",0);
 		io::println ("",0);
 	}
 
 	void printParameters ()  {
 
-	    io::println ("###########Parameters#############",0);                                            
+	    io::println ("##############Parameters################",0); 
     	map<string,string>::iterator i;                                                                  
     	for (i = contents.begin(); i!=contents.end(); i++){                                            
         	string s = "#" + i->first +"\t" + i->second ;                                                
 			io::println (s,0); 
     	}   
-		io::println ("#################################",0); 
+		io::println ("#######################################",0); 
+        cout << modelstring << endl;
+        cout << outputstring << endl;
 	}
 };
 
@@ -361,7 +368,7 @@ void parse_args(int argc, char const *argv[]){
 		exitWithError (usage ());
 	}
     // using a config file instead of cmd-line args. TODO: have all the current options as config version. remove deprecated/redundant options
-	if(strcmp(argv[1],"--config")==0){
+	if (strcmp(argv[1],"--config")==0) {
 		std::string cfg_filename = std::string(argv[2]);
 		ConfigFile cfg(cfg_filename);
 		cfg.printVersion();
@@ -407,7 +414,10 @@ void parse_args(int argc, char const *argv[]){
         command_line_opts.use_ysum = cfg.getValueOfKey<bool>("use_phenosum", false);
         command_line_opts.keep_xsum = cfg.getValueOfKey<bool>("output_genosum", true);
 
+        command_line_opts.normalize_proj_pheno = cfg.getValueOfKey<bool> ("norm_proj_pheno", true);
 		command_line_opts.cov_add_intercept = cfg.getValueOfKey<bool>("cov_add_intercept", true);
+		command_line_opts.exannot = cfg.getValueOfKey<bool>("eXannot", false);
+
         command_line_opts.model = cfg.getValueOfKey<string>("model", string(""));
         if (cfg.keyExists("model")){
             const char* model_arg = command_line_opts.model.c_str();
@@ -415,36 +425,34 @@ void parse_args(int argc, char const *argv[]){
                 command_line_opts.hetero_noise = false;
                 command_line_opts.gen_by_env = false;
                 command_line_opts.normalize_proj_pheno = false;
-                cout << "Estimating G heritability" << endl;	
+                cfg.modelstring = "# Estimating G heritability";	
             } else if (strcmp(model_arg, "G+GxE")==0) {
                 command_line_opts.hetero_noise = false;
                 command_line_opts.gen_by_env = true;
-                cout << "Estimating G and GxE heritability (no heterogeneous noise)" << endl;
+                cfg.modelstring = "# Estimating G and GxE heritability (no heterogeneous noise)";
 				// noTrace(command_line_opts);
 			
             } else if (strcmp(model_arg, "G+GxE+NxE")==0) {
                 command_line_opts.hetero_noise = true;
                 command_line_opts.gen_by_env = true;
-                cout << "Estimating and GxE heritability (with heterogeneous noise)" << endl;
+                cfg.modelstring = "# Estimating and GxE heritability (with heterogeneous noise)";
 				// noTrace(command_line_opts);			
 			
             } else {
-                cout << "Choice of models must be one of G, G+GxE, or G+GxE+NxE. Using default G+GxE+NxE model" << endl;
                 command_line_opts.hetero_noise = true;
                 command_line_opts.gen_by_env = true;
-                cout << "Estimation of G and GxE heritability (with heterogeneous noise)" << endl;
+                cfg.modelstring = "# Choice of models must be one of G, G+GxE, or G+GxE+NxE. Using default G+GxE+NxE model\nEstimation of G and GxE heritability (with heterogeneous noise)";
 				// noTrace(command_line_opts);
             }
 	    }
 		cfg.printParameters ();
     }
-        //currently, trace is only available for "G" model. (TODO for SUMRHE to have other options)
+    //currently, trace is only available for "G" model. (TODO for SUMRHE to have other options)
 	else {
 		//Add other default parameters here
 		ConfigFile cfg;
 		cfg.printVersion();
 		cfg.insertKey ("num_vec", "10");
-		cfg.insertKey ("num_block", "100");
 		cfg.insertKey ("debug", "0");
 		cfg.insertKey ("seed",  Convert::T_to_string (command_line_opts.seed));
 
@@ -530,28 +538,28 @@ void parse_args(int argc, char const *argv[]){
 				*/
 				//CHANGE(2/27)
 				else if(isarg(argv[i], "-m", "--model")) {
+                    cfg.insertKey ("model", argv[i+1]);
 					if (strcmp(argv[i+1], "G")==0) {
 						command_line_opts.model = "G";
 						command_line_opts.hetero_noise = false;
 						command_line_opts.gen_by_env = false;
 						command_line_opts.normalize_proj_pheno = false;
-						cout << "Estimation of G heritability" << endl;
-				} else if (strcmp(argv[i+1], "G+GxE")==0) {
+                        cfg.modelstring = "# Estimating G heritability";	
+				    } else if (strcmp(argv[i+1], "G+GxE")==0) {
 						command_line_opts.model = "G+GxE";
 						command_line_opts.hetero_noise = false;
 						command_line_opts.gen_by_env = true;
-						cout << "Estimation of G and GxE heritability (no heterogeneous noise)" << endl;
+                        cfg.modelstring = "# Estimating G and GxE heritability (no heterogeneous noise)";
 						// noTrace(command_line_opts);
-				} else if (strcmp(argv[i+1], "G+GxE+NxE")==0) {
+				    } else if (strcmp(argv[i+1], "G+GxE+NxE")==0) {
 						command_line_opts.hetero_noise = true;
 						command_line_opts.gen_by_env = true;
-						cout << "Estimation of G and GxE heritability (with heterogeneous noise)" << endl;
+                        cfg.modelstring = "# Estimating and GxE heritability (with heterogeneous noise)";
 						// noTrace(command_line_opts);
-				} else {
-						cout << "model can only be G, G+GxE, or G+GxE+NxE. Using default G+GxE+NxE model" << endl;
+				    } else {
 						command_line_opts.hetero_noise = true;
 						command_line_opts.gen_by_env = true;
-						cout << "Estimation of G and GxE heritability (with heterogeneous noise)" << endl;
+                        cfg.modelstring = "# Choice of models must be one of G, G+GxE, or G+GxE+NxE. Using default G+GxE+NxE model\nEstimation of G and GxE heritability (with heterogeneous noise)";
 					}
 					i++;
 				} else if (isarg(argv[i], "-s", "--seed")) {
@@ -562,29 +570,34 @@ void parse_args(int argc, char const *argv[]){
 					int flag = atoi(argv[i+1]);
 					if (flag == 0) {
 						command_line_opts.normalize_proj_pheno = false;
-						cout << "The phenotype vector after projection on covariates will be be normalized" << endl;
+						cfg.outputstring += "# The phenotype vector after projection on covariates will be be normalized\n";
 					} else {
 						command_line_opts.normalize_proj_pheno = true;
 					}
+					cfg.insertKey ("norm-proj-pheno", argv[i+1]);
 					i++;
 				} else if (isarg(argv[i], "-i", "--cov-add-intercept")) {
 					int flag = atoi(argv[i+1]);
 					if (flag == 0) {
 						command_line_opts.cov_add_intercept = false;
-						cout << "The one vector (intercept term) will not be added to the covariates" << endl;
+						cfg.outputstring += "# The one vector (intercept term) will not be added to the covariates";
 					} else {
 						command_line_opts.cov_add_intercept = true;
 					}
+					cfg.insertKey ("cov-add-intercept", argv[i+1]);
 					i++;
 				} else if (isarg(argv[i], "-t", "--nthreads")) {
 					command_line_opts.nthreads = atoi(argv[i+1]);
+                    cfg.insertKey ("nthreads", argv[i+1]);
 					i++;
                    // CHANGE(03/04): makes more sense to have flags as a boolean true. TODO: also, why aren't we using getopt_long?
 				} else if (isarg(argv[i], "-v", "--verbose")) {
 					command_line_opts.verbose = 1;
+                    cfg.insertKey ("verbose", "1");
 				} else if (isarg(argv[i], "-tr", "--trace")){
                     command_line_opts.print_trace = true;
-					cout << "Printing trace summaries" << endl;
+                    cfg.insertKey ("trace", "1");
+					cfg.outputstring += "# Printing trace summaries";
                 }
 				else if (strcmp(argv[i], "-tr_input")==0) {
 					command_line_opts.TRACE_FILE_PATH = string(argv[i+1]);
@@ -604,9 +617,22 @@ void parse_args(int argc, char const *argv[]){
 					command_line_opts.missing = true;
 				else if(isarg(argv[i], "-nfm", "--no-fast-mode"))
 					command_line_opts.fast_mode = false;
-				else if(isarg(argv[i],"-eXa", "--eXannot"))
+				else if(isarg(argv[i],"-eXa", "--eXannot")) {
 					command_line_opts.exannot = true;
-				else{
+                    cfg.insertKey ("eXannot", "1");
+                } else if (isarg(argv[i],"-mem", "--memeff") ) {
+                    command_line_opts.memeff = true;        
+                    cfg.insertKey ("memeff", "1");
+                } else if (isarg(argv[i],"-opt2", "--opt2") ) {
+                    command_line_opts.opt2 = (atoi (argv[i+1])>0);        
+                    cfg.insertKey ("opt2",Convert::T_to_string (command_line_opts.opt2));
+                } else if (isarg(argv[i],"-opt1", "--opt1") ) {
+                    command_line_opts.opt1 = (atoi (argv[i+1])>0);        
+                    cfg.insertKey ("opt1",Convert::T_to_string (command_line_opts.opt1));
+                } else if (isarg(argv[i],"-mem_Nsnp", "--mem_Nsnp") ) {
+                    command_line_opts.mem_Nsnp = (atoi (argv[i+1]));     
+                    cfg.insertKey ("mem_Nsnp",Convert::T_to_string (command_line_opts.mem_Nsnp));
+                } else {
 					cout<<"Not Enough or Invalid arguments: '"<< argv[i] << "'" << endl;
 					exitWithError (usage());
 				}
@@ -615,10 +641,11 @@ void parse_args(int argc, char const *argv[]){
 				command_line_opts.verbose = 1;
 			else if (isarg(argv[i], "-tr", "--trace")){
 				command_line_opts.print_trace = true;
-				cout << "Printing trace summaries" << endl;
-            }
-			else if(isarg(argv[i], "-acc", "--accuracy"))
-				command_line_opts.getaccuracy = true;
+				cfg.outputstring += "# Printing trace summaries";
+            } else if (isarg(argv[i],"-mem", "--memeff") ) {
+                command_line_opts.memeff = true;
+                cfg.insertKey ("memeff", "1");
+            }    
 			else if(isarg(argv[i], "-mem", "--memory-efficient"))
 				command_line_opts.memory_efficient = true;
 			else if(isarg(argv[i], "-nfm", "--no-fast-mode"))
@@ -631,8 +658,8 @@ void parse_args(int argc, char const *argv[]){
 		cfg.printParameters ();
 	}
 	
-	if(got_genotype_file==false){
-		cerr<<"Genotype file is missing"<<endl;
+	if (got_genotype_file ==  false){
+		cerr << "Genotype file is missing" << endl;
 		exitWithError(usage());
 		exit(-1);
 	}

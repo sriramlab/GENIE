@@ -1902,7 +1902,7 @@ void read_auxillary_files () {
 		}
 		wgxsum_ifs.close();
 
-	}	
+	}
 }
 
 
