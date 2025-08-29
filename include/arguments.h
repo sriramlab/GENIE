@@ -23,25 +23,13 @@ struct options{
 	std::string Annot_PATH;
 	std::string XSUM_FILE_PATH;
 	
+	int num_of_vec ;
 
-	std::string simul_par_PATH;
- 	std::string maf_ld_PATH;
-
-
-	//int batchNum; 
-	int num_of_evec ;
-
-	bool getaccuracy ;
 	bool debugmode;
-	int accelerated_em;
-	int l;
-	bool memory_efficient;
 	bool fast_mode;
 	bool exannot;
 	bool missing;
-	bool text_version;
-	double beta;
-	//CHANGE(10/20)
+
 	bool hetero_noise;
 	bool gen_by_env;
 	std::string model;
@@ -50,11 +38,21 @@ struct options{
 	bool cov_add_intercept;
 	int nthreads;
 	int verbose;
+
+	// If memeff = true, uses the memory efficient version
 	bool memeff;
+
+	// If opt1 = true, writes to a file after pass 1 
+	// Reads from file in pass 2
 	bool opt1;
+
+	// If opt2 = true, reads groups of SNPs in block (termed read block)
+	// Number of SNPs in a read block can be controlled based on memory constraints by setting mem_Nsnp
 	bool opt2;
+
 	int mem_Nsnp;
 	int mem_alloc;
+
 	bool use_ysum;
 	bool keep_xsum;
 	
@@ -64,25 +62,24 @@ struct options{
 	// 1: constant number of SNPs
 	// 2: same as 0 (adjusting for chromosome boundaries)
 	// 3: constant physical length (adjusting for chromosome boundaries)
+	// Default: 1
 	int jack_scheme;
 	int jack_number;
 
 	// Length of jackknife block in MB
 	int jack_size;
 
-	//CHANGE(11/12)
-	// bool perm_E_in_GxE;
-    //CHANGE(03/04)
     bool print_trace;
 	bool use_dummy_pheno; // in case no phenotype is provided; use dummy pheno
 	std::string TRACE_FILE_PATH;
+	string version_string;
 };
 
 extern options command_line_opts;
 
 void exitWithError(const std::string &error) {
-	std::cout << error;
-	std::cout.flush();
+	std::cerr << error;
+	std::cerr.flush();
 
 	exit(1);
 }
@@ -128,11 +125,6 @@ std::string usage ( ) {
 		 << "  -np, --norm-proj-pheno			By default, the phenotype vector is standardized after regressing covariates. Turn this off by setting '--norm-proj-pheno 0'.\n"
 		 << "  -i, --cov-add-intercept			By default, a vector of ones is appended to the covariates (the intercept term). Turn this off by setting '--cov-add-intercept 0'.\n"
 		 << endl;
-/*
-	ostr <<"\t-g [genotype] -annot [annotation] -p [phenotype] -c [covariates] -o [output]" << endl;
-	ostr  << "\t[-e [environment] -m [G|G+GxE|G+GxE+NxE] -k [# random vectors] -jn [# jackknife subsamples]	-t [# threads]]" << endl;
-	ostr <<  "\t[-s [random seed] -eXannot -norm_proj_pheno [0|1] -cov_add_intercept [0|1] -v [0|1]]"<<endl;
-*/
 	return ostr.str ();
 }
 
@@ -182,6 +174,7 @@ public:
 class ConfigFile{
 private:
 	std::map<std::string, std::string> contents;
+	std::map<std::string, int> levels;
 	std::string fName;
 
 	void removeComment(std::string &line) const{
@@ -192,6 +185,7 @@ private:
 	bool onlyWhitespace(const std::string &line) const{
 		return (line.find_first_not_of(' ') == line.npos);
 	}
+
 	bool validLine(const std::string &line) const{
 		std::string temp = line;
 		temp.erase(0, temp.find_first_not_of("\t "));
@@ -210,6 +204,7 @@ private:
 		if (key.find('\t') != line.npos || key.find(' ') != line.npos)
 			key.erase(key.find_first_of("\t "));
 	}
+
 	void extractValue(std::string &value, size_t const &sepPos, const std::string &line) const{
 		value = line.substr(sepPos + 1);
 		value.erase(0, value.find_first_not_of("\t "));
@@ -224,20 +219,19 @@ private:
 		std::string key, value;
 		extractKey(key, sepPos, temp);
 		extractValue(value, sepPos, temp);
+		int level = 0;
 
-		if (!keyExists(key))
-			contents.insert(std::pair<std::string, std::string>(key, value));
-		else
-			exitWithError("CFG: Can only have unique key names!\n");
+		contents[key] = value;
+		levels[key] = 0;
 	}
 
 	void parseLine(const std::string &line, size_t const lineNo){
         //TODO: Allow for boolean flags without "=". might have to do some input filtering
 		if (line.find('=') == line.npos)
-			exitWithError("CFG: Couldn't find separator on line: " + Convert::T_to_string(lineNo) + "\n");
+			exitWithError("ERROR in parameter file: Could not find separator on line: " + Convert::T_to_string(lineNo) + "\n");
 
 		if (!validLine(line))
-			exitWithError("CFG: Bad format for line: " + Convert::T_to_string(lineNo) + "\n");
+			exitWithError("ERROR in parameter file: Bad format for line: " + Convert::T_to_string(lineNo) + "\n");
 
 		extractContents(line);
 	}
@@ -246,7 +240,7 @@ private:
 		std::ifstream file;
 		file.open(fName.c_str());
 		if (!file)
-			exitWithError("CFG: File " + fName + " couldn't be found!\n");
+			exitWithError("ERROR: File " + fName + " not found!\n");
 
 		std::string line;
 		size_t lineNo = 0;
@@ -266,6 +260,7 @@ private:
 
 		file.close();
 	}
+
 public:
     string modelstring;
     string outputstring; 
@@ -277,7 +272,15 @@ public:
         outputstring  = "";
 	}
 
-	ConfigFile () {}
+	ConfigFile () {
+        modelstring = "";
+        outputstring  = "";
+	}
+
+	void readFile (const std::string &fName) {
+		this->fName = fName;
+		ExtractKeys();
+	}
 
 	bool keyExists(const std::string &key) const{
 		return contents.find(key) != contents.end();
@@ -291,55 +294,64 @@ public:
 		return Convert::string_to_T<ValueType>(contents.find(key)->second);
 	}
 
-	void insertKey (const std::string &key, const std::string &value) {
+	void insertKey (const std::string &key, const std::string &value, int level = 1 ) {
 		contents[key] = value;		
+		levels[key] = level; 
 	}
 
-	void printVersion () {
-		io::println ("########################################",0);
-		io::println ("#                                      #",0);
-		io::println ("#             GENIE (v1.2.0)           #",0);
-		io::println ("#                                      #",0);
-		io::println ("########################################",0);
-		io::println ("",0);
+	std::string versionstring () {
+		std::ostringstream ostr;
+		ostr << "############################################################" << endl;
+		ostr << "#                                                          #" << endl;
+		ostr << "#                       GENIE (v1.2.1)                     #" << endl;
+		ostr << "#                                                          #" << endl;
+		ostr << "############################################################" << endl;
+		return ostr.str ();
 	}
 
-	void printParameters ()  {
+	std::string paramstring (int verbose = 0 )  {
+		std::ostringstream ostr;
+	    ostr << "####################### Parameters #########################" << endl; 
 
-	    io::println ("##############Parameters################",0); 
-    	map<string,string>::iterator i;                                                                  
-    	for (i = contents.begin(); i!=contents.end(); i++){                                            
-        	string s = "#" + i->first +"\t" + i->second ;                                                
-			io::println (s,0); 
-    	}   
-		io::println ("#######################################",0); 
-        cout << modelstring << endl;
-        cout << outputstring << endl;
+    	map<string,string>::iterator i;
+		for (i = contents.begin(); i!=contents.end(); i++){
+			string s = "#" + i->first +"\t" + i->second;
+			int level = levels [i->first];
+			if (level <= verbose)
+				ostr << s << endl;
+    	}
+		ostr << "############################################################" << endl;
+		ostr << modelstring << endl;
+		ostr << outputstring << endl;
+		return ostr.str();
 	}
 };
+
 
 void parse_args(int argc, char const *argv[]){
 	
 	// Setting Default Values
-	command_line_opts.num_of_evec=10;
-	command_line_opts.debugmode = false;
-	command_line_opts.OUTPUT_FILE_PATH = "";
+	command_line_opts.fast_mode = true;
+	command_line_opts.missing = false;
+
 	bool got_genotype_file = false;
 	bool got_output_file = false;
 	bool got_phenotype_file = false;
+	bool got_covariate_file = false;
+	bool got_environment_file = false;
 	bool got_annot_file = false;
 
-	command_line_opts.memory_efficient = false;
-	command_line_opts.fast_mode = true;
-	command_line_opts.missing = false;
-	command_line_opts.text_version = false;
+
+	command_line_opts.num_of_vec = 10;
+	command_line_opts.debugmode = false;
+	command_line_opts.OUTPUT_FILE_PATH = "";
+
 	command_line_opts.exannot = false;
-	//CHANGE(10/20)
 	command_line_opts.hetero_noise = true;
 	command_line_opts.gen_by_env = true;
 
 	command_line_opts.jack_scheme = 1;
-	command_line_opts.jack_number = 1000;
+	command_line_opts.jack_number = 100;
 	command_line_opts.jack_size = 10;
 
 	command_line_opts.use_ysum = false;
@@ -351,9 +363,6 @@ void parse_args(int argc, char const *argv[]){
 	command_line_opts.cov_add_intercept = true;
 	command_line_opts.nthreads = 1;
 	command_line_opts.verbose = 0;
-	//CHANGE(11/12)
-	// command_line_opts.perm_E_in_GxE=false;
-    // CHANGE(03/04)
     command_line_opts.print_trace = false;
 	command_line_opts.use_dummy_pheno = false;
 
@@ -363,47 +372,77 @@ void parse_args(int argc, char const *argv[]){
 	command_line_opts.mem_Nsnp = 10; 
 	command_line_opts.mem_alloc = -1; 
 
+	ConfigFile cfg;
+	string param_string; 
+	string version_string = cfg.versionstring();
+	command_line_opts.version_string = version_string;
 
 	if(argc<2 || (argc == 2 && (isarg(argv[1], "-h", "--help")))){
+		cerr << version_string << endl;
 		exitWithError (usage ());
 	}
     // using a config file instead of cmd-line args. TODO: have all the current options as config version. remove deprecated/redundant options
+
+	cfg.insertKey ("num_vec", "10");
+
+	cfg.insertKey ("jack_scheme", "1");
+	cfg.insertKey ("jack_size", "10");
+	cfg.insertKey ("num_jack", "100");
+
+	cfg.insertKey ("nthreads", "1");
+	cfg.insertKey ("model", "G+GxE+NxE");
+	cfg.insertKey ("norm-proj-pheno", "1");
+	cfg.insertKey ("cov-add-intercept", "1");
+	cfg.insertKey ("verbose", "0");
+	cfg.insertKey ("memeff", "0");
+	cfg.insertKey ("opt1", "1");
+	cfg.insertKey ("opt2", "1");
+	cfg.insertKey ("eXannot", "0");
+	cfg.insertKey ("hetero_noise", "1");
+	cfg.insertKey ("gene_by_env", "1");
+
 	if (strcmp(argv[1],"--config")==0) {
 		std::string cfg_filename = std::string(argv[2]);
-		ConfigFile cfg(cfg_filename);
-		cfg.printVersion();
-		got_genotype_file = cfg.keyExists("genotype");
+		cfg.readFile (cfg_filename);
+		
 	    command_line_opts.jack_scheme = cfg.getValueOfKey<int>("jack_scheme", 1);
-	    command_line_opts.jack_number = cfg.getValueOfKey<int>("num_jack", 10);
+	    command_line_opts.jack_number = cfg.getValueOfKey<int>("num_jack", 100);
 	    command_line_opts.jack_size = cfg.getValueOfKey<int>("jack_size", 10);
 
-		command_line_opts.use_ysum = false;
-		command_line_opts.keep_xsum = true;
+		command_line_opts.num_of_vec = cfg.getValueOfKey<int>("num_vec", 10);
+		command_line_opts.debugmode = cfg.getValueOfKey<bool>("debug", false);
 
-		command_line_opts.num_of_evec = cfg.getValueOfKey<int>("num_vec",2);
-		command_line_opts.getaccuracy = cfg.getValueOfKey<bool>("accuracy",false);
-		//command_line_opts.getaccuracy = cfg.keyExists("accuracy"); // config file parsing doesn't allow boolean flags... needs to be fixed
-		command_line_opts.debugmode = cfg.getValueOfKey<bool>("debug",false);
-		command_line_opts.l = cfg.getValueOfKey<int>("l",0);
+		got_output_file = cfg.keyExists("output");
 		command_line_opts.OUTPUT_FILE_PATH = cfg.getValueOfKey<string>("output",string(""));
+
+		got_genotype_file = cfg.keyExists("genotype");
 		command_line_opts.GENOTYPE_FILE_PATH = cfg.getValueOfKey<string>("genotype",string(""));
+
 		command_line_opts.PHENOTYPE_FILE_PATH= cfg.getValueOfKey<string>("phenotype", string(""));
 		if (command_line_opts.PHENOTYPE_FILE_PATH != "")
 			got_phenotype_file = true;
+
 		command_line_opts.COVARIATE_FILE_PATH= cfg.getValueOfKey<string>("covariate", string(""));
-		command_line_opts.XSUM_FILE_PATH= cfg.getValueOfKey<string>("summary_genotype", string(""));
+		if (command_line_opts.COVARIATE_FILE_PATH != "")
+			got_covariate_file = true;
+
         command_line_opts.ENV_FILE_PATH = cfg.getValueOfKey<string>("environment", string(""));
+		if (command_line_opts.ENV_FILE_PATH != "")
+			got_environment_file = true;
+
         command_line_opts.Annot_PATH = cfg.getValueOfKey<string>("annotation", string(""));
+		if (command_line_opts.Annot_PATH != "")
+			got_annot_file = true;
+
+		command_line_opts.XSUM_FILE_PATH= cfg.getValueOfKey<string>("summary_genotype", string(""));
 		command_line_opts.TRACE_FILE_PATH= cfg.getValueOfKey<string>("trace_input", string("")); 
-        command_line_opts.nthreads = cfg.getValueOfKey<int>("nthreads", 1); 
 		command_line_opts.COVARIATE_NAME=cfg.getValueOfKey<string>("covariateName", string(""));  
 		command_line_opts.seed = cfg.getValueOfKey<int>("seed", -1);
-		command_line_opts.memory_efficient = cfg.getValueOfKey<bool>("memory_efficient",false);	
-		command_line_opts.fast_mode = cfg.getValueOfKey<bool>("fast_mode",true);
-		command_line_opts.missing = cfg.getValueOfKey<bool>("missing",false);	
-		command_line_opts.text_version = cfg.getValueOfKey<bool>("text_version",false);						
+		command_line_opts.fast_mode = cfg.getValueOfKey<bool>("fast_mode", true);
+		command_line_opts.missing = cfg.getValueOfKey<bool>("missing", false);	
         command_line_opts.print_trace = cfg.getValueOfKey<bool>("trace", false);
         command_line_opts.verbose = cfg.getValueOfKey<int>("verbose", 0);
+        command_line_opts.nthreads = cfg.getValueOfKey<int>("nthreads", 1); 
 
 		command_line_opts.memeff  = cfg.getValueOfKey<bool>("memeff", false);
 		command_line_opts.opt1 = cfg.getValueOfKey<bool>("opt1", true);
@@ -418,7 +457,7 @@ void parse_args(int argc, char const *argv[]){
 		command_line_opts.cov_add_intercept = cfg.getValueOfKey<bool>("cov_add_intercept", true);
 		command_line_opts.exannot = cfg.getValueOfKey<bool>("eXannot", false);
 
-        command_line_opts.model = cfg.getValueOfKey<string>("model", string(""));
+        command_line_opts.model = cfg.getValueOfKey<string>("model", string("G+GxE+NxE"));
         if (cfg.keyExists("model")){
             const char* model_arg = command_line_opts.model.c_str();
             if (strcmp(model_arg, "G")==0) {
@@ -431,114 +470,76 @@ void parse_args(int argc, char const *argv[]){
                 command_line_opts.gen_by_env = true;
                 cfg.modelstring = "# Estimating G and GxE heritability (no heterogeneous noise)";
 				// noTrace(command_line_opts);
-			
             } else if (strcmp(model_arg, "G+GxE+NxE")==0) {
                 command_line_opts.hetero_noise = true;
                 command_line_opts.gen_by_env = true;
-                cfg.modelstring = "# Estimating and GxE heritability (with heterogeneous noise)";
+                cfg.modelstring = "# Estimating G and GxE heritability (with heterogeneous noise)";
 				// noTrace(command_line_opts);			
 			
             } else {
                 command_line_opts.hetero_noise = true;
                 command_line_opts.gen_by_env = true;
-                cfg.modelstring = "# Choice of models must be one of G, G+GxE, or G+GxE+NxE. Using default G+GxE+NxE model\nEstimation of G and GxE heritability (with heterogeneous noise)";
+                cfg.modelstring = "# Choice of models must be one of G, G+GxE, or G+GxE+NxE. Using default G+GxE+NxE model\n# Estimating G and GxE heritability (with heterogeneous noise)";
 				// noTrace(command_line_opts);
             }
 	    }
-		cfg.printParameters ();
-    }
+
     //currently, trace is only available for "G" model. (TODO for SUMRHE to have other options)
-	else {
-		//Add other default parameters here
-		ConfigFile cfg;
-		cfg.printVersion();
-		cfg.insertKey ("num_vec", "10");
-		cfg.insertKey ("debug", "0");
-		cfg.insertKey ("seed",  Convert::T_to_string (command_line_opts.seed));
+	} else {
 
 		for (int i = 1; i < argc; i++) {
 			if (i + 1 != argc){
 				if(isarg(argv[i], "-g", "--genotype")){
 					command_line_opts.GENOTYPE_FILE_PATH = string(argv[i+1]);
-					cfg.insertKey ("genotype", argv[i+1]);
+					cfg.insertKey ("genotype", argv[i+1], 0);
 					got_genotype_file = true;
 					i++;
-				}
-				else if(isarg(argv[i], "-o", "--output")){
+				} else if(isarg(argv[i], "-o", "--output")){
 					command_line_opts.OUTPUT_FILE_PATH = string(argv[i+1]);
-					cfg.insertKey ("output", argv[i+1]);
+					cfg.insertKey ("output", argv[i+1], 0);
 					got_output_file = true;
 					i++;
-				}
-				else if(isarg(argv[i], "-a", "--annot")){
+				} else if(isarg(argv[i], "-a", "--annot")){
 					command_line_opts.Annot_PATH= string(argv[i+1]);
-					cfg.insertKey ("annotation", argv[i+1]);
+					cfg.insertKey ("annotation", argv[i+1], 0);
             	    got_annot_file = true;
 					i++;
-				}
-				// looks like these are arguments for simulator, not GENIE (unless we want to incorporate the simulator code as well)
-				else if(strcmp(argv[i],"-simul_par")==0){
-					command_line_opts.simul_par_PATH= string(argv[i+1]);
-					cfg.insertKey ("simul_par", argv[i+1]);
-					i++;
-				}
-				else if(strcmp(argv[i],"-maf_ld")==0){
-					command_line_opts.maf_ld_PATH= string(argv[i+1]);
-					i++;
-				}
-				else if(isarg(argv[i], "-p", "--phenotype")){
+				} else if(isarg(argv[i], "-p", "--phenotype")){
 					command_line_opts.PHENOTYPE_FILE_PATH =string(argv[i+1]); 
-					cfg.insertKey ("phenotype", argv[i+1]);
+					cfg.insertKey ("phenotype", argv[i+1], 0);
                 	got_phenotype_file = true;
 					i++; 
-				}
-				else if (isarg(argv[i], "-e", "--environment")){
+				} else if (isarg(argv[i], "-e", "--environment")){
 					command_line_opts.ENV_FILE_PATH=string(argv[i+1]);
+					cfg.insertKey ("environment", argv[i+1], 0);
+                	got_environment_file = true;
 					i++;
-				}
-				else if(isarg(argv[i], "-c", "--covariate")){
+				} else if(isarg(argv[i], "-c", "--covariate")){
 					command_line_opts.COVARIATE_FILE_PATH = string(argv[i+1]);
-					cfg.insertKey ("covariate", argv[i+1]);
+					cfg.insertKey ("covariate", argv[i+1], 0);
+                	got_covariate_file = true;
 					i++; 
-				}
-				else if(strcmp(argv[i],"-sg")==0){
+				} else if(strcmp(argv[i],"-sg")==0){
 					command_line_opts.XSUM_FILE_PATH = string(argv[i+1]);
 					i++; 
-				}
-				else if(isarg(argv[i], "-cn", "--covariate-name")){
+				} else if(isarg(argv[i], "-cn", "--covariate-name")){
 					command_line_opts.COVARIATE_NAME = string(argv[i+1]);
-					cfg.insertKey ("covariate name", argv[i+1]);
+					cfg.insertKey ("covariate name", argv[i+1], 0);
 					i++;
-				}
-				else if(isarg(argv[i], "-k", "--num-vec")){
-					command_line_opts.num_of_evec = atoi(argv[i+1]);
-					cfg.insertKey ("num_vec", argv[i+1]);
+				} else if(isarg(argv[i], "-k", "--num-vec")){
+					command_line_opts.num_of_vec = atoi(argv[i+1]);
+					cfg.insertKey ("num_vec", argv[i+1], 0 );
 					i++;
-				}
-				else if(strcmp(argv[i],"-l")==0){
-					command_line_opts.l = atoi(argv[i+1]);
+				} else if(isarg(argv[i], "-jn", "--num-jack")){
+					command_line_opts.jack_number = atoi(argv[i+1]);
+					cfg.insertKey ("num_jack", argv[i+1], 0);
 					i++;
-				}
-				else if(isarg(argv[i], "-jn", "--num-jack")){
-					command_line_opts.jack_number= atoi(argv[i+1]);
-					cfg.insertKey ("num_jack", argv[i+1]);
+				} else if(isarg(argv[i], "-js", "--jack-scheme")){
+					command_line_opts.jack_scheme = atoi(argv[i+1]);
+					cfg.insertKey ("jack_scheme", argv[i+1], 0);
 					i++;
-				}
-				else if(isarg(argv[i], "-js", "--jack-scheme")){
-					command_line_opts.jack_number= atoi(argv[i+1]);
-					cfg.insertKey ("jack_scheme", argv[i+1]);
-					i++;
-				}
-				//CHANGE(07/16): what is this option for??
-				/*
-				else if(strcmp(argv[i],"-h2")==0){
-					command_line_opts.beta= atof(argv[i+1]);
-					i++;
-				}
-				*/
-				//CHANGE(2/27)
-				else if(isarg(argv[i], "-m", "--model")) {
-                    cfg.insertKey ("model", argv[i+1]);
+				} else if(isarg(argv[i], "-m", "--model")) {
+                    cfg.insertKey ("model", argv[i+1], 0);
 					if (strcmp(argv[i+1], "G")==0) {
 						command_line_opts.model = "G";
 						command_line_opts.hetero_noise = false;
@@ -559,131 +560,131 @@ void parse_args(int argc, char const *argv[]){
 				    } else {
 						command_line_opts.hetero_noise = true;
 						command_line_opts.gen_by_env = true;
-                        cfg.modelstring = "# Choice of models must be one of G, G+GxE, or G+GxE+NxE. Using default G+GxE+NxE model\nEstimation of G and GxE heritability (with heterogeneous noise)";
+                        cfg.modelstring = "# Choice of models must be one of G, G+GxE, or G+GxE+NxE. Using default G+GxE+NxE model\n# Estimating G and GxE heritability (with heterogeneous noise)";
 					}
 					i++;
 				} else if (isarg(argv[i], "-s", "--seed")) {
 					command_line_opts.seed = atoi(argv[i+1]);
-					cfg.insertKey ("seed", argv[i+1]);
+					cfg.insertKey ("seed", argv[i+1], 0);
 					i++;
 				} else if (isarg(argv[i], "-np", "--norm-proj-pheno")) {
 					int flag = atoi(argv[i+1]);
-					if (flag == 0) {
+					if (flag == 0) 
 						command_line_opts.normalize_proj_pheno = false;
-						cfg.outputstring += "# The phenotype vector after projection on covariates will be be normalized\n";
-					} else {
+					else 
 						command_line_opts.normalize_proj_pheno = true;
-					}
-					cfg.insertKey ("norm-proj-pheno", argv[i+1]);
+					cfg.insertKey ("norm-proj-pheno", argv[i+1], 0);
 					i++;
 				} else if (isarg(argv[i], "-i", "--cov-add-intercept")) {
 					int flag = atoi(argv[i+1]);
 					if (flag == 0) {
 						command_line_opts.cov_add_intercept = false;
-						cfg.outputstring += "# The one vector (intercept term) will not be added to the covariates";
 					} else {
 						command_line_opts.cov_add_intercept = true;
 					}
-					cfg.insertKey ("cov-add-intercept", argv[i+1]);
+					cfg.insertKey ("cov-add-intercept", argv[i+1], 0);
 					i++;
 				} else if (isarg(argv[i], "-t", "--nthreads")) {
 					command_line_opts.nthreads = atoi(argv[i+1]);
-                    cfg.insertKey ("nthreads", argv[i+1]);
+                    cfg.insertKey ("nthreads", argv[i+1], 0);
 					i++;
-                   // CHANGE(03/04): makes more sense to have flags as a boolean true. TODO: also, why aren't we using getopt_long?
 				} else if (isarg(argv[i], "-v", "--verbose")) {
-					command_line_opts.verbose = 1;
-                    cfg.insertKey ("verbose", "1");
+					command_line_opts.verbose = atoi(argv[i+1]);
+                    cfg.insertKey ("verbose", argv[i+1], 0);
+					i++;
 				} else if (isarg(argv[i], "-tr", "--trace")){
                     command_line_opts.print_trace = true;
-                    cfg.insertKey ("trace", "1");
+                    cfg.insertKey ("trace", "1", 0);
 					cfg.outputstring += "# Printing trace summaries";
-                }
-				else if (strcmp(argv[i], "-tr_input")==0) {
+				} else if (strcmp(argv[i], "-tr_input")==0) {
 					command_line_opts.TRACE_FILE_PATH = string(argv[i+1]);
-					cfg.insertKey ("trace_input", argv[i+1]);
+					cfg.insertKey ("trace_input", argv[i+1], 0);
 					i++;
 				}
-							//CHANGE(11/12)
-							// else if (strcmp(argv[i], "-perm_E_in_GxE")==0) {
-							// 	command_line_opts.perm_E_in_GxE=true;
-							// 	cout << "permute E in GxE flag set" << endl;
-							// }
-							// else if(strcmp(argv[i],"-v")==0)
-							// 	command_line_opts.debugmode = true;
-				else if(isarg(argv[i], "-mem", "--memory-efficient"))
-					command_line_opts.memory_efficient = true;
 				else if(isarg(argv[i], "-miss", "--missing"))
 					command_line_opts.missing = true;
 				else if(isarg(argv[i], "-nfm", "--no-fast-mode"))
 					command_line_opts.fast_mode = false;
 				else if(isarg(argv[i],"-eXa", "--eXannot")) {
 					command_line_opts.exannot = true;
-                    cfg.insertKey ("eXannot", "1");
+                    cfg.insertKey ("eXannot", "1", 0);
                 } else if (isarg(argv[i],"-mem", "--memeff") ) {
                     command_line_opts.memeff = true;        
-                    cfg.insertKey ("memeff", "1");
+                    cfg.insertKey ("memeff", "1", 0);
                 } else if (isarg(argv[i],"-opt2", "--opt2") ) {
                     command_line_opts.opt2 = (atoi (argv[i+1])>0);        
-                    cfg.insertKey ("opt2",Convert::T_to_string (command_line_opts.opt2));
+                    cfg.insertKey ("opt2",Convert::T_to_string (command_line_opts.opt2), 0);
                 } else if (isarg(argv[i],"-opt1", "--opt1") ) {
                     command_line_opts.opt1 = (atoi (argv[i+1])>0);        
-                    cfg.insertKey ("opt1",Convert::T_to_string (command_line_opts.opt1));
+                    cfg.insertKey ("opt1",Convert::T_to_string (command_line_opts.opt1), 0);
                 } else if (isarg(argv[i],"-mem_Nsnp", "--mem_Nsnp") ) {
-                    command_line_opts.mem_Nsnp = (atoi (argv[i+1]));     
-                    cfg.insertKey ("mem_Nsnp",Convert::T_to_string (command_line_opts.mem_Nsnp));
+                    command_line_opts.mem_Nsnp = atoi(argv[i+1]);     
+                    cfg.insertKey ("mem_Nsnp",Convert::T_to_string (command_line_opts.mem_Nsnp), 0);
                 } else {
-					cout<<"Not Enough or Invalid arguments: '"<< argv[i] << "'" << endl;
+					cerr << version_string << endl;
+					cerr << "ERROR: Not Enough or Invalid arguments: '"<< argv[i] << "'" << endl;
 					exitWithError (usage());
 				}
-			}
-			else if(isarg(argv[i], "-v", "--verbose"))
-				command_line_opts.verbose = 1;
-			else if (isarg(argv[i], "-tr", "--trace")){
+			} else if (isarg(argv[i], "-tr", "--trace")){
 				command_line_opts.print_trace = true;
+				cfg.insertKey ("trace", "1", 0);
 				cfg.outputstring += "# Printing trace summaries";
             } else if (isarg(argv[i],"-mem", "--memeff") ) {
                 command_line_opts.memeff = true;
-                cfg.insertKey ("memeff", "1");
-            }    
-			else if(isarg(argv[i], "-mem", "--memory-efficient"))
-				command_line_opts.memory_efficient = true;
-			else if(isarg(argv[i], "-nfm", "--no-fast-mode"))
+                cfg.insertKey ("memeff", "1", 0);
+			} else if(isarg(argv[i], "-nfm", "--no-fast-mode"))
 				command_line_opts.fast_mode = false;
 			else if(isarg(argv[i], "-miss", "--missing"))
 				command_line_opts.missing = true;
-			else if(isarg(argv[i], "-txt", "--text-version"))
-				command_line_opts.text_version = true;
 		}
-		cfg.printParameters ();
 	}
 	
-	if (got_genotype_file ==  false){
-		cerr << "Genotype file is missing" << endl;
-		exitWithError(usage());
-		exit(-1);
+
+	if (command_line_opts.cov_add_intercept)
+		cfg.outputstring += "# The intercept term *will* be added to any fixed-effect covariates";
+	else
+		cfg.outputstring += "# The intercept term *will not* be added to any fixed-effect covariates";
+
+	if (command_line_opts.normalize_proj_pheno)
+		cfg.outputstring += "# After projecting out the covariates, the phenotype vector *will* be standardized\n";
+	else
+		cfg.outputstring += "# After projecting out the covariates, the phenotype vector *will not* be standardized\n";
+	param_string = cfg.paramstring (command_line_opts.verbose);
+	
+	cout << version_string << endl;
+
+	if (!got_genotype_file){
+		cerr << "ERROR: Missing genotype file" << endl;
+		exitWithError (usage());
 	}
 	// if ((command_line_opts.print_trace) && (command_line_opts.model != "G")){
 	// 	cerr << "Trace summary is only supported for G only model. Disabling --trace option." << endl;
 	// 	command_line_opts.print_trace = false;
 	// }
-	if (got_phenotype_file==false){
+
+	if (!got_phenotype_file){
 		if (command_line_opts.print_trace){
 			cout << "Estimating trace summary without phenotype input (will be using dummy phenotype)" << endl;
 			command_line_opts.use_dummy_pheno = true;
-			if (command_line_opts.COVARIATE_FILE_PATH != ""){
-				cout << "Trace summary estimation with dummy phenotype does not support covariates at the moment." << endl;
-				exitWithError(usage());
-				exit(-1);
+			if (got_covariate_file){
+				cerr << "ERROR: Trace summary estimation with dummy phenotype does not support covariates at the moment." << endl;
+				exitWithError (usage());
 			}
 		}
-		else{
-			cerr << "Phenotype file is missing" << endl;
-			exitWithError(usage());
-			exit(-1);
+		else {
+			cerr << "ERROR: Missing phenotype file" << endl;
+			exitWithError (usage());
+		}
+	}
+	const char* model_arg = command_line_opts.model.c_str();
+	if (strcmp(model_arg, "G+GxE")==0 || strcmp (model_arg, "G+GxE+NxE")==0) {
+		if (!got_environment_file){
+			cerr << "ERROR: Missing file with environmental variables" << endl;
+			exitWithError (usage());
 		}
 	}
 
+	cout << param_string << endl;
 }
 
 #endif
