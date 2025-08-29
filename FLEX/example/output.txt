@@ -1,0 +1,52 @@
+##################################
+#                                #
+#          GENIE (v1.0.0)        #
+#                                #
+##################################
+
+
+Active essential options: 
+	-g (genotype) gene
+	-annot (annotation) gene.annot
+	-p (phenotype) cont.pheno
+	-o (output) output.txt
+	-m (model) G+GxE+NxE
+	-k (# random vectors) 10
+	-jn (# jackknife blocks) 5
+	-t (# threads) 6
+
+
+Number of covariates : 1
+Number of environments : 0
+Number of individuals after filtering for phenotype 0 : 50000
+*****
+Number of features in bin 0 : 2208
+Number of features in bin 1 : 140
+Number of features in bin 2 : 104
+Number of features in bin 3 : 326
+Number of features in bin 4 : 16
+*****
+Number of G variance components : 5
+Number of GxE variance components : 0
+Number of NxE variance components : 0
+*****
+
+
+OUTPUT: 
+
+Phenotype 0: 
+Variance components: 
+Sigma^2_g[0] : -0.00079768  SE : 0.000522829
+Sigma^2_g[1] : -5.37433e-05  SE : 9.48092e-05
+Sigma^2_g[2] : 0.00330012  SE : 0.00139591
+Sigma^2_g[3] : 0.00115444  SE : 0.000602935
+Sigma^2_g[4] : 0.000305795  SE : 0.000202544
+Sigma^2_e : 0.996091  SE : 0.00637875
+*****
+Heritabilities: 
+h2_g[0] : -0.000797696 SE : 0.00052284
+h2_g[1] : -5.37444e-05 SE : 9.48111e-05
+h2_g[2] : 0.00330018 SE : 0.00139593
+h2_g[3] : 0.00115446 SE : 0.000602947
+h2_g[4] : 0.000305802 SE : 0.000202548
+h2_g[gene] : 0.0047067 SE : 0.00156888
