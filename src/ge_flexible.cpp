@@ -297,8 +297,8 @@ void initial_var(){
 	sum.resize(p,1);
 
 	if(!fast_mode && !memory_efficient){
-		geno_matrix.resize(p,n);
-		g.generate_eigen_geno(geno_matrix,var_normalize);
+		geno_matrix.resize (p,n);
+		g.generate_eigen_geno (geno_matrix, var_normalize);
 	}
 
 	// Initial intermediate data structures
@@ -2047,13 +2047,13 @@ void genotype_stream_single_pass (string name) {
 	//CHANGE(10/20)
 	if (hetero_noise == true) {
 		for(int i = 0; i < Nbin + nongen_Nbin + Nenv; i++)
-			cout<<"bin "<<i<<" : "<<len[i]<<endl;
+			cout << "Bin " << i << " : " << len[i] << endl;
 	} else {
 		for(int i = 0; i < Nbin + nongen_Nbin; i++)
-			cout<<"bin "<<i<<" : "<<len[i]<<endl;
+			cout << "Bin " << i << " : " << len[i] << endl;
 	}
 
-	cout<<"Number of individuals without missing phenotype and enviromental variables: "<<mask.sum()<<endl;
+	cout << "Number of individuals without missing phenotype and enviromental variables: " << mask.sum() << endl;
 	cout << endl;
 
 	gen_Nbin = Nbin;
@@ -2891,15 +2891,10 @@ void print_trace () {
 void print_input_parameters() {
 	string outpath = command_line_opts.OUTPUT_FILE_PATH;
 	outfile.open(outpath.c_str(), std::ios_base::out);
-	
-	outfile << "########################################" << endl;
-	outfile << "#                                      #" << endl;
-	outfile << "#             GENIE (v1.2.0)           #" << endl;
-	outfile << "#                                      #" << endl;
-	outfile << "########################################" << endl;
+	outfile << command_line_opts.version_string << endl;
     outfile << "Seed = " << seed << endl;
 
-    }
+}
 
 void init_params () {
 
@@ -2908,7 +2903,7 @@ void init_params () {
 
 	trace = command_line_opts.print_trace;
 	srand((unsigned int) time(0));
-	Nz = command_line_opts.num_of_evec;
+	Nz = command_line_opts.num_of_vec;
 	k = Nz;
 
 	jack_scheme = command_line_opts.jack_scheme;
