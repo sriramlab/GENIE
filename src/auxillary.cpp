@@ -364,6 +364,28 @@ void read_annot (string filename) {
 				temp = snp_to_read_block[i];
 				read_bin[temp][j]++;
 			}
+
+	vector<int> bin_totals(Total_Nbin, 0);
+    for (int b = 0; b < Total_Nbin; ++b) {
+        long tot = 0;
+        for (int jb = 0; jb < Njack; ++jb) tot += jack_bin[jb][b];
+        bin_totals[b] = (int)tot;
+    }
+	    // Error if any jackknife block contains ALL SNPs of a bin
+    for (int b = 0; b < Total_Nbin; ++b) {
+        const int total = bin_totals[b];
+        if (total <= 0) continue; // skip empty bins
+        for (int jb = 0; jb < Njack; ++jb) {
+            if (jack_bin[jb][b] == total) {
+                cerr << "ERROR: Jackknife block " << jb
+                     << " contains ALL " << total
+                     << " SNPs for bin " << b << ".\n"
+                     << "This makes leave-one-out undefined and invalidates SEs.\n"
+                     << "Consider shuffling SNP order, changing Njack, or a different jackknife scheme.\n";
+                exit(1);
+            }
+        }
+    }
 }
 
 void read_annot_1col (string filename){
