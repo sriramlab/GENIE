@@ -1232,7 +1232,8 @@ void genotype_stream_pass (string name, int pass_num){
 							XXz.col((gxe_bin_index * 2*Nz) + Nz + z_index)+=output_env.col(z_index);   /// save whole sample
 							XXz.col((gxe_bin_index * 2*Nz) + z_index)+=output_env.col(z_index);
 						}
-						else if(num_snp != len[bin_index])
+						else 
+						// if(num_snp != len[bin_index])
 							XXz.col((gxe_bin_index * 2 * Nz) + z_index) = XXz.col((gxe_bin_index * 2*Nz) + z_index) - output_env.col (z_index);   /// save corresponding jack contrib
 
 						if(both_side_cov == true) {
@@ -1324,7 +1325,7 @@ void genotype_stream_pass (string name, int pass_num){
 						UXXz.col((bin_index * 2*Nz) + Nz + z_index)+=w3;
 						UXXz.col((bin_index * 2*Nz) + z_index)+=w3;
 					}
-					else if(num_snp != len[bin_index])
+					else // if(num_snp != len[bin_index])
 						UXXz.col((bin_index * 2*Nz) + z_index) = UXXz.col((bin_index * 2*Nz) + Nz + z_index)-w3;
 				}
 			}
@@ -1914,16 +1915,16 @@ void genotype_stream_single_pass (string name) {
 				////end gxe computation
 
 				for (int z_index = 0; z_index < Nz; z_index++){
-					if(num_snp != len[bin_index])
-						XXz.col((bin_index*(Njack+1)*Nz)+(jack_index*Nz)+z_index) = output.col(z_index);
-					XXz.col((bin_index*(Njack+1)*Nz)+(Njack*Nz)+z_index) += output.col(z_index);   /// save whole sample
-
+					// per-block contribution (overwrite)
+					XXz.col((bin_index*(Njack+1)*Nz) + (jack_index*Nz) + z_index) = output.col(z_index);
+					// whole-sample accumulator (+=)
+					XXz.col((bin_index*(Njack+1)*Nz) + (Njack*Nz)   + z_index) += output.col(z_index);
 					if(both_side_cov == true) {
 						vec1 = output.col(z_index);
 						w1 = covariate.transpose()*vec1;
 						w2 = Q * w1;
 						w3 = covariate * w2;
-						if(num_snp != len[bin_index])
+						// if(num_snp != len[bin_index])
 							UXXz.col((bin_index*(Njack+1)*Nz)+(jack_index*Nz)+z_index) = w3;
 						UXXz.col((bin_index*(Njack+1)*Nz)+(Njack*Nz)+z_index) += w3;
 					}
@@ -1933,7 +1934,7 @@ void genotype_stream_single_pass (string name) {
 				if (both_side_cov == true){
 					output=compute_XXUz(num_snp); 
 					for (int z_index = 0; z_index < Nz; z_index++){
-						if(num_snp != len[bin_index])
+						// if(num_snp != len[bin_index])
 							XXUz.col((bin_index*(Njack+1)*Nz)+(jack_index*Nz)+z_index) = output.col(z_index);
 						XXUz.col((bin_index*(Njack+1)*Nz)+(Njack*Nz)+z_index) += output.col(z_index);   /// save whole sample
 					}

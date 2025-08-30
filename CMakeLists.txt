@@ -104,3 +104,73 @@ option(BUILD_PYTHON_MODULE "Whether the python module is being built from the sc
 if (BUILD_PYTHON_MODULE)
     install(TARGETS GENIE DESTINATION rhe)
 endif ()
+
+
+# ---- Debug tooling toggles ----
+option(ENABLE_ASAN   "Enable AddressSanitizer" OFF)
+option(ENABLE_UBSAN  "Enable UndefinedBehaviorSanitizer" OFF)
+option(ENABLE_TSAN   "Enable ThreadSanitizer (mutually exclusive with ASAN/UBSAN)" OFF)
+option(ENABLE_FP_TRAPS "Enable floating-point traps at runtime" OFF)
+option(ENABLE_ASSERTIONS "Enable libstdc++ debug assertions" OFF)
+
+# Eigen can fill uninitialized fixed-size matrices with NaNs (very useful)
+option(ENABLE_EIGEN_NAN_INIT "Initialize Eigen matrices to NaN (debug aid)" OFF)
+
+# Disallow illegal combos
+if (ENABLE_TSAN AND (ENABLE_ASAN OR ENABLE_UBSAN))
+  message(FATAL_ERROR "TSan cannot be combined with ASan/UBSan. Disable others.")
+endif()
+
+# Common safe flags when any sanitizer is on
+set(SAN_COMMON -O1 -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -fno-fast-math -fno-strict-aliasing -fno-common)
+set(SAN_FLAGS "")
+
+if (ENABLE_ASAN)
+  list(APPEND SAN_FLAGS -fsanitize=address)
+endif()
+if (ENABLE_UBSAN)
+  list(APPEND SAN_FLAGS -fsanitize=undefined -fno-sanitize-recover=all)
+  if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    list(APPEND SAN_FLAGS -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow)
+  endif()
+endif()
+if (ENABLE_TSAN)
+  list(APPEND SAN_FLAGS -fsanitize=thread)
+endif()
+
+if (ENABLE_ASAN OR ENABLE_UBSAN OR ENABLE_TSAN)
+  add_compile_options(${SAN_COMMON})
+  foreach(t genie_lib GENIE)
+    target_compile_options(${t} PRIVATE ${SAN_FLAGS})
+    target_link_options(${t}   PRIVATE ${SAN_FLAGS})
+  endforeach()
+endif()
+
+if (ENABLE_ASSERTIONS)
+  add_compile_definitions(_GLIBCXX_ASSERTIONS)
+endif()
+
+if (ENABLE_EIGEN_NAN_INIT)
+  # Eigen debug aid: uninitialized fixed-size matrices start as NaN
+  foreach(t genie_lib GENIE)
+    target_compile_definitions(${t} PRIVATE EIGEN_INITIALIZE_MATRICES_BY_NAN)
+  endforeach()
+endif()
+
+if (ENABLE_FP_TRAPS)
+  foreach(t genie_lib GENIE)
+    target_compile_definitions(${t} PRIVATE ENABLE_FP_TRAPS)
+  endforeach()
+endif()
+
+# Precision toggle
+option(USE_DOUBLE "Build with double precision (float if OFF)" OFF)
+
+# Propagate the macro to all targets that compile your code
+foreach(t genie_lib GENIE)
+  if(USE_DOUBLE)
+    target_compile_definitions(${t} PUBLIC USE_DOUBLE=1)
+  else()
+    target_compile_definitions(${t} PUBLIC USE_DOUBLE=0)
+  endif()
+endforeach()

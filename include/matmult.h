@@ -25,27 +25,35 @@ class MatMult {
 	bool memory_efficient; // = false;
 	bool missing; // = false;
 	bool fast_mode; // = true;
-	int nthreads; // = 1;
+	int nthreads = 1; // = 1;
 
 	// How to batch columns:
-	int blocksize;  // k
-	int hsegsize;  // = log_3(n)
-	int hsize;
-	int vsegsize;  // = log_3(p)
-	int vsize;
+	int blocksize = 0;  // k
+	int hsegsize = 0;  // = log_3(n)
+	int hsize = 0;
+	int vsegsize = 0;  // = log_3(p)
+	int vsize = 0;
 
-	double **partialsums;
-	double *sum_op;
+	double **partialsums = nullptr;
+	double *sum_op = nullptr;
 
 	// Intermediate computations in E-step.
-	double **yint_e;  // Size = 3^(log_3(n)) * k
-	double ***y_e;    // n X k
+	double **yint_e = nullptr;  // Size = 3^(log_3(n)) * k
+	double ***y_e = nullptr;    // n X k
 
 	// Intermediate computations in M-step.
-	double **yint_m;  // Size = nthreads X 3^(log_3(n)) * k
-	double ***y_m;    // nthreads X log_3(n) X k
+	double **yint_m = nullptr;  // Size = nthreads X 3^(log_3(n)) * k
+	double ***y_m = nullptr;    // nthreads X log_3(n) X k
 
 	MatMult() {}
+  	~MatMult();
+
+	MatMult(const MatMult&) = delete;
+	MatMult& operator=(const MatMult&) = delete;
+
+	MatMult(MatMult&& other) noexcept;
+	MatMult& operator=(MatMult&& other) noexcept;
+
 
 	MatMult(genotype &xg,
 			MatrixXdr &xgeno_matrix,

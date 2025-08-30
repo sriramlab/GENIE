@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <thread>
+#include <vector>
 
 #include <Eigen/Dense>
 #include <Eigen/Core>
@@ -46,11 +47,13 @@ MatMult::MatMult(genotype &xg,
 	yint_m = new double*[nthreads];
 	for (int t = 0; t < nthreads; t++) {
 		partialsums[t] = new double[blocksize];
+		memset(partialsums[t], 0, blocksize * sizeof(double));
 		yint_m[t] = new double[hsize*blocksize];
 		memset (yint_m[t], 0, hsize*blocksize * sizeof(double));
 	}
 
 	sum_op = new double[blocksize];
+	memset(sum_op, 0, blocksize * sizeof(double));
 
 	yint_e = new double* [nthreads];
 	for (int t = 0; t < nthreads; t++) {
@@ -72,6 +75,7 @@ MatMult::MatMult(genotype &xg,
 		y_m[t] = new double*[hsegsize];
 		for (int i = 0; i < hsegsize; i++) {
 			y_m[t][i] = new double[blocksize];
+			memset(y_m[t][i], 0, blocksize * sizeof(double));
 		}
 	}
 }
@@ -82,6 +86,11 @@ void MatMult::multiply_y_pre_fast_thread(int begin, int end, MatrixXdr &op, int 
 		cout << "end = " << end << endl;
 	}
 	for (int seg_iter = begin; seg_iter < end; seg_iter++) {
+		memset(partialsums, 0, blocksize * sizeof(double));
+		memset(yint_m, 0, hsize * blocksize * sizeof(double));
+		for (int i = 0; i < g.segment_size_hori; i++) {
+			memset(y_m[i], 0, blocksize * sizeof(double));
+		}
 		mailman::fastmultiply(g.segment_size_hori, g.Nindv, Ncol_op, g.p[seg_iter], op, yint_m, partialsums, y_m);
 		int p_base = seg_iter * g.segment_size_hori;
 		for (int p_iter = p_base; (p_iter < p_base + g.segment_size_hori) && (p_iter < g.Nsnp); p_iter++) {
@@ -98,6 +107,8 @@ void MatMult::multiply_y_post_fast_thread(int begin, int end, MatrixXdr &op, int
 	for (int i = 0; i < g.Nindv; i++) {
 		memset (y_e[i], 0, blocksize * sizeof(double));
 	}
+	std::memset(yint_e,     0, static_cast<size_t>(hsize) * blocksize * sizeof(double));
+  	std::memset(partialsums, 0, static_cast<size_t>(blocksize) * sizeof(double));
 
 	for (int seg_iter = begin; seg_iter < end; seg_iter++) {
 		mailman::fastmultiply_pre(g.segment_size_hori, g.Nindv, Ncol_op, seg_iter * g.segment_size_hori, g.p[seg_iter], op, yint_e, partialsums, y_e);
@@ -124,7 +135,7 @@ void MatMult::multiply_y_pre_fast(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bo
 	nthreads = (nthreads > g.Nsegments_hori) ? g.Nsegments_hori: nthreads;
 	nthreads = (nthreads < 1)? 1:nthreads;
 
-	std::thread th[nthreads];
+	std::vector<std::thread> th(nthreads); // use vectors instead
 	int perthread = g.Nsegments_hori / nthreads;
 	// std::cout << g.Nsegments_hori << "\t" << nthreads << "\t" << perthread << std::endl;
 	int t = 0;
@@ -140,6 +151,11 @@ void MatMult::multiply_y_pre_fast(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bo
 	}
 
 	int last_seg_size = (g.Nsnp % g.segment_size_hori != 0) ? g.Nsnp % g.segment_size_hori : g.segment_size_hori;
+	memset(partialsums[0], 0, blocksize * sizeof(double));
+	memset(yint_m[0], 0, hsize * blocksize * sizeof(double));
+	for (int i = 0; i < g.segment_size_hori; i++) {
+		memset(y_m[0][i], 0, blocksize * sizeof(double));
+	}
 	mailman::fastmultiply(last_seg_size, g.Nindv, Ncol_op, g.p[g.Nsegments_hori-1], op, yint_m[0], partialsums[0], y_m[0]);
 	int p_base = (g.Nsegments_hori - 1) * g.segment_size_hori;
 	for (int p_iter = p_base; (p_iter < p_base + g.segment_size_hori) && (p_iter < g.Nsnp); p_iter++) {
@@ -163,7 +179,11 @@ void MatMult::multiply_y_pre_fast(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bo
 		for (int k_iter = 0; k_iter < Ncol_op; k_iter++) {
 			res(p_iter, k_iter) = res(p_iter, k_iter) - (g.get_col_mean(p_iter) * sum_op[k_iter]);
 			if (var_normalize) {
-				res(p_iter, k_iter) = res(p_iter, k_iter) / (g.get_col_std(p_iter));
+				double s = g.get_col_std(p_iter);
+				if (s > 0.0)
+					res(p_iter, k_iter) /= s;
+				else
+					res(p_iter, k_iter) = 0.0; // degenerate column
 			}
 		}
 	}
@@ -174,10 +194,14 @@ void MatMult::multiply_y_post_fast(MatrixXdr &op_orig, int Nrows_op, MatrixXdr &
 	MatrixXdr op;
 	op = op_orig.transpose();
 
+	// safer standardization
 	if (var_normalize && subtract_means) {
 		for (int p_iter = 0; p_iter < g.Nsnp; p_iter++) {
-			for (int k_iter = 0; k_iter < Nrows_op; k_iter++) {
-				op(p_iter, k_iter) = op(p_iter, k_iter) / (g.get_col_std(p_iter));
+			double s = g.get_col_std(p_iter);
+			if (s > 0.0) {
+				for (int k_iter = 0; k_iter < Nrows_op; k_iter++) {
+					op(p_iter, k_iter) /= s;
+				}
 			}
 		}
 	}
@@ -193,7 +217,7 @@ void MatMult::multiply_y_post_fast(MatrixXdr &op_orig, int Nrows_op, MatrixXdr &
 
 	nthreads = (nthreads > g.Nsegments_hori) ? g.Nsegments_hori: nthreads;
 
-	std::thread th[nthreads];
+	std::vector<std::thread> th(nthreads); // use vector instead
 	int perthread = g.Nsegments_hori / nthreads;
 	// std::cout << "post: " << g.segment_size_hori << "\t" << g.Nsegments_hori << "\t" << nthreads << "\t" << perthread << std::endl;
 	int t = 0;
@@ -245,7 +269,7 @@ void MatMult::multiply_y_post_fast(MatrixXdr &op_orig, int Nrows_op, MatrixXdr &
 	}
 
 	double *sums_elements = new double[Ncol_op];
-	memset (sums_elements, 0, Nrows_op * sizeof(int));
+	memset (sums_elements, 0, Ncol_op * sizeof(double)); // should be double not int
 
 	for (int k_iter = 0; k_iter < Ncol_op; k_iter++) {
 		double sum_to_calc = 0.0;
@@ -308,33 +332,82 @@ void MatMult::multiply_y_pre(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bool su
 }
 
 void MatMult::clean_up() {
-	delete[] sum_op;
+  if (y_m) {
+    for (int t = 0; t < nthreads; ++t) {
+      if (y_m[t]) {
+        for (int i = 0; i < hsegsize; ++i) {
+          delete[] y_m[t][i];
+        }
+        delete[] y_m[t];
+      }
+    }
+    delete[] y_m; y_m = nullptr;
+  }
 
-	for (int t = 0; t < nthreads; t++) {
-		delete[] yint_e[t];
-	}
-	delete[] yint_e;
+  if (y_e) {
+    for (int t = 0; t < nthreads; ++t) {
+      if (y_e[t]) {
+        for (int i = 0; i < g.Nindv; ++i) {
+          delete[] y_e[t][i];
+        }
+        delete[] y_e[t];
+      }
+    }
+    delete[] y_e; y_e = nullptr;
+  }
 
-	for (int t = 0; t < nthreads; t++) {
-		delete[] yint_m[t];
-		delete[] partialsums[t];
-	}
-	delete[] yint_m;
-	delete[] partialsums;
+  if (yint_m) {
+    for (int t = 0; t < nthreads; ++t) delete[] yint_m[t];
+    delete[] yint_m; yint_m = nullptr;
+  }
+  if (partialsums) {
+    for (int t = 0; t < nthreads; ++t) delete[] partialsums[t];
+    delete[] partialsums; partialsums = nullptr;
+  }
 
-	for (int t = 0; t < nthreads; t++) {
-		for (int i  = 0; i < hsegsize; i++) {
-			delete[] y_m[t][i];
-		}
-		delete[] y_m[t];
-	}
-	delete[] y_m;
+  if (yint_e) { for (int t = 0; t < nthreads; ++t) delete[] yint_e[t];
+                delete[] yint_e; yint_e = nullptr; }
 
-	for (int t = 0; t < nthreads; t++) {
-		for (int i  = 0; i < g.Nindv; i++) {
-			delete[] y_e[t][i];
-		}
-		delete[] y_e[t];
-	}
-	delete[] y_e;
+  if (sum_op) { delete[] sum_op; sum_op = nullptr; }
+
+  // reset sizes to safe state
+  nthreads = 0; blocksize = 0; hsegsize = 0; hsize = 0; vsegsize = 0; vsize = 0;
+}
+
+
+MatMult::~MatMult() { clean_up(); }
+
+static void move_from(MatMult& dst, MatMult& src) noexcept {
+  // trivial fields
+  dst.g = src.g; // or std::move(src.g) if genotype is movable
+  dst.geno_matrix = std::move(src.geno_matrix);
+  dst.debug = src.debug;
+  dst.var_normalize = src.var_normalize;
+  dst.memory_efficient = src.memory_efficient;
+  dst.missing = src.missing;
+  dst.fast_mode = src.fast_mode;
+  dst.nthreads = src.nthreads;
+  dst.blocksize = src.blocksize;
+  dst.hsegsize = src.hsegsize;
+  dst.hsize = src.hsize;
+  dst.vsegsize = src.vsegsize;
+  dst.vsize = src.vsize;
+
+  // steal pointers
+  dst.sum_op      = src.sum_op;      src.sum_op = nullptr;
+  dst.partialsums = src.partialsums; src.partialsums = nullptr;
+  dst.yint_m      = src.yint_m;      src.yint_m = nullptr;
+  dst.y_m         = src.y_m;         src.y_m = nullptr;
+  dst.yint_e      = src.yint_e;      src.yint_e = nullptr;
+  dst.y_e         = src.y_e;         src.y_e = nullptr;
+}
+
+MatMult::MatMult(MatMult&& other) noexcept { move_from(*this, other); }
+
+MatMult& MatMult::operator=(MatMult&& other) noexcept {
+  if (this != &other) {
+    clean_up();
+    move_from(*this, other);
+  }
+  return *this;
 }
