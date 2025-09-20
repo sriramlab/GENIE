@@ -8,7 +8,7 @@
 Active essential options: 
 	-g (genotype) gene
 	-annot (annotation) gene.annot
-	-p (phenotype) cont.pheno
+	-p (phenotype) null.pheno
 	-o (output) output.txt
 	-m (model) G+GxE+NxE
 	-k (# random vectors) 10
@@ -36,17 +36,17 @@ OUTPUT:
 
 Phenotype 0: 
 Variance components: 
-Sigma^2_g[0] : -0.00079768  SE : 0.000522829
-Sigma^2_g[1] : -5.37433e-05  SE : 9.48092e-05
-Sigma^2_g[2] : 0.00330012  SE : 0.00139591
-Sigma^2_g[3] : 0.00115444  SE : 0.000602935
-Sigma^2_g[4] : 0.000305795  SE : 0.000202544
-Sigma^2_e : 0.996091  SE : 0.00637875
+Sigma^2_g[0] : -9.16136e-05  SE : 0.000411229
+Sigma^2_g[1] : 6.04454e-05  SE : 0.000155142
+Sigma^2_g[2] : -7.66147e-05  SE : 0.000209733
+Sigma^2_g[3] : 7.12975e-06  SE : 0.000499905
+Sigma^2_g[4] : 5.93855e-05  SE : 0.000146769
+Sigma^2_e : 1.00004  SE : 0.00635716
 *****
 Heritabilities: 
-h2_g[0] : -0.000797696 SE : 0.00052284
-h2_g[1] : -5.37444e-05 SE : 9.48111e-05
-h2_g[2] : 0.00330018 SE : 0.00139593
-h2_g[3] : 0.00115446 SE : 0.000602947
-h2_g[4] : 0.000305802 SE : 0.000202548
-h2_g[gene] : 0.0047067 SE : 0.00156888
+h2_g[0] : -9.16154e-05 SE : 0.000411237
+h2_g[1] : 6.04466e-05 SE : 0.000155145
+h2_g[2] : -7.66162e-05 SE : 0.000209738
+h2_g[3] : 7.1299e-06 SE : 0.000499915
+h2_g[4] : 5.93866e-05 SE : 0.000146772
+h2_g[gene] : 5.03469e-05 SE : 0.000574668
