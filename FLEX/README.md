@@ -115,7 +115,6 @@ FLEX‑summ‑h2 operates in **two stages** (Step 3 below). It exposes two modes
   FID IID phenotype_1 phenotype_2 ... phenotype_n
   ```
 - `NA` or `-9` values are excluded.  
-- For binary, specify `--binary` in the appropriate tool.
 
 **Covariates**  
 - Header format:
