@@ -39,7 +39,7 @@ cmake ..
 make
 ```
 
-This produces the main binary (often named `FLEX` or `FLEX_h2`) under `build/`.
+This produces the main binary (named `FLEX_h2`) under `build/`.
 
 ---
 
@@ -166,7 +166,7 @@ threads=6
 
 # 1) Individual-level heritability with FLEX
 #    (Change -p to ${pheno_cont} or ${pheno_bin} with -b, as appropriate)
-build/FLEX \
+build/FLEX_h2 \
   -g "${geno_prefix}" \
   -p "${pheno_null}" \
   -a "${annot_file}" \

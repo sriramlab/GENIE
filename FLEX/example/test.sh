@@ -11,7 +11,7 @@ output=output.txt             # Output prefix
 
 # --- 1. Run FLEX directly on genotype + phenotype ---
 pheno=${null_pheno}
-../build/FLEX -g ${geno} -p ${pheno} -k 10 -jn 5 -o ${output} -annot ${annot} -t 6
+../build/FLEX_h2 -g ${geno} -p ${pheno} -k 10 -jn 5 -o ${output} -annot ${annot} -t 6
 
 # --- 2. Run FLEX conditional test (FLEX-cond-test) ---
 # The conditional test evaluates additional variance explained by a target set after conditioning.
