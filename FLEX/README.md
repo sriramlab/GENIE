@@ -73,7 +73,7 @@ This produces the main binary (named `FLEX_h2`) under `build/`.
 
 ### 3) FLEX‑summ‑h2 (summary‑statistics mode; Python)
 
-FLEX‑summ‑h2 operates in **two stages** (Step 3 below). It exposes two modes of operation:
+FLEX‑summ‑h2 operates in **two stages**.
 
 **(i) LD scores & stochastic LD sketches from genotypes**  
 (Use this to prepare LD inputs once per reference panel / annotation.)
@@ -145,7 +145,7 @@ Performs a conditional test to quantify additional variance explained by a targe
 
 **3) FLEX‑summ‑h2 in two stages**  
 (i) **Generate LD scores and stochastic LD sketches** from genotype and annotation.  
-(ii) **Estimate gene‑level heritability** (and SEs) from **GWAS summary statistics** using the outputs of (i).
+(ii) **Estimate gene‑level heritability** (and SEs) from **GWAS summary statistics** and the outputs of (i).
 
 > Ultra‑rare variants have already been collapsed upstream. Ensure your input genotype/annotation reflect this preprocessing.
 
