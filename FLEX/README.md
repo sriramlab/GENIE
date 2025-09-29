@@ -135,7 +135,7 @@ FLEX‑summ‑h2 operates in **two stages**.
 
 ## End‑to‑end Example Pipeline (`example/test.sh`)
 
-The example script demonstrates a complete run comprising three high‑level steps:
+The example script demonstrates the usage of three algorithms:
 
 **1) FLEX on individual‑level data**  
 Estimates exome‑wide and gene‑level heritability (optionally partitioned) from genotypes.
