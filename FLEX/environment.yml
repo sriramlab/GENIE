@@ -1,0 +1,17 @@
+name: flex
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - numpy=1.26.4
+  - pandas=2.2.2
+  - scipy=1.13.1
+  - tqdm=4.66.5
+  - bed-reader=1.0.0
+  - matplotlib=3.8.4
+  - scikit-learn=1.4.2
+  - statsmodels=0.14.2
+  - blas=2
+  - blas-devel=3.9.0  # optional, helps pin BLAS family
+  - libblas=*=*openblas
