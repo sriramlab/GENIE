@@ -15,7 +15,7 @@ pheno=${null_pheno}
 
 # --- 2. Run FLEX conditional test (FLEX-cond-test) ---
 # The conditional test evaluates additional variance explained by a target set after conditioning.
-# output_dir=cond_test_output
+output_dir=cond_test_output
 python3 ../src/flex_cond_test.py -g ${geno} -p ${pheno} -o ${output_dir} -a ${annot}
 
 # --- 3. Run FLEX-summ-h2 on GWAS summary statistics ---

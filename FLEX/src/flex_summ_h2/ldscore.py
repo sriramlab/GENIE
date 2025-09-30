@@ -154,7 +154,7 @@ class PartitionedLDScore:
                 f"Number of SNPs in .bed ({self.nsnps}) does not match .bim ({len(self.snplist)})."
             )
 
-    def _partition_index(self, snpidx, annot) -> list[np.ndarray]:
+    def _partition_index(self, snpidx, annot):
         """Partition SNP indices by annotation for a given block."""
         return [snpidx[annot[:, c] == 1] for c in range(self.nbins)]
 

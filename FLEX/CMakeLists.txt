@@ -1,5 +1,6 @@
-cmake_minimum_required(VERSION 2.8.12)
-project(EM_C++)
+cmake_minimum_required(VERSION 3.12...3.30)
+project(FLEX LANGUAGES C CXX)
+
 
 include_directories(include/)
 
