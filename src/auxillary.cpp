@@ -54,7 +54,7 @@ int read_env (int Nind, std::string filename){
 			double cur = atof(temp.c_str());
 			if(cur==-9)
 			{
-				// Need to mask this case? 
+				mask(j,0) = 0; 
 				continue;
 			} else {
 				if (gen_by_env == true) {
