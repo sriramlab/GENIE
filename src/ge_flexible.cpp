@@ -2491,7 +2491,6 @@ void read_auxillary_files () {
 	}	
 }
 
-
 void print_results () {
 	int T_Nbin;
 	if (gen_by_env == false) {
