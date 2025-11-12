@@ -62,7 +62,8 @@ using the flags -opt2 0, --opt2 0 (opt2 = 0 in the configuration file).
   -t, --nthreads                                The number of threads for multithreading
   -tr, --trace                                  Flag for printing trace summary files (.trace).
   -tr_input                                     Read in the trace estimates.
-  -v, --verbose                                 Verbose mode; Output extra information (Normal equation, number of samples, etc.).
+  -v, --verbose                                 Verbose modes; Output extra information (Normal equation, number of samples, etc.). Default = 0. 
+                                                    Setting '--verbose V' where V is 1,2,3,4, or 5 prints out increasingly more information during the run.
   -eXa, --eXannot                               By default, GENIE fits a single GxE variance component. To partition the GxE component w.r.t the annotation file, add '-eXannot' flag.
   -np, --norm-proj-pheno                        By default, the phenotype vector is standardized after regressing covariates. Turn this off by setting '--norm-proj-pheno 0'.
   -i, --cov-add-intercept                       By default, a vector of ones is appended to the covariates (the intercept term). Turn this off by setting '--cov-add-intercept 0'.
