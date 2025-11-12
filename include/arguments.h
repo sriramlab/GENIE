@@ -383,17 +383,17 @@ void parse_args(int argc, char const *argv[]){
 	}
     // using a config file instead of cmd-line args. TODO: have all the current options as config version. remove deprecated/redundant options
 
-	cfg.insertKey ("num_vec", "10");
+	cfg.insertKey ("num_vec", "10", 0);
 
 	cfg.insertKey ("jack_scheme", "1");
 	cfg.insertKey ("jack_size", "10");
-	cfg.insertKey ("num_jack", "100");
+	cfg.insertKey ("num_jack", "100", 0);
 
 	cfg.insertKey ("nthreads", "1");
-	cfg.insertKey ("model", "G+GxE+NxE");
+	cfg.insertKey ("model", "G+GxE+NxE", 0);
 	cfg.insertKey ("norm-proj-pheno", "1");
 	cfg.insertKey ("cov-add-intercept", "1");
-	cfg.insertKey ("verbose", "0");
+	cfg.insertKey ("verbose", "0", 0);
 	cfg.insertKey ("memeff", "0");
 	cfg.insertKey ("opt1", "1");
 	cfg.insertKey ("opt2", "1");
@@ -646,9 +646,9 @@ void parse_args(int argc, char const *argv[]){
 		cfg.outputstring += "# The intercept term *will not* be added to any fixed-effect covariates";
 
 	if (command_line_opts.normalize_proj_pheno)
-		cfg.outputstring += "# After projecting out the covariates, the phenotype vector *will* be standardized\n";
+		cfg.outputstring += "\n# After projecting out the covariates, the phenotype vector *will* be standardized";
 	else
-		cfg.outputstring += "# After projecting out the covariates, the phenotype vector *will not* be standardized\n";
+		cfg.outputstring += "\n# After projecting out the covariates, the phenotype vector *will not* be standardized";
 	param_string = cfg.paramstring (command_line_opts.verbose);
 	
 	cout << version_string << endl;
