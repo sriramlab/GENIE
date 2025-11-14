@@ -398,8 +398,8 @@ void parse_args(int argc, char const *argv[]){
 	cfg.insertKey ("opt1", "1");
 	cfg.insertKey ("opt2", "1");
 	cfg.insertKey ("eXannot", "0");
-	cfg.insertKey ("hetero_noise", "1");
-	cfg.insertKey ("gene_by_env", "1");
+//	cfg.insertKey ("hetero_noise", "1");
+//	cfg.insertKey ("gene_by_env", "1");
 
 	if (strcmp(argv[1],"--config")==0) {
 		std::string cfg_filename = std::string(argv[2]);
@@ -614,12 +614,15 @@ void parse_args(int argc, char const *argv[]){
                 } else if (isarg(argv[i],"-opt2", "--opt2") ) {
                     command_line_opts.opt2 = (atoi (argv[i+1])>0);        
                     cfg.insertKey ("opt2",Convert::T_to_string (command_line_opts.opt2), 0);
+					i++;
                 } else if (isarg(argv[i],"-opt1", "--opt1") ) {
                     command_line_opts.opt1 = (atoi (argv[i+1])>0);        
                     cfg.insertKey ("opt1",Convert::T_to_string (command_line_opts.opt1), 0);
+					i++;
                 } else if (isarg(argv[i],"-mem_Nsnp", "--mem_Nsnp") ) {
                     command_line_opts.mem_Nsnp = atoi(argv[i+1]);     
                     cfg.insertKey ("mem_Nsnp",Convert::T_to_string (command_line_opts.mem_Nsnp), 0);
+					i++;
                 } else {
 					cerr << version_string << endl;
 					cerr << "ERROR: Not Enough or Invalid arguments: '"<< argv[i] << "'" << endl;
