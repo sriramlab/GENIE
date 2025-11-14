@@ -29,6 +29,7 @@ extern int Njack;
 extern int step_size;
 extern int step_size_rem;
 
+extern bool memeff;
 extern vector<vector<int> > read_bin;
 extern int Nreadblocks; 
 extern vector<int> snp_to_read_block;

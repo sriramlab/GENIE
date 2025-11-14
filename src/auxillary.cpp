@@ -12,7 +12,7 @@ using namespace std;
 int read_env (int Nind, std::string filename){
 	ifstream ifs(filename.c_str(), ios::in);
 	if (!ifs.is_open()){
-		cerr << "Error reading file with environmental variables : "<< filename <<endl;
+		cerr << "ERROR: Error reading file with environmental variables : "<< filename <<endl;
 		exit(1);
 	}
 	std::string line;
@@ -77,7 +77,7 @@ int read_env (int Nind, std::string filename){
 int read_cov (int Nind, std::string filename) {
 	ifstream ifs(filename.c_str(), ios::in);
 	if (!ifs.is_open()){
-		cerr << "Error reading covariate file : "<< filename <<endl;
+		cerr << "ERROR: Error reading covariate file : "<< filename <<endl;
 		exit(1);
 	}
 	std::string line;
@@ -202,7 +202,7 @@ void read_pheno(int Nind, std::string filename){
 	ifstream ifs(filename.c_str(), ios::in); 
 
 	if (!ifs.is_open()){
-		cerr << "Error reading phenotype file : "<< filename <<endl;
+		cerr << "ERROR: Error reading phenotype file : "<< filename <<endl;
 		exit(1);
 	}
 
@@ -218,6 +218,12 @@ void read_pheno(int Nind, std::string filename){
 		if(b!="FID" && b !="IID")
 			phenocount++; 
 	}
+
+	if (phenocount > 1) { 
+		cerr << "ERROR: The phenotype file can only have a single phenotype" << endl;
+		exit (1);
+	}
+
 	pheno.resize(Nind, phenocount);
 	new_pheno.resize(Nind, phenocount);
 	mask.resize(Nind, phenocount);
@@ -252,7 +258,7 @@ void read_pheno(int Nind, std::string filename){
 int count_pheno(std::string filename){
 	ifstream ifs(filename.c_str(), ios::in);
 	if (!ifs.is_open()){
-		cerr << "Error reading phenotype file : "<< filename <<endl;
+		cerr << "ERROR: Error reading phenotype file : "<< filename <<endl;
 		exit(1);
 	}
 
@@ -268,7 +274,7 @@ int count_pheno(std::string filename){
 void read_annot (string filename) {
 	ifstream inp(filename.c_str());
 	if (!inp.is_open()){
-		cout <<"Warning: no annotation file provided. All SNPs will be assigned to a single annotation" << endl;	
+		cout <<"WARNING: no annotation file provided. All SNPs will be assigned to a single annotation" << endl;	
 		Nbin = 1;
 		vector<bool> snp_annot;
 		if(Annot_x_E == false)
@@ -318,7 +324,7 @@ void read_annot (string filename) {
 			}
 
 			if (tokens.size () != Nbin) {
-				cerr << "Error reading annotation file : "<< filename << " at line number : " << linenum <<endl;
+				cerr << "ERROR: Error reading annotation file : "<< filename << " at line number : " << linenum <<endl;
 				exit(1);
 			}
 
@@ -361,11 +367,13 @@ void read_annot (string filename) {
 	int Total_Nbin;
 	if(Annot_x_E == false){
 		jack_bin.resize(Njack, vector<int>(Nbin + Nenv + Nenv,0));
-		read_bin.resize(Nreadblocks, vector<int>(Nbin + Nenv + Nenv,0));
+		if (memeff)
+			read_bin.resize(Nreadblocks, vector<int>(Nbin + Nenv + Nenv,0));
 		Total_Nbin = Nbin + Nenv;
 	} else {
 		jack_bin.resize(Njack, vector<int>(Nbin + (Nenv * Nbin) + Nenv,0));
-		read_bin.resize(Nreadblocks, vector<int>(Nbin + (Nenv * Nbin) + Nenv,0));
+		if (memeff)
+			read_bin.resize(Nreadblocks, vector<int>(Nbin + (Nenv * Nbin) + Nenv,0));
 		Total_Nbin = Nbin + (Nenv * Nbin);
 	}
 
@@ -375,8 +383,10 @@ void read_annot (string filename) {
 				int temp = snp_to_jackblock[i];
 				jack_bin[temp][j]++;
 
-				temp = snp_to_read_block[i];
-				read_bin[temp][j]++;
+				if (memeff)  {
+					temp = snp_to_read_block[i];
+					read_bin[temp][j]++;
+				}
 			}
 
 	vector<int> bin_totals(Total_Nbin, 0);

@@ -327,9 +327,13 @@ void initial_var(){
 }
 
 // Needed for the memory efficient vesion (opt1 = true && opt2 = true).
+// This is only used when memeff == 1
 // Needed to handle the cases where jackknife blocks do not all have equal number of SNPs
 // Sets up data structures that map SNPs and jackknife blocks to read blocks
 void setup_read_blocks ()  {
+	if (verbose >= 3) {
+		cout << "In setup_read_blocks" << endl;
+	}
 
 	int snpindex = 0;
 	int blockindex = 0 ;
@@ -365,6 +369,9 @@ void setup_read_blocks ()  {
 			vectorfn::printvector (jack_to_read_block); cout << endl;
 			vectorfn::printvector (snp_to_read_block); cout << endl;
 		}
+	}
+	if (verbose >= 3) {
+		cout << "Finished setting up read blocks" << endl;
 	}
 }
 
@@ -2301,12 +2308,20 @@ void genotype_stream_single_pass (string name) {
 
 
 
-// Regress covariates from phenotypes
+// Regress covariates from phenotype
+// If no covariates are provided, center phenotype
 //  
 void regress_covariates () {
+	if (verbose >= 3) {
+		cout << "In regress_covariates" << endl;
+	}
+
 	bool normalize_proj_pheno = command_line_opts.normalize_proj_pheno;
 	if(use_cov == true){
-		MatrixXdr mat_mask = mask.replicate(1,Ncov);
+		if (verbose >= 3) {
+			cout << "Regressing covariates" << endl;
+		}
+		MatrixXdr mat_mask = mask.replicate(1, Ncov);
 		covariate = covariate.cwiseProduct(mat_mask);
 
 		MatrixXdr WtW= covariate.transpose() * covariate;
@@ -2364,6 +2379,10 @@ void regress_covariates () {
 
 		}
 	} else {
+		if (verbose >= 3) {
+			cout << "Centering phenotype" << endl;
+		}
+
 		y_sum = pheno.sum();
 		y_mean = y_sum / mask.sum();
 		for(int i = 0; i < Nindv; i++){
@@ -2371,7 +2390,9 @@ void regress_covariates () {
 				pheno(i,0) = pheno(i,0) - y_mean; //center phenotype
 		}
 		y_sum = pheno.sum();
-
+	}
+	if (verbose >= 3) {
+		cout << "Finished regressing covariates" << endl;
 	}
 }
 
@@ -2394,6 +2415,7 @@ void read_auxillary_files () {
 	cout << "Number of SNPs = "<< Nsnp << endl;
 
 	setup_read_blocks();
+
 
 	// trace summary only
 	use_dummy = command_line_opts.use_dummy_pheno;
@@ -2891,6 +2913,10 @@ void print_trace () {
 void print_input_parameters() {
 	string outpath = command_line_opts.OUTPUT_FILE_PATH;
 	outfile.open(outpath.c_str(), std::ios_base::out);
+	if (!outfile.is_open()){
+		cerr << "Error writing to output file : "<< outpath <<endl;
+		exit(1);
+	}
 	outfile << command_line_opts.version_string << endl;
     outfile << "Seed = " << seed << endl;
 
@@ -2976,6 +3002,8 @@ int main(int argc, char const *argv[]){
 	// fill in dummy (for trace summaries)
 	if (use_dummy)
 		dummy_pheno(Nindv, z_vec);
+
+	cout << "Regressing covariates" << endl;
 	regress_covariates ();	
 
 	for (int i = 0 ; i < Nz ; i++)
@@ -3046,19 +3074,20 @@ int main(int argc, char const *argv[]){
 	std::stringstream f3;
 	f3 << geno_name << ".bed";
 	string name = f3.str();
-	ifstream ifs (name.c_str(), ios::in|ios::binary);
 	read_header = true;
 	global_snp_index=-1;
 
+	ifstream ifs (name.c_str(), ios::in|ios::binary);
 	if (!ifs.is_open()){
 		cerr << "Error reading file "<< name  <<endl;
 		exit(1);
 	}
 
+	print_input_parameters ();
+
 	cout << endl;
 	cout << "Reading genotypes ..." << endl;
 
-	print_input_parameters ();
 	
 	//CHANGE(03/05): add trace summary files. input to -o is now just the prefix (all output file endings are fixed to .log)
 	if (trace){
