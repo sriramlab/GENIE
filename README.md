@@ -20,6 +20,30 @@ cmake ..
 make
 ```
 
+## CLI Quick Start
+
+### Model G: Additive Heritability Only
+```bash
+./GENIE -g data/mydata -p data/mydata.pheno -e data/mydata.env -a data/mydata.annot -o results/out -m G -k 10 -jn 100
+```
+
+### Model G+GxE: Gene-Environment Interaction
+```bash
+./GENIE -g data/mydata -p data/mydata.pheno -e data/mydata.env -a data/mydata.annot -o results/out -m G+GxE -k 10 -jn 100
+```
+
+### Model G+GxE+NxE: Full Model
+```bash
+./GENIE -g data/mydata -p data/mydata.pheno -e data/mydata.env -a data/mydata.annot -o results/out -m "G+GxE+NxE" -k 10 -jn 100
+```
+
+### With Covariates
+```bash
+./GENIE -g data/mydata -p data/mydata.pheno -e data/mydata.env -c data/mydata.cov -a data/mydata.annot -o results/out -m "G+GxE+NxE" -k 10 -jn 100
+```
+
+See below for usage with config files.
+
 # Documentation for GENIE
 An executable file named GENIE will be in the build folder after the installation steps. Run GENIE as follows:
  ```
