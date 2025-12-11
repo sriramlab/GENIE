@@ -1,6 +1,9 @@
 #ifndef ARGUMENTS_H
 #define ARGUMENTS_H
 
+// Version constant - update this for each release
+#define GENIE_VERSION "1.2.2"
+
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -73,9 +76,15 @@ struct options{
 	bool use_dummy_pheno; // in case no phenotype is provided; use dummy pheno
 	std::string TRACE_FILE_PATH;
 	string version_string;
+
+	// BUG-003: Sample ID matching
+	bool no_match_ids;  // If true, use legacy position-based matching instead of ID-based
 };
 
 extern options command_line_opts;
+
+// UPG-007: Include validation after struct options is defined
+#include "validation.h"
 
 void exitWithError(const std::string &error) {
 	std::cerr << error;
@@ -102,6 +111,7 @@ std::string usage ( ) {
 	ostr <<"Usage: GENIE " << "[--config parameter file|command-line options]" << endl;
 	ostr << "\nOptions:\n"
 		 << "  -h, --help 					Show this message and exit\n"
+		 << "  -V, --version					Print version and exit\n"
 		 << "  -g, --genotype				The path of PLINK BED genotype file\n"
 		 << "  -p, --phenotype				The path of phenotype file\n"
 		 << "  -c, --covariate				The path of covariate file\n"
@@ -124,6 +134,11 @@ std::string usage ( ) {
 		 << "  -eXa, --eXannot				By default, GENIE fits a single GxE variance component. To partition the GxE component w.r.t the annotation file, add '-eXannot' flag.\n"
 		 << "  -np, --norm-proj-pheno			By default, the phenotype vector is standardized after regressing covariates. Turn this off by setting '--norm-proj-pheno 0'.\n"
 		 << "  -i, --cov-add-intercept			By default, a vector of ones is appended to the covariates (the intercept term). Turn this off by setting '--cov-add-intercept 0'.\n"
+		 << "  -s, --seed					Set the random seed for reproducibility.\n"
+		 << "  -mm, --memory-mode				Memory mode: 0 (standard), 1 (memory-efficient), 2 (most memory-efficient).\n"
+		 << "						Note: Modes 1 and 2 are only supported for Model G.\n"
+		 << "  --no-match-ids				Disable sample ID matching (use legacy position-based matching).\n"
+		 << "						WARNING: May produce incorrect results if files are not pre-aligned.\n"
 		 << endl;
 	return ostr.str ();
 }
@@ -303,7 +318,7 @@ public:
 		std::ostringstream ostr;
 		ostr << "############################################################" << endl;
 		ostr << "#                                                          #" << endl;
-		ostr << "#                       GENIE (v1.2.1)                     #" << endl;
+		ostr << "#                       GENIE (v" << GENIE_VERSION << ")                     #" << endl;
 		ostr << "#                                                          #" << endl;
 		ostr << "############################################################" << endl;
 		return ostr.str ();
@@ -365,6 +380,7 @@ void parse_args(int argc, char const *argv[]){
 	command_line_opts.verbose = 0;
     command_line_opts.print_trace = false;
 	command_line_opts.use_dummy_pheno = false;
+	command_line_opts.no_match_ids = false;  // BUG-003: Default to ID-based matching
 
 	command_line_opts.memeff = false;
 	command_line_opts.opt1 = true;
@@ -380,6 +396,11 @@ void parse_args(int argc, char const *argv[]){
 	if(argc<2 || (argc == 2 && (isarg(argv[1], "-h", "--help")))){
 		cerr << version_string << endl;
 		exitWithError (usage ());
+	}
+	// UPG-003: Add --version flag
+	if(argc == 2 && (isarg(argv[1], "-V", "--version"))){
+		cout << "GENIE v" << GENIE_VERSION << endl;
+		exit(0);
 	}
     // using a config file instead of cmd-line args. TODO: have all the current options as config version. remove deprecated/redundant options
 
@@ -446,9 +467,28 @@ void parse_args(int argc, char const *argv[]){
 
 		command_line_opts.memeff  = cfg.getValueOfKey<bool>("memeff", false);
 		command_line_opts.opt1 = cfg.getValueOfKey<bool>("opt1", true);
-        command_line_opts.opt2 = cfg.getValueOfKey<bool>("opt2", true); 
-        command_line_opts.mem_Nsnp = cfg.getValueOfKey<int>("mem_Nsnp", 10); 
-        command_line_opts.mem_alloc = cfg.getValueOfKey<int>("mem_alloc", -1); 
+        command_line_opts.opt2 = cfg.getValueOfKey<bool>("opt2", true);
+        command_line_opts.mem_Nsnp = cfg.getValueOfKey<int>("mem_Nsnp", 10);
+        command_line_opts.mem_alloc = cfg.getValueOfKey<int>("mem_alloc", -1);
+
+		// UPG-004: Unified memory_mode config (overrides memeff/opt1/opt2 if specified)
+		int memory_mode = cfg.getValueOfKey<int>("memory_mode", -1);
+		if (memory_mode >= 0) {
+			if (memory_mode == 0) {
+				command_line_opts.memeff = false;
+			} else if (memory_mode == 1) {
+				command_line_opts.memeff = true;
+				command_line_opts.opt1 = true;
+				command_line_opts.opt2 = true;
+			} else if (memory_mode == 2) {
+				command_line_opts.memeff = true;
+				command_line_opts.opt1 = true;
+				command_line_opts.opt2 = false;
+			} else {
+				cerr << "ERROR: memory_mode must be 0, 1, or 2. Got: " << memory_mode << endl;
+				exit(1);
+			}
+		}
 
         command_line_opts.use_ysum = cfg.getValueOfKey<bool>("use_phenosum", false);
         command_line_opts.keep_xsum = cfg.getValueOfKey<bool>("output_genosum", true);
@@ -456,6 +496,7 @@ void parse_args(int argc, char const *argv[]){
         command_line_opts.normalize_proj_pheno = cfg.getValueOfKey<bool> ("norm_proj_pheno", true);
 		command_line_opts.cov_add_intercept = cfg.getValueOfKey<bool>("cov_add_intercept", true);
 		command_line_opts.exannot = cfg.getValueOfKey<bool>("eXannot", false);
+		command_line_opts.no_match_ids = cfg.getValueOfKey<bool>("no_match_ids", false);  // BUG-003
 
         command_line_opts.model = cfg.getValueOfKey<string>("model", string("G+GxE+NxE"));
         if (cfg.keyExists("model")){
@@ -488,7 +529,29 @@ void parse_args(int argc, char const *argv[]){
 	} else {
 
 		for (int i = 1; i < argc; i++) {
-			if (i + 1 != argc){
+			// Check for flags (no value required) FIRST
+			if (isarg(argv[i], "-h", "--help")) {
+				exitWithError(usage());
+			} else if (isarg(argv[i], "-V", "--version")) {
+				cout << version_string << endl;
+				exit(0);
+			} else if (isarg(argv[i], "-tr", "--trace")) {
+				command_line_opts.print_trace = true;
+				cfg.insertKey("trace", "1", 0);
+				cfg.outputstring += "# Printing trace summaries";
+			} else if (isarg(argv[i], "-mem", "--memeff")) {
+				command_line_opts.memeff = true;
+				cfg.insertKey("memeff", "1", 0);
+			} else if (isarg(argv[i], "-nfm", "--no-fast-mode")) {
+				command_line_opts.fast_mode = false;
+			} else if (isarg(argv[i], "-miss", "--missing")) {
+				command_line_opts.missing = true;
+			} else if (isarg(argv[i], "", "--no-match-ids")) {
+				// BUG-003: Disable ID-based sample matching
+				command_line_opts.no_match_ids = true;
+				cfg.insertKey("no_match_ids", "1", 0);
+			} else if (i + 1 != argc){
+				// Arguments that require a value
 				if(isarg(argv[i], "-g", "--genotype")){
 					command_line_opts.GENOTYPE_FILE_PATH = string(argv[i+1]);
 					cfg.insertKey ("genotype", argv[i+1], 0);
@@ -620,25 +683,34 @@ void parse_args(int argc, char const *argv[]){
                     cfg.insertKey ("opt1",Convert::T_to_string (command_line_opts.opt1), 0);
 					i++;
                 } else if (isarg(argv[i],"-mem_Nsnp", "--mem_Nsnp") ) {
-                    command_line_opts.mem_Nsnp = atoi(argv[i+1]);     
+                    command_line_opts.mem_Nsnp = atoi(argv[i+1]);
                     cfg.insertKey ("mem_Nsnp",Convert::T_to_string (command_line_opts.mem_Nsnp), 0);
+					i++;
+                } else if (isarg(argv[i],"-mm", "--memory-mode") ) {
+					// UPG-004: Unified memory mode flag
+					int mm = atoi(argv[i+1]);
+					if (mm == 0) {
+						command_line_opts.memeff = false;
+					} else if (mm == 1) {
+						command_line_opts.memeff = true;
+						command_line_opts.opt1 = true;
+						command_line_opts.opt2 = true;
+					} else if (mm == 2) {
+						command_line_opts.memeff = true;
+						command_line_opts.opt1 = true;
+						command_line_opts.opt2 = false;
+					} else {
+						cerr << "ERROR: memory-mode must be 0, 1, or 2. Got: " << mm << endl;
+						exit(1);
+					}
+					cfg.insertKey ("memory_mode", argv[i+1], 0);
 					i++;
                 } else {
 					cerr << version_string << endl;
 					cerr << "ERROR: Not Enough or Invalid arguments: '"<< argv[i] << "'" << endl;
 					exitWithError (usage());
 				}
-			} else if (isarg(argv[i], "-tr", "--trace")){
-				command_line_opts.print_trace = true;
-				cfg.insertKey ("trace", "1", 0);
-				cfg.outputstring += "# Printing trace summaries";
-            } else if (isarg(argv[i],"-mem", "--memeff") ) {
-                command_line_opts.memeff = true;
-                cfg.insertKey ("memeff", "1", 0);
-			} else if(isarg(argv[i], "-nfm", "--no-fast-mode"))
-				command_line_opts.fast_mode = false;
-			else if(isarg(argv[i], "-miss", "--missing"))
-				command_line_opts.missing = true;
+			}
 		}
 	}
 	
@@ -686,6 +758,9 @@ void parse_args(int argc, char const *argv[]){
 			exitWithError (usage());
 		}
 	}
+
+	// UPG-007: Run centralized validation
+	validate_params();
 
 	cout << param_string << endl;
 }
