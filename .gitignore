@@ -1,3 +1,53 @@
+# =============================================================================
+# GENIE Project-Specific Ignores
+# =============================================================================
+
+# Test directories (private test suites)
+genie-tests/
+genie-tests-v2/
+
+# Documentation PDFs (large files, not tracked)
+docs/
+
+# Project planning and audit files (internal)
+AUDIT*.md
+CLAUDE.md
+CODEEDIT*.md
+METHODS_REFERENCE.md
+PLAN*.md
+PROJECT*.md
+TEST*.md
+
+# =============================================================================
+# Editor and OS Files
+# =============================================================================
+
+# Vim
+*~
+*.swp
+*.swo
+*.swn
+*.orig
+*.bak
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# =============================================================================
+# Claude Code / AI Assistant Cache
+# =============================================================================
+.claude/
+.claude_cache/
+.aider*
+.cursor/
+
+# =============================================================================
+# Python
+# =============================================================================
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

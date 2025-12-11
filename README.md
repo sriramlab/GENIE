@@ -32,18 +32,101 @@ Alternatively, you may run either ```GENIE``` with a newline-separated config fi
 ```
 When using a config file, the full keys (e.g., genotype="") must be used instead of shortcut flags (e.g., -g).
 
-If there are many annotations, then we recommend to run a memory-efficient version of GENIE (that is slower). This can be enabled by setting
-the flags -mem, --memeff on the command-line or memeff = 1 in the configuration file. This memory-efficient version reads in a specified block of SNPs that can be set 
-using the flags -mem_Nsnp, --mem_Nsnp (mem_Nsnp in the configuration file). The default value for mem_Nsnp = 10. 
-Alternatively, this memory efficient version can read an entire block of SNPs specified by the size of Jackknife blocks and this can be specified
-using the flags -opt2 0, --opt2 0 (opt2 = 0 in the configuration file).
+## Config File Examples
 
+### Basic Model G (Additive genetic effects only)
+```
+genotype=data/mydata
+phenotype=data/mydata.pheno
+covariate=data/mydata.cov
+annotation=data/mydata.annot
+output=results/model_g
+model=G
+num_vec=10
+num_jack=100
+nthreads=4
+seed=42
+```
 
+### Full GxE Model (G+GxE+NxE) - Recommended for GxE analysis
+```
+genotype=data/mydata
+phenotype=data/mydata.pheno
+covariate=data/mydata.cov
+environment=data/mydata.env
+annotation=data/mydata.annot
+output=results/model_gxe
+model=G+GxE+NxE
+num_vec=10
+num_jack=100
+nthreads=4
+seed=42
+```
+
+### Memory-Efficient Mode (for large datasets, Model G only)
+```
+genotype=data/mydata
+phenotype=data/mydata.pheno
+annotation=data/mydata.annot
+output=results/model_g_memeff
+model=G
+num_vec=10
+num_jack=100
+nthreads=4
+memory_mode=1
+mem_Nsnp=10
+seed=42
+```
+
+### Config File Parameters Reference
+| Config Key | CLI Flag | Description |
+|------------|----------|-------------|
+| genotype | -g | Path to PLINK BED file (without .bed extension) |
+| phenotype | -p | Path to phenotype file |
+| covariate | -c | Path to covariate file |
+| environment | -e | Path to environment file |
+| annotation | -a | Path to annotation file |
+| output | -o | Output file prefix |
+| model | -m | Model type: G, G+GxE, or G+GxE+NxE |
+| num_vec | -k | Number of random vectors (recommended: 10) |
+| num_jack | -jn | Number of jackknife blocks (recommended: 100) |
+| nthreads | -t | Number of threads |
+| seed | -s | Random seed for reproducibility |
+| memory_mode | -mm | Memory mode: 0 (standard), 1 (memory-efficient), 2 (most memory-efficient) |
+| memeff | -- | Legacy: Memory mode 1 (use memory_mode=1 instead) |
+| opt1 | -- | Legacy: Memory mode 2 (use memory_mode=2 instead) |
+| opt2 | -- | Legacy: Used with opt1 for mode 2 (use memory_mode=2 instead) |
+| mem_Nsnp | -- | SNPs per block in memory mode 1 (default: 10) |
+| trace | -tr | Print trace summary files (0 or 1) |
+| verbose | -v | Verbosity level (0-5) |
+| eXannot | -eXa | Partition GxE by annotation (0 or 1) |
+| norm_proj_pheno | -np | Normalize projected phenotype (default: 1) |
+| cov_add_intercept | -i | Add intercept to covariates (default: 1) |
+| no_match_ids | --no-match-ids | Skip sample ID matching (faster, requires pre-aligned files) |
+
+## Memory Modes
+
+GENIE supports three memory modes for handling large datasets. Use `-mm`/`--memory-mode` on the command line or `memory_mode` in config files:
+
+| Mode | CLI | Config Setting | Description |
+|------|-----|----------------|-------------|
+| 0 (default) | `-mm 0` | `memory_mode=0` | Standard mode. Fastest but uses most memory. |
+| 1 | `-mm 1` | `memory_mode=1` | Memory-efficient. Reads SNPs in blocks of size `mem_Nsnp` (default: 10). |
+| 2 | `-mm 2` | `memory_mode=2` | Most memory-efficient. Reads SNPs in jackknife-sized blocks. For very large datasets. |
+
+**Note**: Memory modes 1 and 2 are only supported for Model G. GxE models (`G+GxE`, `G+GxE+NxE`) require the default memory mode (`memory_mode=0`).
+
+## Sample Matching
+
+By default, GENIE matches samples across genotype, phenotype, covariate, and environment files by FID/IID and analyzes only the intersection.
+
+For pre-aligned files where row order is guaranteed to match across all input files, you can use `--no-match-ids` (CLI) or `no_match_ids=1` (config) to skip ID matching. This is faster but will produce incorrect results if files are not perfectly aligned.
 
 ## Parameters
 
 ```
   -h, --help                                    Show this message and exit
+  -V, --version                                 Show version and exit
   -g, --genotype                                The path of PLINK BED genotype file
   -p, --phenotype                               The path of phenotype file
   -c, --covariate                               The path of covariate file
@@ -67,6 +150,11 @@ using the flags -opt2 0, --opt2 0 (opt2 = 0 in the configuration file).
   -eXa, --eXannot                               By default, GENIE fits a single GxE variance component. To partition the GxE component w.r.t the annotation file, add '-eXannot' flag.
   -np, --norm-proj-pheno                        By default, the phenotype vector is standardized after regressing covariates. Turn this off by setting '--norm-proj-pheno 0'.
   -i, --cov-add-intercept                       By default, a vector of ones is appended to the covariates (the intercept term). Turn this off by setting '--cov-add-intercept 0'.
+  -s, --seed                                    Set the random seed for reproducibility. Using the same seed produces identical results.
+  -mm, --memory-mode                            Memory mode: 0 (standard), 1 (memory-efficient), 2 (most memory-efficient).
+                                                Modes 1 and 2 only supported for Model G.
+  --no-match-ids                                Disable sample ID matching (use faster legacy position-based matching).
+                                                WARNING: May produce incorrect results if files are not pre-aligned.
 
 ```
 ## File formats
@@ -83,8 +171,7 @@ Annotation: must have M rows (M=number  of SNPs) and K columns (K=number of anno
     If SNP i belongs to annotation j, then there is  "1" in row i and column j.
     Otherwise, there is "0". (delimiter is " ")
 
-1) The number and order of individuals must be the same in phenotype, 
-    genotype, environment, and covariate files.
+1) Samples are matched by FID/IID across all input files; only the intersection is analyzed.
 2) The number and order of SNPs must be the same in bim file and annotation file.
 3) The annotation file does not have a header. 
 4) SNPs with MAF=0 must be excluded from the genotype file.
@@ -124,7 +211,7 @@ To simulate phenotypes with GxE effects, see https://github.com/sriramlab/Simula
 
 ## Version
 ```
-v1.2.0
+v1.2.2
 ```
 
 ## Zenodo

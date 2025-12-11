@@ -76,6 +76,8 @@ set(genie_lib_header
 		include/functions.h
 		include/vectorfn.h
 		include/statsfn.h
+		include/validation.h
+		include/sample_matching.h
 )
 
 set(genie_lib_source
@@ -85,6 +87,7 @@ set(genie_lib_source
         src/matmult.cpp
         src/storage.cpp
 		src/functions.cpp
+		src/sample_matching.cpp
 )
 
 add_library(genie_lib STATIC ${genie_lib_header} ${genie_lib_source})

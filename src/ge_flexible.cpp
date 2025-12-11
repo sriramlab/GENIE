@@ -23,6 +23,7 @@
 #include "functions.h"
 #include "vectorfn.h"
 #include "statsfn.h"
+#include "sample_matching.h"
 
 // #if SSE_SUPPORT == 1
 // 	#define fastmultiply fastmultiply_sse
@@ -2416,77 +2417,187 @@ void read_auxillary_files () {
 
 	setup_read_blocks();
 
-
-	// trace summary only
+	// Get file paths
 	use_dummy = command_line_opts.use_dummy_pheno;
-	// Read .fam file
 	std::stringstream f0;
 	f0 << geno_name << ".fam";
-	string name_fam = f0.str();
-	int fam_lines = count_fam (name_fam);
-	
-	// Read phenotype and save the number of indvs
-	string filename = command_line_opts.PHENOTYPE_FILE_PATH;
+	string fam_path = f0.str();
+	string pheno_path = command_line_opts.PHENOTYPE_FILE_PATH;
+	string cov_path = command_line_opts.COVARIATE_FILE_PATH;
+	string env_path = command_line_opts.ENV_FILE_PATH;
+	string annot_path = command_line_opts.Annot_PATH;
 
-	if (use_dummy){
-		Nindv = fam_lines;
-	}	
-	else{
-		Nindv = count_pheno (filename);
-		read_pheno (Nindv, filename);
-	}
-
-	if (fam_lines != Nindv) {
-		exitWithError ("Number of individuals in fam file and pheno file does not match ");
-		exit (1);
-	}
-
-	cout << "Number of individuals = "<< Nindv << endl;
-	y_sum = pheno.sum();
-
-
-	// Read .env file depending on the model
 	// Model to fit
 	gen_by_env = command_line_opts.gen_by_env;
 	hetero_noise = command_line_opts.hetero_noise;
 	if (gen_by_env == false) {
 		Nenv = 0;
 		hetero_noise = false;
-	} else {
-		//Read environment file 
-		std::string envfile = command_line_opts.ENV_FILE_PATH;
-		Nenv = read_env (Nindv, envfile);
 	}
 
-	// Read annotation files
-	filename = command_line_opts.Annot_PATH;
+	if (command_line_opts.no_match_ids) {
+		// ============================================================
+		// LEGACY MODE: Position-based matching (original behavior)
+		// ============================================================
+		cerr << "Warning: Using legacy position-based sample matching (--no-match-ids)." << endl;
+		cerr << "  Results may be incorrect if files are not pre-aligned." << endl;
 
-	if(use_1col_annot == true){
-		read_annot_1col(filename);
-	}else{
-		read_annot(filename);
-	}
+		int fam_lines = count_fam(fam_path);
 
-	// Read covariate file
-	std::string covfile = command_line_opts.COVARIATE_FILE_PATH;
-	std::string covname = "";
-	if(covfile != "" ){
-		use_cov = true;
-		Ncov = read_cov (Nindv, covfile);
-	} else if (covfile == ""){
-		cout << "No covariate file specified" << endl;
-
-		if ((cov_add_intercept == true) && (!use_dummy)) {
-			covariate.resize(Nindv,1);
-			for(int i = 0 ; i < Nindv ; i++)
-				covariate(i,0) = 1;
-			Ncov = 1;
-			use_cov = true;
-			cout << "Intercept included" << endl;
+		if (use_dummy) {
+			Nindv = fam_lines;
+			// Initialize dummy phenotype and mask
+			pheno.resize(Nindv, 1);
+			mask.resize(Nindv, 1);
+			new_pheno.resize(Nindv, 1);
+			pheno.setZero();
+			mask.setOnes();
+			new_pheno.setZero();
+			phenocount = 1;
 		} else {
-			both_side_cov = false;
-			use_cov = false;
-			cout << "No intercept included" << endl;
+			Nindv = count_pheno(pheno_path);
+			read_pheno(Nindv, pheno_path);
+		}
+
+		if (fam_lines != Nindv) {
+			exitWithError("Number of individuals in fam file and pheno file does not match ");
+			exit(1);
+		}
+
+		cout << "Number of individuals = " << Nindv << endl;
+		y_sum = pheno.sum();
+
+		// Read environment file (if needed)
+		if (gen_by_env) {
+			Nenv = read_env(Nindv, env_path);
+		}
+
+		// Read annotation files
+		if (use_1col_annot == true) {
+			read_annot_1col(annot_path);
+		} else {
+			read_annot(annot_path);
+		}
+
+		// Read covariate file
+		if (cov_path != "") {
+			use_cov = true;
+			Ncov = read_cov(Nindv, cov_path);
+		} else {
+			cout << "No covariate file specified" << endl;
+			if ((cov_add_intercept == true) && (!use_dummy)) {
+				covariate.resize(Nindv, 1);
+				for (int i = 0; i < Nindv; i++)
+					covariate(i, 0) = 1;
+				Ncov = 1;
+				use_cov = true;
+				cout << "Intercept included" << endl;
+			} else {
+				both_side_cov = false;
+				use_cov = false;
+				cout << "No intercept included" << endl;
+			}
+		}
+
+	} else {
+		// ============================================================
+		// NEW MODE: ID-based sample matching (default)
+		// BUG-003 fix: Match samples by FID/IID across all input files
+		// ============================================================
+
+		// Step 1: Read FAM IDs (master sample list)
+		FamIndex fam_idx = read_fam_ids(fam_path);
+		cout << "Read " << fam_idx.count << " samples from FAM file" << endl;
+
+		// Step 2: Initialize tracking
+		SampleMatchResult match_result;
+		match_result.fam_count = fam_idx.count;
+		match_result.all_aligned = true;
+		match_result.covar_count = 0;
+		match_result.env_count = 0;
+		match_result.fam_not_in_covar = 0;
+		match_result.covar_not_in_fam = 0;
+		match_result.fam_not_in_env = 0;
+		match_result.env_not_in_fam = 0;
+
+		// Step 3: Read environment file FIRST (if needed, before covariates)
+		MatchStats env_stats = {0, 0, 0, true};
+		if (gen_by_env) {
+			Nenv = read_env_matched(fam_idx, env_path, env_stats);
+			match_result.env_count = env_stats.total_in_file;
+			match_result.fam_not_in_env = fam_idx.count - env_stats.matched;
+			match_result.env_not_in_fam = env_stats.not_in_fam;
+			if (!env_stats.already_aligned) match_result.all_aligned = false;
+		}
+
+		// Step 4: Read phenotype file
+		MatchStats pheno_stats = {0, 0, 0, true};
+		if (use_dummy) {
+			Nindv = fam_idx.count;
+			// Initialize dummy phenotype and mask
+			pheno.resize(Nindv, 1);
+			mask.resize(Nindv, 1);
+			new_pheno.resize(Nindv, 1);
+			pheno.setZero();
+			mask.setOnes();
+			new_pheno.setZero();
+			phenocount = 1;
+			pheno_stats = {fam_idx.count, fam_idx.count, 0, true};
+		} else {
+			pheno_stats = read_pheno_matched(fam_idx, pheno_path, phenocount);
+			Nindv = fam_idx.count;  // Matrix sized to FAM count
+		}
+		match_result.pheno_count = pheno_stats.total_in_file;
+		match_result.fam_not_in_pheno = fam_idx.count - pheno_stats.matched;
+		match_result.pheno_not_in_fam = pheno_stats.not_in_fam;
+		if (!pheno_stats.already_aligned) match_result.all_aligned = false;
+
+		cout << "Number of individuals (FAM) = " << Nindv << endl;
+		y_sum = pheno.sum();
+
+		// Step 5: Read annotation file (unchanged - SNP-level, no sample IDs)
+		if (use_1col_annot == true) {
+			read_annot_1col(annot_path);
+		} else {
+			read_annot(annot_path);
+		}
+
+		// Step 6: Read covariate file
+		MatchStats cov_stats = {0, 0, 0, true};
+		if (cov_path != "") {
+			use_cov = true;
+			Ncov = read_cov_matched(fam_idx, cov_path, cov_stats);
+			match_result.covar_count = cov_stats.total_in_file;
+			match_result.fam_not_in_covar = fam_idx.count - cov_stats.matched;
+			match_result.covar_not_in_fam = cov_stats.not_in_fam;
+			if (!cov_stats.already_aligned) match_result.all_aligned = false;
+		} else {
+			cout << "No covariate file specified" << endl;
+			if ((cov_add_intercept == true) && (!use_dummy)) {
+				covariate.resize(Nindv, 1);
+				for (int i = 0; i < Nindv; i++) {
+					covariate(i, 0) = 1;
+				}
+				Ncov = 1;
+				use_cov = true;
+				cout << "Intercept included" << endl;
+			} else {
+				both_side_cov = false;
+				use_cov = false;
+				cout << "No intercept included" << endl;
+			}
+		}
+
+		// Step 7: Compute intersection count and report
+		match_result.intersection_count = compute_intersection_count();
+		report_sample_matching(match_result);
+
+		// Step 8: Validate intersection is not empty
+		if (match_result.intersection_count == 0) {
+			cerr << "ERROR: No samples in common across all input files." << endl;
+			cerr << "  Hint: Check that FID/IID columns match across files." << endl;
+			cerr << "        Sample IDs are case-sensitive." << endl;
+			exit(1);
 		}
 	}
 
